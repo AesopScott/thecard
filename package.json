@@ -1,0 +1,21 @@
+{
+  "name": "thecard",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=11"
+  },
+  "packageManager": "pnpm@11.0.9"
+}
