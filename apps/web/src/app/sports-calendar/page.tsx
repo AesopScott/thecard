@@ -2,225 +2,227 @@
 
 import Link from "next/link";
 
-interface SportEvent {
-  name: string;
-  startMonth: number; // 1-12
-  endMonth: number;
-  year: number;
-  priority: "v1" | "phase2" | "future";
-  region?: string;
+interface KeyDate {
+  label: string;
+  date: string;
 }
 
-const SPORTS_CALENDAR: SportEvent[] = [
-  // 2026
-  { name: "NFL Preseason", startMonth: 8, endMonth: 8, year: 2026, priority: "v1" },
-  { name: "NFL Regular Season", startMonth: 9, endMonth: 1, year: 2026, priority: "v1" },
-  { name: "College Football", startMonth: 9, endMonth: 1, year: 2026, priority: "v1" },
-  { name: "MLB (Playoffs/World Series)", startMonth: 10, endMonth: 11, year: 2026, priority: "v1" },
-  { name: "NBA Season", startMonth: 10, endMonth: 6, year: 2026, priority: "phase2" },
-  { name: "NHL Season", startMonth: 10, endMonth: 6, year: 2026, priority: "phase2" },
-  { name: "MLS Cup Playoffs", startMonth: 10, endMonth: 12, year: 2026, priority: "phase2" },
-  { name: "Premier League", startMonth: 8, endMonth: 5, year: 2026, priority: "phase2" },
-  { name: "La Liga (Spain)", startMonth: 8, endMonth: 5, year: 2026, priority: "phase2" },
-  { name: "Serie A (Italy)", startMonth: 8, endMonth: 5, year: 2026, priority: "phase2" },
-  { name: "Bundesliga (Germany)", startMonth: 8, endMonth: 5, year: 2026, priority: "phase2" },
-  { name: "Ligue 1 (France)", startMonth: 8, endMonth: 5, year: 2026, priority: "phase2" },
-  { name: "College Basketball", startMonth: 11, endMonth: 3, year: 2026, priority: "v1" },
-  { name: "March Madness (NCAA)", startMonth: 3, endMonth: 4, year: 2027, priority: "v1" },
-  { name: "FIFA World Cup 2026", startMonth: 6, endMonth: 7, year: 2026, priority: "future" },
-  { name: "PGA Tour (Regular Season)", startMonth: 1, endMonth: 8, year: 2026, priority: "phase2" },
-  { name: "PGA Tour (Fall)", startMonth: 8, endMonth: 12, year: 2026, priority: "phase2" },
-  { name: "PGA Tour (Spring 2027)", startMonth: 1, endMonth: 8, year: 2027, priority: "phase2" },
-  { name: "Golf Majors (Masters)", startMonth: 4, endMonth: 4, year: 2027, priority: "phase2" },
-  { name: "Golf Majors (US Open)", startMonth: 6, endMonth: 6, year: 2026, priority: "phase2" },
-  { name: "Golf Majors (Open Championship)", startMonth: 7, endMonth: 7, year: 2026, priority: "phase2" },
-  { name: "Golf Majors (PGA Championship)", startMonth: 8, endMonth: 8, year: 2026, priority: "phase2" },
-  { name: "ATP Tennis (Regular Tour)", startMonth: 1, endMonth: 12, year: 2026, priority: "phase2" },
-  { name: "WTA Tennis (Regular Tour)", startMonth: 1, endMonth: 12, year: 2026, priority: "phase2" },
-  { name: "Wimbledon", startMonth: 7, endMonth: 7, year: 2026, priority: "phase2" },
-  { name: "US Open Tennis", startMonth: 8, endMonth: 9, year: 2026, priority: "phase2" },
-  { name: "Australian Open", startMonth: 1, endMonth: 2, year: 2027, priority: "phase2" },
-  { name: "French Open", startMonth: 5, endMonth: 6, year: 2027, priority: "phase2" },
-  { name: "UFC / MMA (Regular Events)", startMonth: 1, endMonth: 12, year: 2026, priority: "phase2" },
-  { name: "Major Boxing Events", startMonth: 1, endMonth: 12, year: 2026, priority: "future" },
-  { name: "Rugby Six Nations", startMonth: 2, endMonth: 3, year: 2027, priority: "future" },
-  { name: "Rugby Championship", startMonth: 8, endMonth: 10, year: 2026, priority: "future" },
-  { name: "Cricket (IPL)", startMonth: 3, endMonth: 5, year: 2027, priority: "future" },
-  { name: "Cricket (World Cup)", startMonth: 10, endMonth: 11, year: 2027, priority: "future" },
-  { name: "Formula 1 Season", startMonth: 3, endMonth: 11, year: 2026, priority: "future" },
-  { name: "Horse Racing (Triple Crown)", startMonth: 5, endMonth: 6, year: 2026, priority: "future" },
-  { name: "Horse Racing (Breeders Cup)", startMonth: 11, endMonth: 11, year: 2026, priority: "future" },
-  { name: "Tour de France", startMonth: 7, endMonth: 7, year: 2026, priority: "future" },
-  { name: "Winter Olympics 2026", startMonth: 2, endMonth: 2, year: 2026, priority: "future" },
-  { name: "Summer Olympics 2028", startMonth: 7, endMonth: 8, year: 2028, priority: "future" },
+interface Sport {
+  icon: string;
+  name: string;
+  season: string;
+  keyDates: KeyDate[];
+}
+
+const SPORTS: Sport[] = [
+  {
+    icon: "🏈",
+    name: "NFL",
+    season: "Aug 6 – Feb 1, 2027",
+    keyDates: [
+      { label: "Hall of Fame Game", date: "Aug 6, 2026" },
+      { label: "Preseason kickoff", date: "Aug 13, 2026" },
+      { label: "Regular Season begins", date: "Sep 3, 2026" },
+      { label: "Wild Card Weekend", date: "Jan 9–11, 2027" },
+      { label: "Super Bowl LXI", date: "Feb 1, 2027" },
+    ],
+  },
+  {
+    icon: "🏈",
+    name: "College Football",
+    season: "Aug 29 – Jan 19, 2027",
+    keyDates: [
+      { label: "Season opener", date: "Aug 29, 2026" },
+      { label: "Conference Championship Games", date: "Dec 5–6, 2026" },
+      { label: "CFP First Round", date: "Dec 20, 2026" },
+      { label: "CFP Semifinals", date: "Jan 1, 2027" },
+      { label: "CFP National Championship", date: "Jan 19, 2027" },
+    ],
+  },
+  {
+    icon: "⚽",
+    name: "FIFA World Cup 2026",
+    season: "Jun 11 – Jul 19, 2026",
+    keyDates: [
+      { label: "Opening Match", date: "Jun 11, 2026" },
+      { label: "Group Stage ends", date: "Jun 28, 2026" },
+      { label: "Round of 32 begins", date: "Jul 1, 2026" },
+      { label: "Quarterfinals", date: "Jul 9–10, 2026" },
+      { label: "Final (MetLife Stadium)", date: "Jul 19, 2026" },
+    ],
+  },
+  {
+    icon: "⚾",
+    name: "MLB",
+    season: "Apr 2 – Nov 1, 2026",
+    keyDates: [
+      { label: "Opening Day", date: "Apr 2, 2026" },
+      { label: "All-Star Game", date: "Jul 14, 2026" },
+      { label: "Wild Card Games", date: "Sep 29, 2026" },
+      { label: "ALCS & NLCS", date: "Oct 8–19, 2026" },
+      { label: "World Series", date: "Oct 20 – Nov 1, 2026" },
+    ],
+  },
+  {
+    icon: "🏀",
+    name: "NBA",
+    season: "Oct 21, 2026 – Jun 22, 2027",
+    keyDates: [
+      { label: "Opening Night", date: "Oct 21, 2026" },
+      { label: "All-Star Weekend", date: "Feb 13–15, 2027" },
+      { label: "Regular Season ends", date: "Apr 12, 2027" },
+      { label: "Playoffs begin", date: "Apr 18, 2027" },
+      { label: "NBA Finals", date: "Jun 2–22, 2027" },
+    ],
+  },
+  {
+    icon: "🏒",
+    name: "NHL",
+    season: "Oct 7, 2026 – Jun 28, 2027",
+    keyDates: [
+      { label: "Opening Night", date: "Oct 7, 2026" },
+      { label: "All-Star Weekend", date: "Feb 6–8, 2027" },
+      { label: "Regular Season ends", date: "Apr 17, 2027" },
+      { label: "Playoffs begin", date: "Apr 21, 2027" },
+      { label: "Stanley Cup Finals", date: "Jun 7–28, 2027" },
+    ],
+  },
+  {
+    icon: "🏀",
+    name: "College Basketball",
+    season: "Nov 10, 2026 – Apr 5, 2027",
+    keyDates: [
+      { label: "Tip-Off", date: "Nov 10, 2026" },
+      { label: "Conference Tournaments", date: "Mar 2–14, 2027" },
+      { label: "NCAA Selection Sunday", date: "Mar 14, 2027" },
+      { label: "First & Second Rounds", date: "Mar 19–22, 2027" },
+      { label: "Final Four & Championship", date: "Apr 3–5, 2027" },
+    ],
+  },
+  {
+    icon: "⚽",
+    name: "Premier League",
+    season: "Aug 15, 2026 – May 23, 2027",
+    keyDates: [
+      { label: "Season opener", date: "Aug 15, 2026" },
+      { label: "Boxing Day fixtures", date: "Dec 26, 2026" },
+      { label: "FA Cup Final", date: "May 15, 2027" },
+      { label: "Final Matchday", date: "May 23, 2027" },
+    ],
+  },
+  {
+    icon: "⚽",
+    name: "UEFA Champions League",
+    season: "Sep 2026 – May 29, 2027",
+    keyDates: [
+      { label: "League Phase begins", date: "Sep 16, 2026" },
+      { label: "League Phase ends", date: "Jan 29, 2027" },
+      { label: "Round of 16", date: "Feb 17 – Mar 18, 2027" },
+      { label: "Quarterfinals", date: "Apr 1–16, 2027" },
+      { label: "Final (Munich)", date: "May 29, 2027" },
+    ],
+  },
+  {
+    icon: "⛳",
+    name: "Golf — 2027 Majors",
+    season: "Apr – Jul 2027",
+    keyDates: [
+      { label: "Masters (Augusta)", date: "Apr 8–11, 2027" },
+      { label: "PGA Championship", date: "May 20–23, 2027" },
+      { label: "U.S. Open", date: "Jun 17–20, 2027" },
+      { label: "The Open Championship", date: "Jul 15–18, 2027" },
+    ],
+  },
+  {
+    icon: "🎾",
+    name: "Tennis — Grand Slams",
+    season: "Jan – Sep 2027",
+    keyDates: [
+      { label: "U.S. Open 2026", date: "Aug 24 – Sep 6, 2026" },
+      { label: "Australian Open", date: "Jan 18 – Feb 1, 2027" },
+      { label: "French Open (Roland Garros)", date: "May 24 – Jun 8, 2027" },
+      { label: "Wimbledon", date: "Jun 28 – Jul 11, 2027" },
+      { label: "U.S. Open 2027", date: "Aug 23 – Sep 5, 2027" },
+    ],
+  },
+  {
+    icon: "🥊",
+    name: "UFC / MMA",
+    season: "Year-round",
+    keyDates: [
+      { label: "UFC events", date: "Every 2–3 weeks" },
+      { label: "UFC 300-series Pay-Per-Views", date: "Quarterly" },
+      { label: "International Fight Weeks", date: "Jul & Dec" },
+    ],
+  },
+  {
+    icon: "🏎️",
+    name: "Formula 1",
+    season: "Mar – Nov 2026",
+    keyDates: [
+      { label: "Season opener (Australia)", date: "Mar 15, 2026" },
+      { label: "Monaco Grand Prix", date: "May 24, 2026" },
+      { label: "British Grand Prix (Silverstone)", date: "Jul 5, 2026" },
+      { label: "U.S. Grand Prix (Austin)", date: "Oct 18, 2026" },
+      { label: "Season finale (Abu Dhabi)", date: "Nov 22, 2026" },
+    ],
+  },
+  {
+    icon: "🏇",
+    name: "Horse Racing — Triple Crown",
+    season: "May – Jun 2027",
+    keyDates: [
+      { label: "Kentucky Derby", date: "May 1, 2027" },
+      { label: "Preakness Stakes", date: "May 15, 2027" },
+      { label: "Belmont Stakes", date: "Jun 5, 2027" },
+      { label: "Breeders' Cup", date: "Nov 6–7, 2026" },
+    ],
+  },
 ];
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
-
-const PRIORITY_COLORS = {
-  v1: "bg-emerald-900/40 border-emerald-600 text-emerald-100",
-  phase2: "bg-blue-900/40 border-blue-600 text-blue-100",
-  future: "bg-slate-800/40 border-slate-600 text-slate-300",
-};
-
-const PRIORITY_BADGES = {
-  v1: "V1 Priority",
-  phase2: "Phase 2",
-  future: "Future",
-};
 
 export default function SportsCalendarPage() {
-  const years = [2026, 2027, 2028];
-
-  const getEventsByMonth = (year: number, month: number) => {
-    return SPORTS_CALENDAR.filter((event) => {
-      if (event.year !== year) return false;
-      // Handle events that wrap across years (like NFL season)
-      if (event.startMonth <= event.endMonth) {
-        return month >= event.startMonth && month <= event.endMonth;
-      } else {
-        return month >= event.startMonth || month <= event.endMonth;
-      }
-    });
-  };
-
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] pt-8 pb-32">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-12">
-          <Link href="/learn" className="text-sm text-[var(--color-brand-primary)] hover:underline mb-4 inline-block">
+      <div className="max-w-2xl mx-auto px-4">
+
+        <div className="mb-10">
+          <Link href="/card" className="text-sm text-[var(--color-brand-primary)] hover:underline mb-4 inline-block">
             ← Back
           </Link>
-          <h1 className="text-4xl font-bold mb-4">Sports Calendar</h1>
-          <p className="text-[var(--color-text-muted)] mb-6">
-            Comprehensive sports calendar covering major events across 2026–2028. Reference this to plan seasons and anticipate when you can forecast new sports.
+          <h1 className="text-4xl font-display font-black tracking-tight mb-2">Sports Calendar</h1>
+          <p className="text-sm text-[var(--color-text-muted)]">
+            Key dates for every major sport — plan your forecasts around what&apos;s live.
           </p>
-
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 mb-8">
-            {Object.entries(PRIORITY_BADGES).map(([key, label]) => (
-              <div key={key} className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded border ${PRIORITY_COLORS[key as keyof typeof PRIORITY_COLORS]}`}></div>
-                <span className="text-sm">{label}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Calendar by Year */}
-        {years.map((year) => (
-          <div key={year} className="mb-16">
-            <h2 className="text-2xl font-bold mb-8 text-[var(--color-brand-primary)]">{year}</h2>
-
-            {/* Grid of months */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {MONTHS.map((month, monthIndex) => {
-                const monthNum = monthIndex + 1;
-                const events = getEventsByMonth(year, monthNum);
-
-                return (
-                  <div
-                    key={`${year}-${monthNum}`}
-                    className="border border-[var(--color-card-border)] rounded-lg bg-[var(--color-card-surface)] p-4 hover:border-[var(--color-brand-primary)] transition-colors"
-                  >
-                    <h3 className="font-bold text-lg mb-4 text-[var(--color-brand-primary)]">
-                      {month}
-                    </h3>
-
-                    {events.length > 0 ? (
-                      <div className="space-y-2">
-                        {events.map((event, idx) => (
-                          <div
-                            key={`${event.name}-${idx}`}
-                            className={`p-3 rounded border text-sm ${PRIORITY_COLORS[event.priority]}`}
-                          >
-                            <div className="font-semibold">{event.name}</div>
-                            <div className="text-xs opacity-75 mt-1">{PRIORITY_BADGES[event.priority]}</div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-[var(--color-text-muted)] text-sm italic">No major events</div>
-                    )}
+        <div className="flex flex-col gap-4">
+          {SPORTS.map((sport) => (
+            <div
+              key={sport.name}
+              className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5"
+            >
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">{sport.icon}</span>
+                  <div>
+                    <h2 className="font-bold text-base text-[var(--color-card-text)]">{sport.name}</h2>
+                    <p className="text-xs text-[var(--color-text-muted)]">{sport.season}</p>
                   </div>
-                );
-              })}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {sport.keyDates.map((kd) => (
+                  <div key={kd.label} className="flex items-baseline justify-between gap-4">
+                    <span className="text-xs text-[var(--color-text-secondary)] min-w-0">{kd.label}</span>
+                    <span className="text-xs font-semibold text-[var(--color-brand-primary)] shrink-0 tabular-nums">{kd.date}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-
-        {/* Summary Section */}
-        <div className="mt-16 border-t border-[var(--color-card-border)] pt-12">
-          <h2 className="text-2xl font-bold mb-8">Priority Summary</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            {/* V1 Priority */}
-            <div className="border border-emerald-600 rounded-lg bg-emerald-900/20 p-6">
-              <h3 className="font-bold text-emerald-100 mb-4">🚀 V1 Priority (August 2026)</h3>
-              <ul className="text-sm text-emerald-100/80 space-y-2">
-                {SPORTS_CALENDAR.filter((e) => e.priority === "v1")
-                  .map((e) => (
-                    <li key={e.name}>• {e.name}</li>
-                  ))}
-              </ul>
-            </div>
-
-            {/* Phase 2 */}
-            <div className="border border-blue-600 rounded-lg bg-blue-900/20 p-6">
-              <h3 className="font-bold text-blue-100 mb-4">📅 Phase 2 (Q4 2026–2027)</h3>
-              <ul className="text-sm text-blue-100/80 space-y-2">
-                {SPORTS_CALENDAR.filter((e) => e.priority === "phase2")
-                  .slice(0, 8)
-                  .map((e) => (
-                    <li key={e.name}>• {e.name}</li>
-                  ))}
-                <li className="italic text-blue-100/60">+ {SPORTS_CALENDAR.filter((e) => e.priority === "phase2").length - 8} more</li>
-              </ul>
-            </div>
-
-            {/* Future */}
-            <div className="border border-slate-600 rounded-lg bg-slate-800/20 p-6">
-              <h3 className="font-bold text-slate-300 mb-4">🔮 Future (2027+)</h3>
-              <ul className="text-sm text-slate-300/80 space-y-2">
-                {SPORTS_CALENDAR.filter((e) => e.priority === "future")
-                  .slice(0, 8)
-                  .map((e) => (
-                    <li key={e.name}>• {e.name}</li>
-                  ))}
-                <li className="italic text-slate-300/60">+ {SPORTS_CALENDAR.filter((e) => e.priority === "future").length - 8} more</li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Key Notes */}
-          <div className="bg-[var(--color-surface-2)] rounded-lg p-6 border border-[var(--color-card-border)]">
-            <h3 className="font-bold mb-4">📌 Key Planning Notes</h3>
-            <ul className="text-sm text-[var(--color-text-muted)] space-y-3">
-              <li>
-                <strong>August 2026:</strong> NFL preseason + college football start. V1 event sourcing must be ready for these two.
-              </li>
-              <li>
-                <strong>November 2026:</strong> College basketball + World Cup 2026 (if we can get ready in time). Stretch goal.
-              </li>
-              <li>
-                <strong>December 2026 – March 2027:</strong> Peak sports season. NFL playoffs, college basketball, March Madness. Heavy engagement period.
-              </li>
-              <li>
-                <strong>April onwards:</strong> NBA/NHL playoffs, baseball season ramps. Transition to summer sports.
-              </li>
-              <li>
-                <strong>Phase 2 scope:</strong> European soccer (Premier League, La Liga, etc.), NBA, NHL, major golf tournaments, tennis Grand Slams.
-              </li>
-              <li>
-                <strong>Future scope:</strong> Combat sports, cricket, rugby, Formula 1, horse racing, cycling, Olympics.
-              </li>
-            </ul>
-          </div>
+          ))}
         </div>
+
       </div>
     </div>
   );
