@@ -4,49 +4,46 @@ export default function LeaderboardPage() {
   return (
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5">
 
-      <header>
-        <h1 className="text-2xl font-black tracking-tight text-[var(--color-card-text)]">
+      <header className="flex flex-col gap-2 pt-2">
+        <h1 className="text-4xl font-display font-black tracking-tight text-[var(--color-card-text)]">
           Leaderboard
         </h1>
-        <p className="text-sm text-[var(--color-card-muted)] mt-1">
-          The sharpest forecasters, ranked by how right they are — not how loud.
+        <p className="text-base text-[var(--color-text-secondary)]">
+          The sharpest forecasters, ranked by calibration — not wins.
         </p>
       </header>
 
       {/* What this ranks */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
-        <p className="text-xs font-semibold text-[var(--color-card-accent)] uppercase tracking-widest">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5 flex flex-col gap-3">
+        <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
           How ranking works
         </p>
-        <p className="text-sm text-[var(--color-card-muted)] leading-relaxed">
-          This leaderboard doesn&apos;t rank by win rate — it ranks by{" "}
-          <strong className="text-[var(--color-card-text)]">calibration</strong>.
-          A calibrated forecaster says 70% and is right about 70% of the time.
-          That&apos;s harder than it sounds. Most people are overconfident.
-        </p>
-        <p className="text-sm text-[var(--color-card-muted)] leading-relaxed">
-          Scores are computed from the Brier score — the same method used by
-          superforecasters, meteorologists, and professional risk analysts.
-          A score near 100 means your stated probabilities match reality almost perfectly.
-        </p>
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+            This leaderboard ranks by <strong>calibration</strong> — not wins.
+            A calibrated forecaster says 70% and is right 70% of the time. Most people are overconfident.
+          </p>
+          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+            Scores use the Brier score — the same method used by superforecasters and meteorologists.
+            A score near 100 means your probabilities match reality almost perfectly.
+          </p>
+        </div>
       </div>
 
       {/* Live leaderboard */}
       <LeaderboardClient />
 
       {/* What a ranked forecaster looks like */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
-        <p className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-widest">
-          Verified forecasters
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5 flex flex-col gap-3">
+        <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
+          ✓ Verified forecasters
         </p>
-        <p className="text-sm text-[var(--color-card-muted)] leading-relaxed">
-          The top forecasters on The Card get a verified badge and a public profile.
-          Their track records are visible on every market they&apos;ve predicted —
-          other users can follow them or mirror a percentage of their position
-          with one tap.
+        <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
+          Top forecasters get a verified badge and public profile. Their track records are visible on every market.
+          You can follow them or mirror a percentage of their position with one tap.
         </p>
-        <p className="text-xs text-[var(--color-card-muted)]">
-          Verification requires 50+ resolved predictions and a calibration score above 65.
+        <p className="text-xs text-[var(--color-text-muted)]">
+          Verification requires 50+ predictions and a calibration score above 65.
         </p>
       </div>
 
