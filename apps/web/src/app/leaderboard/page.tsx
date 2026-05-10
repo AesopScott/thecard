@@ -9,26 +9,9 @@ export default function LeaderboardPage() {
           Leaderboard
         </h1>
         <p className="text-base text-[var(--color-text-secondary)]">
-          The sharpest forecasters, ranked by calibration — not wins.
+          Season rank by bankroll growth. Calibration score shows skill vs luck.
         </p>
       </header>
-
-      {/* What this ranks */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5 flex flex-col gap-3">
-        <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-          How ranking works
-        </p>
-        <div className="space-y-3">
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            This leaderboard ranks by <strong>calibration</strong> — not wins.
-            A calibrated forecaster says 70% and is right 70% of the time. Most people are overconfident.
-          </p>
-          <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-            Scores use the Brier score — the same method used by superforecasters and meteorologists.
-            A score near 100 means your probabilities match reality almost perfectly.
-          </p>
-        </div>
-      </div>
 
       {/* Live leaderboard */}
       <LeaderboardClient />

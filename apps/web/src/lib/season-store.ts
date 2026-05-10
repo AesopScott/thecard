@@ -1,0 +1,151 @@
+import type { Season, League, LeagueMembership, SeasonLeaderboardEntry } from "@thecard/types";
+
+const STORAGE_KEY = "thecard:season:v1";
+export const STARTING_BANKROLL = 1_000;
+
+export const ACTIVE_SEASON: Season = {
+  id: "s1-nfl-fall-2026",
+  name: "NFL + College Fall 2026",
+  startDate: new Date("2026-08-04"),
+  endDate: new Date("2026-10-26"),
+  prizePoolEstimate: 5_000,
+};
+
+export const GLOBAL_LEAGUE: League = {
+  id: "global-s1",
+  seasonId: ACTIVE_SEASON.id,
+  name: "Global",
+  type: "global",
+  memberCount: 1_247,
+};
+
+export function getSeasonStatus(season: Season): "upcoming" | "active" | "closed" {
+  const now = Date.now();
+  if (now < season.startDate.getTime()) return "upcoming";
+  if (now > season.endDate.getTime()) return "closed";
+  return "active";
+}
+
+export function daysUntilSeason(season: Season): number {
+  const diff = season.startDate.getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+export function daysLeftInSeason(season: Season): number {
+  const diff = season.endDate.getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+interface SeasonState {
+  memberships: Record<string, LeagueMembership>;
+}
+
+export const SEASON_BANKROLL_EVENT = "thecard:season:bankroll";
+
+function read(): SeasonState {
+  if (typeof window === "undefined") return { memberships: {} };
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as SeasonState;
+  } catch {
+    return { memberships: {} };
+  }
+}
+
+function write(state: SeasonState): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  window.dispatchEvent(new Event(SEASON_BANKROLL_EVENT));
+}
+
+function ensureMembership(state: SeasonState, leagueId: string, seasonId: string): SeasonState {
+  if (state.memberships[leagueId]) return state;
+  return {
+    ...state,
+    memberships: {
+      ...state.memberships,
+      [leagueId]: {
+        leagueId,
+        seasonId,
+        startingBankroll: STARTING_BANKROLL,
+        currentBankroll: STARTING_BANKROLL,
+        betCount: 0,
+        isBust: false,
+        joinedAt: Date.now(),
+      },
+    },
+  };
+}
+
+export function initGlobalLeague(): void {
+  const state = ensureMembership(read(), GLOBAL_LEAGUE.id, ACTIVE_SEASON.id);
+  write(state);
+}
+
+export function getMembership(leagueId: string): LeagueMembership {
+  const state = ensureMembership(read(), leagueId, ACTIVE_SEASON.id);
+  return state.memberships[leagueId]!;
+}
+
+export function getBankroll(leagueId: string): number {
+  return getMembership(leagueId).currentBankroll;
+}
+
+// Returns false if bankroll insufficient or player is bust
+export function placeBet(leagueId: string, amount: number): boolean {
+  let state = ensureMembership(read(), leagueId, ACTIVE_SEASON.id);
+  const m = state.memberships[leagueId]!;
+  if (m.isBust || m.currentBankroll < amount) return false;
+
+  const newBankroll = Math.max(0, m.currentBankroll - amount);
+  state = {
+    ...state,
+    memberships: {
+      ...state.memberships,
+      [leagueId]: {
+        ...m,
+        currentBankroll: newBankroll,
+        betCount: m.betCount + 1,
+        isBust: newBankroll <= 0,
+      },
+    },
+  };
+  write(state);
+  return true;
+}
+
+export function recordPayout(leagueId: string, payout: number): void {
+  let state = ensureMembership(read(), leagueId, ACTIVE_SEASON.id);
+  const m = state.memberships[leagueId]!;
+  state = {
+    ...state,
+    memberships: {
+      ...state.memberships,
+      [leagueId]: { ...m, currentBankroll: m.currentBankroll + payout },
+    },
+  };
+  write(state);
+}
+
+// Inserts the user's real bankroll + betCount into mock standings at the correct rank
+export function buildSeasonLeaderboard(userBankroll: number, userBetCount: number): SeasonLeaderboardEntry[] {
+  const mocks: Omit<SeasonLeaderboardEntry, "rank">[] = [
+    { displayName: "SharpMike", avatarInitial: "S", bankroll: 1_847, betCount: 23 },
+    { displayName: "CalibrationKing", avatarInitial: "C", bankroll: 1_612, betCount: 31 },
+    { displayName: "NFLNerd88", avatarInitial: "N", bankroll: 1_544, betCount: 19 },
+    { displayName: "TheBookie", avatarInitial: "T", bankroll: 1_489, betCount: 27 },
+    { displayName: "GridironGuru", avatarInitial: "G", bankroll: 1_401, betCount: 14 },
+    { displayName: "OddsWizard", avatarInitial: "O", bankroll: 1_355, betCount: 22 },
+    { displayName: "SportsSage", avatarInitial: "S", bankroll: 1_288, betCount: 18 },
+    { displayName: "ProbabilityPete", avatarInitial: "P", bankroll: 1_201, betCount: 33 },
+    { displayName: "LineSharp", avatarInitial: "L", bankroll: 1_144, betCount: 11 },
+    { displayName: "MarketMaker", avatarInitial: "M", bankroll: 1_089, betCount: 29 },
+    { displayName: "EdgeFinder", avatarInitial: "E", bankroll: 1_022, betCount: 16 },
+    { displayName: "WildcardWill", avatarInitial: "W", bankroll: 978, betCount: 20 },
+    { displayName: "VarianceVic", avatarInitial: "V", bankroll: 901, betCount: 25 },
+    { displayName: "HunchPlayer", avatarInitial: "H", bankroll: 834, betCount: 38 },
+    { displayName: "LongShot", avatarInitial: "L", bankroll: 712, betCount: 42 },
+  ];
+
+  const you = { displayName: "You", avatarInitial: "Y", bankroll: userBankroll, betCount: userBetCount, isYou: true };
+  const combined = [...mocks, you].sort((a, b) => b.bankroll - a.bankroll);
+  return combined.map((entry, i) => ({ ...entry, rank: i + 1 }));
+}

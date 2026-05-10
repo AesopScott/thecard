@@ -4,6 +4,7 @@ import { MarketCard } from "@/components/market-card";
 import { JackpotBanner } from "@/components/jackpot-banner";
 import { PositionsPanel } from "@/components/positions-panel";
 import { UpcomingSportsCard } from "@/components/upcoming-sports-card";
+import { SeasonBanner } from "@/components/season-banner";
 import type { Odds } from "@thecard/types";
 
 // Mock jackpot — will come from Firestore when backend is wired
@@ -52,6 +53,9 @@ export default async function CardPage() {
           </span>
         </div>
       </header>
+
+      {/* Season bankroll */}
+      <SeasonBanner variant="compact" />
 
       {/* Upcoming sports calendar */}
       <UpcomingSportsCard />

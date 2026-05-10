@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { exchange } from "@/lib/exchange";
 import { savePosition } from "@/lib/user-store";
+import {
+  GLOBAL_LEAGUE,
+  SEASON_BANKROLL_EVENT,
+  getBankroll,
+  initGlobalLeague,
+  placeBet,
+} from "@/lib/season-store";
 import type { Market, Odds } from "@thecard/types";
 
 export const ORDER_PLACED_EVENT = "thecard:order:placed";
@@ -23,6 +30,16 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
   const { user } = useAuth();
   const [amount, setAmount] = useState("10");
   const [sheetState, setSheetState] = useState<SheetState>("input");
+  const [bankroll, setBankroll] = useState(() => {
+    initGlobalLeague();
+    return getBankroll(GLOBAL_LEAGUE.id);
+  });
+
+  useEffect(() => {
+    function onUpdate() { setBankroll(getBankroll(GLOBAL_LEAGUE.id)); }
+    window.addEventListener(SEASON_BANKROLL_EVENT, onUpdate);
+    return () => window.removeEventListener(SEASON_BANKROLL_EVENT, onUpdate);
+  }, []);
 
   const price = side === "yes" ? odds.yes : odds.no;
   const priceCents = Math.round(price * 100);
@@ -34,7 +51,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
   const sideDimColor = side === "yes" ? "var(--color-card-yes-dim)" : "var(--color-card-no-dim)";
 
   async function handleConfirm() {
-    if (!user || dollarAmount <= 0) return;
+    if (!user || dollarAmount <= 0 || dollarAmount > bankroll) return;
     setSheetState("confirming");
     try {
       const fill = await exchange.placeOrder(user.uid, {
@@ -42,6 +59,8 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
         side,
         amountUsd: dollarAmount,
       });
+      // Deduct from season bankroll
+      placeBet(GLOBAL_LEAGUE.id, dollarAmount);
       // Persist position to Firestore
       savePosition(user.uid, {
         marketId: fill.marketId,
@@ -111,6 +130,15 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                   </motion.div>
                 ) : (
                   <motion.div key="form" className="flex flex-col gap-4">
+                    {/* Bankroll row */}
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-[var(--color-card-muted)]">Season bankroll</span>
+                      <span className={`font-bold ${dollarAmount > bankroll ? "text-[var(--color-card-no)]" : "text-[var(--color-card-text)]"}`}>
+                        ${bankroll.toLocaleString()}
+                        {dollarAmount > bankroll && " — insufficient"}
+                      </span>
+                    </div>
+
                     {/* Header */}
                     <div className="flex items-start justify-between">
                       <div className="flex flex-col gap-0.5 min-w-0 mr-3">
@@ -145,7 +173,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                         <input
                           type="number"
                           min="1"
-                          max="500"
+                          max={bankroll}
                           step="1"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
@@ -182,7 +210,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                     {/* Confirm button */}
                     <button
                       onClick={handleConfirm}
-                      disabled={sheetState === "confirming" || dollarAmount <= 0}
+                      disabled={sheetState === "confirming" || dollarAmount <= 0 || dollarAmount > bankroll}
                       className="w-full rounded-xl font-bold text-sm py-3.5 transition-all active:scale-[0.98] disabled:opacity-50"
                       style={{
                         backgroundColor: sideDimColor,
