@@ -325,6 +325,34 @@ export default function SportsCalendarPage() {
           </p>
         </div>
 
+        <Link
+          href="/card"
+          className="group mb-10 block overflow-hidden rounded-xl border border-[var(--color-brand-primary)]/35 bg-[var(--color-card-surface)] transition-all hover:border-[var(--color-brand-primary)]/70"
+        >
+          <div
+            className="relative min-h-[190px] bg-cover bg-center"
+            style={{ backgroundImage: "url('/card/og.png')" }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/10" />
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
+                  Ready to play
+                </p>
+                <p className="mt-1 text-2xl font-display font-black text-white">
+                  Tonight&apos;s Card
+                </p>
+                <p className="mt-1 max-w-sm text-xs text-white/70">
+                  Jump from the season calendar into live markets, odds, and open positions.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white transition-transform group-hover:translate-x-0.5">
+                Open Card →
+              </span>
+            </div>
+          </div>
+        </Link>
+
         {CATEGORIES.map((cat) => (
           <div key={cat.label} className="mb-12">
             <h2 className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest mb-5">
