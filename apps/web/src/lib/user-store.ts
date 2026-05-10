@@ -7,6 +7,7 @@ import {
   addDoc,
   query,
   orderBy,
+  where,
   limit,
   serverTimestamp,
   getDocs,
@@ -234,7 +235,35 @@ export async function savePosition(
   }
 ): Promise<void> {
   if (!db) return;
-  await addDoc(collection(db, "users", uid, "positions"), {
+  const positionsRef = collection(db, "users", uid, "positions");
+  const existing = await getDocs(query(
+    positionsRef,
+    where("marketId", "==", data.marketId),
+    where("side", "==", data.side),
+    limit(1),
+  ));
+
+  if (!existing.empty) {
+    const positionDoc = existing.docs[0]!;
+    const current = positionDoc.data();
+    const currentContracts = (current.contracts as number | undefined) ?? 0;
+    const currentAveragePrice = (current.averagePrice as number | undefined) ?? data.averagePrice;
+    const nextContracts = currentContracts + data.contracts;
+    const nextAmountUsd = ((current.amountUsd as number | undefined) ?? (currentContracts * currentAveragePrice)) + data.amountUsd;
+    const nextAveragePrice = nextContracts > 0
+      ? ((currentContracts * currentAveragePrice) + (data.contracts * data.averagePrice)) / nextContracts
+      : data.averagePrice;
+
+    await updateDoc(positionDoc.ref, {
+      amountUsd: nextAmountUsd,
+      contracts: nextContracts,
+      averagePrice: nextAveragePrice,
+      updatedAt: serverTimestamp(),
+    });
+    return;
+  }
+
+  await addDoc(positionsRef, {
     ...data,
     placedAt: serverTimestamp(),
   });
