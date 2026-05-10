@@ -60,8 +60,10 @@ export function OnboardingSheet() {
       if (!available) { setUsernameError("That username is taken. Try another."); return; }
       await persistUsername(user.uid, trimmed);
       setStep("photo");
-    } catch {
-      setUsernameError("Something went wrong. Try again.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
+      console.error("Username claim error:", msg);
+      setUsernameError(msg);
     } finally {
       setSavingUsername(false);
     }
