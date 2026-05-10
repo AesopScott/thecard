@@ -68,6 +68,11 @@ service cloud.firestore {
         allow write: if isVerified() && request.auth.uid == uid;
       }
 
+      match /settledPositions/{positionId} {
+        allow read: if true;
+        allow write: if isVerified() && request.auth.uid == uid;
+      }
+
       match /perfectTenEntries/{contestId} {
         allow read: if isSignedIn() && request.auth.uid == uid;
         allow create: if isVerified()

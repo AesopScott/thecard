@@ -21,6 +21,7 @@ import { db, storage } from "./firebase";
 import type { LocalForecast } from "./forecast-store";
 import { brierScore as computeBrierScore, calibrationScore } from "@thecard/scoring";
 import type { Position } from "@thecard/types";
+import type { Sport } from "@thecard/types";
 
 export interface LeaderboardEntry {
   uid: string;
@@ -43,6 +44,21 @@ export interface UserProfile {
   avgBrierScore: number | null;
   teamName: string | null;
   emailVerified: boolean;
+}
+
+export interface SettledPositionRecord {
+  id: string;
+  marketId: string;
+  marketTitle: string;
+  sport: Sport;
+  side: "yes" | "no";
+  contracts: number;
+  averagePrice: number;
+  costBasis: number;
+  payout: number;
+  pnl: number;
+  outcome: "yes" | "no" | "sold";
+  closedAtMs: number;
 }
 
 // ─── User profile ────────────────────────────────────────────────────────────
@@ -231,6 +247,8 @@ export async function savePosition(
   uid: string,
   data: {
     marketId: string;
+    marketTitle?: string;
+    sport?: Sport;
     side: "yes" | "no";
     amountUsd: number;
     contracts: number;
@@ -262,6 +280,8 @@ export async function savePosition(
       amountUsd: nextAmountUsd,
       contracts: nextContracts,
       averagePrice: nextAveragePrice,
+      ...(data.marketTitle && { marketTitle: data.marketTitle }),
+      ...(data.sport && { sport: data.sport }),
       leagueIds: Array.from(new Set([
         ...((current.leagueIds as string[] | undefined) ?? []),
         ...(data.leagueIds ?? []),
@@ -365,7 +385,17 @@ export async function closePosition(uid: string, positionId: string): Promise<vo
   await deleteDoc(doc(db, "users", uid, "positions", positionId));
 }
 
-export async function closeMatchingPositions(uid: string, marketId: string, side: "yes" | "no"): Promise<void> {
+export async function closeMatchingPositions(
+  uid: string,
+  marketId: string,
+  side: "yes" | "no",
+  settlement?: {
+    marketTitle: string;
+    sport: Sport;
+    payout: number;
+    outcome: "sold";
+  }
+): Promise<void> {
   if (!db) return;
   const snap = await getDocs(query(
     collection(db, "users", uid, "positions"),
@@ -374,8 +404,64 @@ export async function closeMatchingPositions(uid: string, marketId: string, side
   ));
   if (snap.empty) return;
   const batch = writeBatch(db);
+  if (settlement) {
+    const aggregate = snap.docs.reduce(
+      (acc, positionDoc) => {
+        const data = positionDoc.data();
+        const contracts = (data.contracts as number | undefined) ?? 0;
+        const averagePrice = (data.averagePrice as number | undefined) ?? 0;
+        const amountUsd = (data.amountUsd as number | undefined) ?? contracts * averagePrice;
+        return {
+          contracts: acc.contracts + contracts,
+          costBasis: acc.costBasis + amountUsd,
+          weightedPrice: acc.weightedPrice + contracts * averagePrice,
+        };
+      },
+      { contracts: 0, costBasis: 0, weightedPrice: 0 }
+    );
+    batch.set(doc(collection(db, "users", uid, "settledPositions")), {
+      marketId,
+      marketTitle: settlement.marketTitle,
+      sport: settlement.sport,
+      side,
+      contracts: aggregate.contracts,
+      averagePrice: aggregate.contracts > 0 ? aggregate.weightedPrice / aggregate.contracts : 0,
+      costBasis: aggregate.costBasis,
+      payout: settlement.payout,
+      pnl: settlement.payout - aggregate.costBasis,
+      outcome: settlement.outcome,
+      closedAtMs: Date.now(),
+      closedAt: serverTimestamp(),
+    });
+  }
   snap.docs.forEach((positionDoc) => batch.delete(positionDoc.ref));
   await batch.commit();
+}
+
+export async function getPublicSettledPositions(uid: string, max = 50): Promise<SettledPositionRecord[]> {
+  if (!db) return [];
+  const snap = await getDocs(query(
+    collection(db, "users", uid, "settledPositions"),
+    orderBy("closedAtMs", "desc"),
+    limit(max),
+  ));
+  return snap.docs.map((positionDoc) => {
+    const data = positionDoc.data();
+    return {
+      id: positionDoc.id,
+      marketId: data.marketId as string,
+      marketTitle: (data.marketTitle as string | undefined) ?? (data.marketId as string),
+      sport: (data.sport as Sport | undefined) ?? "other",
+      side: data.side as "yes" | "no",
+      contracts: (data.contracts as number | undefined) ?? 0,
+      averagePrice: (data.averagePrice as number | undefined) ?? 0,
+      costBasis: (data.costBasis as number | undefined) ?? 0,
+      payout: (data.payout as number | undefined) ?? 0,
+      pnl: (data.pnl as number | undefined) ?? 0,
+      outcome: (data.outcome as "yes" | "no" | "sold" | undefined) ?? "sold",
+      closedAtMs: (data.closedAtMs as number | undefined) ?? Date.now(),
+    };
+  });
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────

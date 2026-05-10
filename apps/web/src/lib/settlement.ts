@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, writeBatch } from "firebase/firestore";
+import { collection, doc, getDocs, query, serverTimestamp, where, writeBatch } from "firebase/firestore";
 import type { Sport } from "@thecard/types";
 import { db } from "./firebase";
 import { resolveForecast } from "./forecast-store";
@@ -40,9 +40,10 @@ async function settleUserPositions({
   outcome,
 }: SettleUserMarketInput): Promise<SettlementResult> {
   if (!db) return { payout: 0, settledPositions: 0 };
+  const firestore = db;
 
   const positionsSnap = await getDocs(query(
-    collection(db, "users", uid, "positions"),
+    collection(firestore, "users", uid, "positions"),
     where("marketId", "==", marketId),
   ));
 
@@ -68,8 +69,30 @@ async function settleUserPositions({
     );
   }
 
-  const batch = writeBatch(db);
-  positionsSnap.docs.forEach((positionDoc) => batch.delete(positionDoc.ref));
+  const batch = writeBatch(firestore);
+  const closedAtMs = Date.now();
+  positionsSnap.docs.forEach((positionDoc) => {
+    const data = positionDoc.data();
+    const contracts = (data.contracts as number | undefined) ?? 0;
+    const averagePrice = (data.averagePrice as number | undefined) ?? 0;
+    const costBasis = (data.amountUsd as number | undefined) ?? contracts * averagePrice;
+    const positionPayout = data.side === outcome ? contracts : 0;
+    batch.set(doc(collection(firestore, "users", uid, "settledPositions")), {
+      marketId,
+      marketTitle: (data.marketTitle as string | undefined) ?? marketId,
+      sport,
+      side: data.side,
+      contracts,
+      averagePrice,
+      costBasis,
+      payout: positionPayout,
+      pnl: positionPayout - costBasis,
+      outcome,
+      closedAtMs,
+      closedAt: serverTimestamp(),
+    });
+    batch.delete(positionDoc.ref);
+  });
   await batch.commit();
 
   return { payout, settledPositions: positionsSnap.size };

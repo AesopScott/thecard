@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getUserProfileByUsername, type UserProfile } from "@/lib/user-store";
+import {
+  getPublicSettledPositions,
+  getUserProfileByUsername,
+  type SettledPositionRecord,
+  type UserProfile,
+} from "@/lib/user-store";
 
 interface ProfileClientProps {
   username: string;
@@ -11,14 +16,21 @@ interface ProfileClientProps {
 
 export function ProfileClient({ username }: ProfileClientProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [settledPositions, setSettledPositions] = useState<SettledPositionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     getUserProfileByUsername(username)
-      .then((data) => {
-        if (!cancelled) setProfile(data);
+      .then(async (data) => {
+        if (cancelled) return;
+        setProfile(data);
+        if (data) {
+          setSettledPositions(await getPublicSettledPositions(data.uid));
+        } else {
+          setSettledPositions([]);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -96,10 +108,51 @@ export function ProfileClient({ username }: ProfileClientProps) {
       </section>
 
       <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Track record</p>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
-          Public prediction history and settled positions will appear here once market settlement is wired into the live product.
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position History</p>
+          <span className="text-xs font-semibold text-[var(--color-card-muted)]">{settledPositions.length} closed</span>
+        </div>
+
+        {settledPositions.length === 0 ? (
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
+            Closed position history will appear here after this player sells a position or a market settles.
+          </p>
+        ) : (
+          <div className="mt-3 flex flex-col gap-2">
+            {settledPositions.map((position) => {
+              const isProfit = position.pnl >= 0;
+              return (
+                <div
+                  key={position.id}
+                  className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold text-[var(--color-card-text)]">
+                        {position.marketTitle}
+                      </p>
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
+                        {position.side.toUpperCase()} · {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className={`text-sm font-black ${isProfit ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>
+                        {isProfit ? "+" : ""}${position.pnl.toFixed(2)}
+                      </p>
+                      <p className="text-[10px] text-[var(--color-card-muted)]">
+                        ${position.payout.toFixed(2)} paid
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-card-muted)]">
+                    <span>{position.contracts.toFixed(1)} contracts · avg {Math.round(position.averagePrice * 100)}c</span>
+                    <span>cost ${position.costBasis.toFixed(2)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
     </div>
   );

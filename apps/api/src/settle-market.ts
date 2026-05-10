@@ -114,11 +114,29 @@ async function settleUser(userRef: DocumentReference, input: Args): Promise<User
   const leagueIds = new Set<string>();
   positionsSnap.docs.forEach((positionDoc) => {
     const position = positionDoc.data();
+    const contracts = Number(position.contracts ?? 0);
+    const averagePrice = Number(position.averagePrice ?? 0);
+    const costBasis = Number(position.amountUsd ?? contracts * averagePrice);
+    const positionPayout = position.side === input.outcome ? contracts : 0;
     if (position.side === input.outcome) {
-      payout += Number(position.contracts ?? 0);
+      payout += contracts;
       const positionLeagueIds = Array.isArray(position.leagueIds) ? position.leagueIds as string[] : [];
       positionLeagueIds.forEach((leagueId) => leagueIds.add(leagueId));
     }
+    writes.set(userRef.collection("settledPositions").doc(), {
+      marketId: input.marketId,
+      marketTitle: (position.marketTitle as string | undefined) ?? input.marketId,
+      sport: (position.sport as Sport | undefined) ?? input.sport,
+      side: position.side,
+      contracts,
+      averagePrice,
+      costBasis,
+      payout: positionPayout,
+      pnl: positionPayout - costBasis,
+      outcome: input.outcome,
+      closedAtMs: Date.now(),
+      closedAt: FieldValue.serverTimestamp(),
+    });
     writes.delete(positionDoc.ref);
   });
 

@@ -25,7 +25,7 @@ export async function placeAccountOrder({
   amountUsd,
 }: {
   uid: string;
-  market: Pick<Market, "id" | "sport">;
+  market: Pick<Market, "id" | "sport" | "title">;
   side: "yes" | "no";
   amountUsd: number;
 }): Promise<AccountOrderResult> {
@@ -48,6 +48,8 @@ export async function placeAccountOrder({
 
     const position = {
       marketId: fill.marketId,
+      marketTitle: market.title,
+      sport: market.sport,
       side: fill.side,
       amountUsd: fill.filledAmountUsd,
       contracts: fill.filledAmountUsd / fill.price,
@@ -76,7 +78,7 @@ export async function closeAccountPosition({
   currentValue,
 }: {
   uid: string;
-  market: Pick<Market, "id" | "sport">;
+  market: Pick<Market, "id" | "sport" | "title">;
   side: "yes" | "no";
   currentValue: number;
 }): Promise<void> {
@@ -86,5 +88,10 @@ export async function closeAccountPosition({
     await recordUserLeaguePayout(uid, leagueId, currentValue);
   }
 
-  await closeMatchingPositions(uid, market.id, side);
+  await closeMatchingPositions(uid, market.id, side, {
+    marketTitle: market.title,
+    sport: market.sport,
+    payout: currentValue,
+    outcome: "sold",
+  });
 }
