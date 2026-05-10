@@ -1,4 +1,6 @@
 import type { PerfectTenContest, PerfectTenPick } from "@thecard/types";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 export const BASE_JACKPOT = 5_000;
 export const P10_PICK_EVENT = "thecard:p10:pick";
@@ -64,6 +66,59 @@ export function submitPicks(contestId: string): PerfectTenPick | null {
   const submitted: PerfectTenPick = { ...current, isSubmitted: true, submittedAt: Date.now() };
   localStorage.setItem(storageKey(contestId), JSON.stringify(submitted));
   window.dispatchEvent(new Event(P10_PICK_EVENT));
+  return submitted;
+}
+
+export async function getStoredPick(uid: string, contestId: string): Promise<PerfectTenPick> {
+  const local = getPick(contestId);
+  if (!db) return local;
+  const snap = await getDoc(doc(db, "users", uid, "perfectTenEntries", contestId));
+  if (!snap.exists()) return local;
+  const data = snap.data();
+  const remote: PerfectTenPick = {
+    contestId,
+    picks: (data.picks as Record<string, "yes" | "no"> | undefined) ?? {},
+    isSubmitted: (data.isSubmitted as boolean | undefined) ?? false,
+    submittedAt: (data.submittedAtMs as number | undefined) ?? 0,
+  };
+  if (typeof window !== "undefined") {
+    localStorage.setItem(storageKey(contestId), JSON.stringify(remote));
+    window.dispatchEvent(new Event(P10_PICK_EVENT));
+  }
+  return remote;
+}
+
+export async function savePickDraft(uid: string, pick: PerfectTenPick): Promise<void> {
+  if (!db || pick.isSubmitted || isLocked()) return;
+  await setDoc(
+    doc(db, "users", uid, "perfectTenEntries", pick.contestId),
+    {
+      contestId: pick.contestId,
+      picks: pick.picks,
+      isSubmitted: false,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+export async function submitStoredPicks(uid: string, contestId: string): Promise<PerfectTenPick | null> {
+  const submitted = submitPicks(contestId);
+  if (!submitted || !db) return submitted;
+  await setDoc(
+    doc(db, "users", uid, "perfectTenEntries", contestId),
+    {
+      contestId,
+      picks: submitted.picks,
+      marketIds: CURRENT_CONTEST.marketIds,
+      isSubmitted: true,
+      submittedAtMs: submitted.submittedAt,
+      submittedAt: serverTimestamp(),
+      lockedAtMs: CURRENT_CONTEST.locksAt.getTime(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: false }
+  );
   return submitted;
 }
 

@@ -6,14 +6,19 @@ import Link from "next/link";
 import {
   CURRENT_CONTEST,
   getPick,
+  getStoredPick,
   setPick,
-  submitPicks,
+  savePickDraft,
+  submitStoredPicks,
   isLocked,
   countdownToLock,
   formatDollars,
   P10_PICK_EVENT,
 } from "@/lib/perfect-ten-store";
 import { exchange } from "@/lib/exchange";
+import { useAuth } from "@/contexts/auth-context";
+import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { SignInSheet } from "@/components/sign-in-sheet";
 import type { Market, PerfectTenPick } from "@thecard/types";
 
 const SPORT_ICONS: Record<string, string> = {
@@ -74,11 +79,14 @@ function MarketPickRow({
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function PerfectTenClient() {
+  const { user, verificationRequired } = useAuth();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [pick, setPicked] = useState<PerfectTenPick>(() => getPick(CURRENT_CONTEST.id));
   const [countdown, setCountdown] = useState(countdownToLock);
   const [locked, setLocked] = useState(isLocked);
   const [submitted, setSubmitted] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     exchange.getMarkets({ limit: 10 }).then((all) => {
@@ -105,6 +113,16 @@ export function PerfectTenClient() {
     return () => window.removeEventListener(P10_PICK_EVENT, refresh);
   }, [refresh]);
 
+  useEffect(() => {
+    if (!user || verificationRequired) return;
+    getStoredPick(user.uid, CURRENT_CONTEST.id)
+      .then((stored) => {
+        setPicked(stored);
+        setSubmitted(stored.isSubmitted);
+      })
+      .catch(() => setSaveError("Could not load your saved Perfect 10 entry."));
+  }, [user, verificationRequired]);
+
   // Countdown ticker
   useEffect(() => {
     const id = setInterval(() => {
@@ -115,12 +133,22 @@ export function PerfectTenClient() {
   }, []);
 
   function handlePick(marketId: string, side: "yes" | "no") {
+    if (!user) { setSignInOpen(true); return; }
+    if (verificationRequired) return;
     const updated = setPick(CURRENT_CONTEST.id, marketId, side);
     setPicked(updated);
+    savePickDraft(user.uid, updated).catch(() => {
+      setSaveError("Pick saved locally, but could not sync to your account.");
+    });
   }
 
-  function handleSubmit() {
-    const result = submitPicks(CURRENT_CONTEST.id);
+  async function handleSubmit() {
+    if (!user) { setSignInOpen(true); return; }
+    if (verificationRequired) return;
+    const result = await submitStoredPicks(user.uid, CURRENT_CONTEST.id).catch(() => {
+      setSaveError("Could not lock your picks. Try again.");
+      return null;
+    });
     if (result) {
       setPicked(result);
       setSubmitted(true);
@@ -172,6 +200,29 @@ export function PerfectTenClient() {
         </div>
 
         {/* Progress bar */}
+        {!user && (
+          <div className="mb-4 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+            <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to lock your entry</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">You can preview the markets, but Perfect 10 entries are account-bound.</p>
+            <button
+              type="button"
+              onClick={() => setSignInOpen(true)}
+              className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
+        {user && verificationRequired && (
+          <div className="mb-4">
+            <EmailVerificationNotice compact />
+          </div>
+        )}
+        {saveError && (
+          <p className="mb-4 rounded-lg border border-[var(--color-card-no)]/30 bg-[var(--color-card-no-dim)] px-3 py-2 text-xs text-[var(--color-card-no)]">
+            {saveError}
+          </p>
+        )}
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="text-[var(--color-text-muted)]">
@@ -206,7 +257,7 @@ export function PerfectTenClient() {
                   index={i}
                   market={market}
                   pick={pick.picks[market.id]}
-                  locked={locked || submitted}
+                  locked={locked || submitted || verificationRequired}
                   onPick={handlePick}
                 />
               ))}
@@ -246,7 +297,7 @@ export function PerfectTenClient() {
             <motion.div key="submit" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <button
                 onClick={handleSubmit}
-                disabled={!allPicked}
+                disabled={!allPicked || verificationRequired}
                 className="w-full rounded-xl font-bold text-sm py-3.5 transition-all active:scale-[0.98] disabled:opacity-40"
                 style={{
                   backgroundColor: allPicked
@@ -279,6 +330,7 @@ export function PerfectTenClient() {
           </div>
         </div>
 
+        <SignInSheet open={signInOpen} onClose={() => setSignInOpen(false)} />
       </div>
     </div>
   );

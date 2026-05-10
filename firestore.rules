@@ -67,6 +67,19 @@ service cloud.firestore {
         allow read: if isSignedIn() && request.auth.uid == uid;
         allow write: if isVerified() && request.auth.uid == uid;
       }
+
+      match /perfectTenEntries/{contestId} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isVerified()
+          && request.auth.uid == uid
+          && request.resource.data.contestId == contestId
+          && request.resource.data.isSubmitted in [true, false];
+        allow update: if isVerified()
+          && request.auth.uid == uid
+          && resource.data.isSubmitted != true
+          && request.resource.data.contestId == contestId
+          && request.resource.data.isSubmitted in [true, false];
+      }
     }
   }
 }
