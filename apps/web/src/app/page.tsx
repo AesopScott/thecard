@@ -41,6 +41,12 @@ const SURFACES = [
     label: "Head-to-Head",
     desc: "You vs a verified forecaster. Same 5 markets, no timer. Most right wins.",
   },
+  {
+    emoji: "🎯",
+    href: "/forecast",
+    label: "Forecast",
+    desc: "Build your calibration record. Predict outcomes, track your accuracy over time.",
+  },
 ];
 
 const LEADERBOARD = [
@@ -259,12 +265,12 @@ export default function LandingPage() {
         </div>
       </main>
 
-      {/* ── Four Surfaces ── */}
+      {/* ── Five Surfaces ── */}
       <section className="px-4 sm:px-6 lg:px-8 py-12 border-t border-[var(--color-border)] relative">
         <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
         <div className="max-w-7xl mx-auto relative z-10">
-          <h2 className="text-2xl font-display font-black tracking-tight mb-6">One app, four ways to play</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h2 className="text-2xl font-display font-black tracking-tight mb-6">One app, five ways to play</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {SURFACES.map(({ emoji, href, label, desc }, i) => (
               <Link
                 key={href}
