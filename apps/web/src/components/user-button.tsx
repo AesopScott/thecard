@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { SignInSheet } from "./sign-in-sheet";
@@ -50,8 +51,15 @@ export function UserButton() {
               <p className="text-xs font-semibold text-[var(--color-card-text)] truncate">
                 {user.displayName ?? user.email}
               </p>
-              <p className="text-[10px] text-[var(--color-card-muted)]">Practice mode</p>
+              <p className="text-[10px] text-[var(--color-card-muted)]">Forecaster</p>
             </div>
+            <Link
+              href={`/profile/${(user.displayName ?? user.email ?? "me").toLowerCase()}`}
+              onClick={() => setMenuOpen(false)}
+              className="block w-full text-left px-3 py-2 text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] rounded-lg transition-colors"
+            >
+              View Profile
+            </Link>
             <button
               onClick={async () => {
                 await signOut();
