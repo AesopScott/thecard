@@ -59,7 +59,7 @@ const FEATURES = [
   },
   {
     title: "Free to play",
-    desc: "Practice mode is always free. Premium unlocks advanced calibration breakdowns and analytics.",
+    desc: "Daily forecasting is free. Premium unlocks advanced calibration breakdowns and analytics.",
   },
 ];
 

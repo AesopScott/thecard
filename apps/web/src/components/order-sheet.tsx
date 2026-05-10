@@ -4,17 +4,14 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { EmailVerificationNotice } from "./email-verification-notice";
-import { exchange } from "@/lib/exchange";
-import { savePosition } from "@/lib/user-store";
+import { placeAccountOrder } from "@/lib/account-order";
 import {
   GLOBAL_LEAGUE,
   SEASON_BANKROLL_EVENT,
   getBankroll,
   getUserSeasonMembership,
   initGlobalLeague,
-  placeUserSeasonBet,
 } from "@/lib/season-store";
-import { getActiveJoinedLeaguesForSportForUser, placeUserLeagueBet } from "@/lib/league-store";
 import type { Market, Odds } from "@thecard/types";
 
 export const ORDER_PLACED_EVENT = "thecard:order:placed";
@@ -92,30 +89,13 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
     if (!user || verificationRequired || dollarAmount <= 0 || dollarAmount > bankroll) return;
     setSheetState("confirming");
     try {
-      const fill = await exchange.placeOrder(user.uid, {
-        marketId: market.id,
+      const order = await placeAccountOrder({
+        uid: user.uid,
+        market,
         side,
         amountUsd: dollarAmount,
       });
-      // Deduct from global monthly bankroll
-      const seasonMembership = await placeUserSeasonBet(user.uid, dollarAmount);
-      if (!seasonMembership) {
-        setSheetState("input");
-        return;
-      }
-      setBankroll(seasonMembership.currentBankroll);
-      // Deduct from any active sport leagues the user has joined for this sport
-      for (const leagueId of await getActiveJoinedLeaguesForSportForUser(user.uid, market.sport)) {
-        await placeUserLeagueBet(user.uid, leagueId, dollarAmount);
-      }
-      // Persist position to Firestore
-      await savePosition(user.uid, {
-        marketId: fill.marketId,
-        side: fill.side,
-        amountUsd: fill.filledAmountUsd,
-        contracts: fill.filledAmountUsd / fill.price,
-        averagePrice: fill.price,
-      });
+      setBankroll(order.seasonBankroll);
       window.dispatchEvent(new Event(ORDER_PLACED_EVENT));
       setSheetState("success");
       setTimeout(() => {
@@ -271,7 +251,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                     </button>
 
                     <p className="text-[10px] text-center text-[var(--color-card-muted)]">
-                      Practice mode · No real funds at risk
+                      No real funds at risk
                     </p>
                   </motion.div>
                 )}

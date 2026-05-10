@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { exchange } from "@/lib/exchange";
-import { subscribeToPositions, closePosition, savePosition } from "@/lib/user-store";
+import { placeAccountOrder } from "@/lib/account-order";
+import { subscribeToPositions, closePosition } from "@/lib/user-store";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import type { Market, Odds, Position } from "@thecard/types";
 
@@ -128,9 +129,10 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
     if (o.autoBuy.enabled && !fired.autoBuy && cp <= o.autoBuy.price / 100) {
       fired.autoBuy = true;
       fireOrder(`Auto-buy at ${Math.round(cp * 100)}¢ — adding $${o.autoBuy.amount}`);
-      exchange.placeOrder(user.uid, { marketId: position.marketId, side: position.side, amountUsd: o.autoBuy.amount })
-        .then((fill) => savePosition(user.uid, { marketId: fill.marketId, side: fill.side, amountUsd: fill.filledAmountUsd, contracts: fill.filledAmountUsd / fill.price, averagePrice: fill.price }))
-        .catch(() => {});
+      if (!market) return;
+      placeAccountOrder({ uid: user.uid, market, side: position.side, amountUsd: o.autoBuy.amount })
+        .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
+        .catch(() => fireOrder("Auto-buy skipped - insufficient bankroll"));
     }
   }, [odds]);
 
