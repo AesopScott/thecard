@@ -6,12 +6,14 @@ import Link from "next/link";
 import type { Market, Odds } from "@thecard/types";
 import { exchange } from "@/lib/exchange";
 import { OddsPill } from "./odds-pill";
+import type { HostTake } from "@/lib/editorial";
 
 interface MarketCardProps {
   market: Market;
+  hostTake?: HostTake;
 }
 
-export function MarketCard({ market }: MarketCardProps) {
+export function MarketCard({ market, hostTake }: MarketCardProps) {
   const [odds, setOdds] = useState<Odds | null>(null);
   const [betPrompt, setBetPrompt] = useState(false);
 
@@ -42,7 +44,6 @@ export function MarketCard({ market }: MarketCardProps) {
           </p>
         </div>
 
-        {/* Odds pill + label */}
         {yesPct !== null && (
           <div className="flex flex-col items-end gap-1 shrink-0">
             <OddsPill probability={odds!.yes} side="yes" />
@@ -72,6 +73,23 @@ export function MarketCard({ market }: MarketCardProps) {
         </div>
       )}
 
+      {/* Host take */}
+      {hostTake?.text && (
+        <div className="flex gap-2 border-t border-[var(--color-card-border)] pt-2.5">
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="text-[10px] font-semibold text-[var(--color-card-accent)] uppercase tracking-widest">
+              The Card
+              {hostTake.source === "claude" && (
+                <span className="ml-1 opacity-50">· AI</span>
+              )}
+            </span>
+            <p className="text-xs text-[var(--color-card-muted)] leading-relaxed italic">
+              &ldquo;{hostTake.text}&rdquo;
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* YES / NO buttons */}
       {odds && (
         <div className="flex gap-2">
@@ -90,14 +108,13 @@ export function MarketCard({ market }: MarketCardProps) {
         </div>
       )}
 
-      {/* What do these prices mean? */}
+      {/* Prices explainer */}
       <p className="text-[10px] text-[var(--color-card-muted)] leading-relaxed">
-        Prices are cents on the dollar — 62¢ YES means the crowd thinks there&apos;s a
-        62% chance this happens. Buy YES if you agree; buy NO if you don&apos;t.
-        Pays $1 per contract if you&apos;re right.
+        Prices are cents on the dollar — 62¢ YES means a 62% chance this happens.
+        Buy YES if you agree; buy NO if you don&apos;t. Pays $1 per contract if right.
       </p>
 
-      {/* Bet prompt — shown when YES/NO is clicked before auth is wired */}
+      {/* Bet coming-soon prompt */}
       <AnimatePresence>
         {betPrompt && (
           <motion.div

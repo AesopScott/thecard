@@ -1,10 +1,32 @@
 import { exchange } from "@/lib/exchange";
+import { getAllHostTakes } from "@/lib/editorial";
 import { MarketCard } from "@/components/market-card";
+import { JackpotBanner } from "@/components/jackpot-banner";
+import type { Odds } from "@thecard/types";
 
 export const dynamic = "force-dynamic";
 
+// Mock jackpot — will come from Firestore when backend is wired
+const JACKPOT = { amount: 42000, rolloverWeeks: 2, resetsOn: "Sunday" };
+
 export default async function CardPage() {
   const markets = await exchange.getMarkets({ limit: 10 });
+
+  // Fetch all odds and host takes in parallel
+  const [oddsResults, hostTakes] = await Promise.all([
+    Promise.all(markets.map((m) => exchange.getOdds(m.id))),
+    (async () => {
+      const oddsMap: Record<string, Odds> = {};
+      const rawOdds = await Promise.all(markets.map((m) => exchange.getOdds(m.id)));
+      markets.forEach((m, i) => {
+        const o = rawOdds[i];
+        if (o) oddsMap[m.id] = o;
+      });
+      return getAllHostTakes(markets, oddsMap);
+    })(),
+  ]);
+
+  void oddsResults; // odds are fetched client-side for live updates; server fetch here is for SSR only
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-4">
@@ -24,7 +46,14 @@ export default async function CardPage() {
         </p>
       </header>
 
-      {/* What is this? — context banner for new users */}
+      {/* Perfect 10 jackpot */}
+      <JackpotBanner
+        amount={JACKPOT.amount}
+        rolloverWeeks={JACKPOT.rolloverWeeks}
+        resetsOn={JACKPOT.resetsOn}
+      />
+
+      {/* What is this — context banner */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-2">
         <p className="text-xs font-semibold text-[var(--color-card-accent)] uppercase tracking-widest">
           What is The Card?
@@ -32,11 +61,10 @@ export default async function CardPage() {
         <p className="text-sm text-[var(--color-card-muted)] leading-relaxed">
           A prediction market is a question you can bet on. Instead of picking a winner
           and waiting until Sunday, you buy YES or NO contracts at the current price.
-          If you&apos;re right, you get paid $1 per contract. If not, you lose what
-          you put in.
+          If you&apos;re right, you get paid $1 per contract. If not, you lose what you put in.
         </p>
         <p className="text-sm text-[var(--color-card-muted)] leading-relaxed">
-          The price moves with the betting — as more people bet YES on Mahomes,
+          The price moves with the betting — as more people buy YES on Mahomes,
           the YES price goes up. That price <em>is</em> the crowd&apos;s forecast.
           If YES is at 70¢, the market thinks there&apos;s a 70% chance it happens.
         </p>
@@ -52,7 +80,11 @@ export default async function CardPage() {
 
       <div className="flex flex-col gap-3">
         {markets.map((market) => (
-          <MarketCard key={market.id} market={market} />
+          <MarketCard
+            key={market.id}
+            market={market}
+            hostTake={hostTakes[market.id]}
+          />
         ))}
       </div>
 
