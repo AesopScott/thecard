@@ -3,6 +3,7 @@ import { Inter, Outfit } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Nav } from "@/components/nav";
 import { UserButton } from "@/components/user-button";
+import { OnboardingSheet } from "@/components/onboarding-sheet";
 import "@/styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <UserButton />
+          <OnboardingSheet />
           <main className="pb-20 min-h-dvh">{children}</main>
           <Nav />
         </Providers>

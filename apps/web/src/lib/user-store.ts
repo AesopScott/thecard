@@ -1,5 +1,6 @@
 import {
   doc,
+  getDoc,
   setDoc,
   collection,
   onSnapshot,
@@ -14,7 +15,8 @@ import {
   type Timestamp,
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
-import { db } from "./firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "./firebase";
 import type { LocalForecast } from "./forecast-store";
 import { brierScore as computeBrierScore, calibrationScore } from "@thecard/scoring";
 import type { Position } from "@thecard/types";
@@ -29,6 +31,25 @@ export interface LeaderboardEntry {
 
 // ─── User profile ────────────────────────────────────────────────────────────
 
+export async function getUserUsername(uid: string): Promise<string | null> {
+  if (!db) return null;
+  const snap = await getDoc(doc(db, "users", uid));
+  return (snap.data()?.username as string | undefined) ?? null;
+}
+
+export async function checkUsernameAvailable(username: string): Promise<boolean> {
+  if (!db) return true;
+  const snap = await getDoc(doc(db, "usernames", username.toLowerCase()));
+  return !snap.exists();
+}
+
+export async function setUsername(uid: string, username: string): Promise<void> {
+  if (!db) return;
+  const normalized = username.toLowerCase();
+  await setDoc(doc(db, "usernames", normalized), { uid });
+  await setDoc(doc(db, "users", uid), { username: normalized }, { merge: true });
+}
+
 export async function upsertUserProfile(user: User): Promise<void> {
   if (!db) return;
   await setDoc(
@@ -41,6 +62,15 @@ export async function upsertUserProfile(user: User): Promise<void> {
     },
     { merge: true }
   );
+}
+
+export async function uploadAvatar(uid: string, file: File): Promise<string> {
+  if (!storage || !db) throw new Error("Firebase not configured");
+  const r = ref(storage, `avatars/${uid}`);
+  await uploadBytes(r, file);
+  const url = await getDownloadURL(r);
+  await setDoc(doc(db, "users", uid), { photoURL: url }, { merge: true });
+  return url;
 }
 
 // ─── Forecasts ────────────────────────────────────────────────────────────────

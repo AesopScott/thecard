@@ -42,10 +42,10 @@ export function SignInSheet({ open, onClose }: SignInSheetProps) {
             <div className="flex flex-col gap-5 max-w-sm mx-auto">
               <div className="flex flex-col gap-1">
                 <h2 className="text-lg font-bold text-[var(--color-card-text)]">
-                  Sign in to place your bet
+                  Sign in to start predicting
                 </h2>
                 <p className="text-sm text-[var(--color-card-muted)]">
-                  Track your record, build calibration, and compete on the leaderboard.
+                  Build your calibration record and compete for the Season 1 prize pool.
                 </p>
               </div>
 
@@ -77,7 +77,7 @@ export function SignInSheet({ open, onClose }: SignInSheetProps) {
               </button>
 
               <p className="text-[10px] text-center text-[var(--color-card-muted)]">
-                Practice mode only — no real funds at risk until Kalshi goes live.
+                Free to play — no real money. Seasonal prizes funded by The Card.
               </p>
             </div>
           </motion.div>

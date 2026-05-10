@@ -9,11 +9,13 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { upsertUserProfile } from "@/lib/user-store";
+import { upsertUserProfile, getUserUsername } from "@/lib/user-store";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
+  needsOnboarding: boolean;
+  completeOnboarding: () => void;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -23,19 +25,30 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
       setLoading(false);
       return;
     }
-    const unsub = onAuthStateChanged(auth, (u) => {
+    const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       setLoading(false);
-      if (u) upsertUserProfile(u);
+      if (u) {
+        await upsertUserProfile(u);
+        const username = await getUserUsername(u.uid);
+        setNeedsOnboarding(!username);
+      } else {
+        setNeedsOnboarding(false);
+      }
     });
     return unsub;
   }, []);
+
+  function completeOnboarding() {
+    setNeedsOnboarding(false);
+  }
 
   async function signInWithGoogle() {
     if (!auth) throw new Error("Firebase not configured");
@@ -49,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, needsOnboarding, completeOnboarding, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
