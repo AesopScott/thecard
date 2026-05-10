@@ -20,7 +20,7 @@ const SURFACES = [
     emoji: "🎴",
     href: "/card",
     label: "Tonight's Card",
-    desc: "Ten curated markets every night. Live odds, host take on each, one clean feed.",
+    desc: "Curated markets every night. Live odds, host take on each, one clean feed.",
   },
   {
     emoji: "⚡",
@@ -114,7 +114,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-[var(--color-brand-primary)] animate-pulse" />
                   <span className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-                    Live Now — 10 Markets
+                    Live Now
                   </span>
                 </div>
 

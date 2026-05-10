@@ -73,8 +73,8 @@ export function JackpotBanner({ amount, rolloverWeeks, resetsOn }: JackpotBanner
 
         {/* How it works */}
         <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-          Predict all ten markets on Tonight&apos;s Card correctly and win the jackpot.
-          Nobody has hit all ten in {rolloverWeeks} week{rolloverWeeks !== 1 ? "s" : ""}.
+          Call every market on Tonight&apos;s Card correctly to win the jackpot.
+          Nobody has called the card in {rolloverWeeks} week{rolloverWeeks !== 1 ? "s" : ""}.
           Every trade earns entries — the more you trade, the more shots you get.
         </p>
 

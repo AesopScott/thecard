@@ -11,7 +11,7 @@ import type { Odds } from "@thecard/types";
 const JACKPOT = { amount: 42000, rolloverWeeks: 2, resetsOn: "Sunday" };
 
 export default async function CardPage() {
-  const markets = await exchange.getMarkets({ limit: 10 });
+  const markets = await exchange.getMarkets({ limit: 25 });
 
   // Fetch all odds and host takes in parallel
   const [oddsResults, hostTakes] = await Promise.all([
@@ -38,7 +38,7 @@ export default async function CardPage() {
             Tonight&apos;s Card
           </h1>
           <p className="text-base text-[var(--color-text-secondary)] leading-relaxed">
-            Ten curated markets. Live odds. Real money on the line.
+            Curated markets. Live odds. Real money on the line.
           </p>
         </div>
         <div className="flex items-center justify-between pt-2">

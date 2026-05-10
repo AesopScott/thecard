@@ -10,7 +10,7 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-display", weight: 
 
 export const metadata: Metadata = {
   title: "The Card",
-  description: "Ten markets. Live. Loud.",
+  description: "Curated markets. Live. Loud.",
 };
 
 export const viewport: Viewport = {
