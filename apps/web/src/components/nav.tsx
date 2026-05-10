@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import pkg from "../../package.json";
 
 const NAV_ITEMS = [
   { href: "/card",       label: "Card",    emoji: "🎴" },
@@ -20,7 +21,7 @@ export function Nav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] backdrop-blur-sm">
-      <ul className="flex items-center justify-around px-1 py-2 max-w-lg mx-auto">
+      <ul className="flex items-center justify-around px-1 pt-2 pb-1 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ href, label, emoji }) => {
           const isActive = pathname.startsWith(href);
           return (
@@ -41,6 +42,9 @@ export function Nav() {
           );
         })}
       </ul>
+      <p className="text-center text-[9px] text-[var(--color-text-muted)] opacity-40 pb-1 tracking-wider">
+        v{pkg.version}
+      </p>
     </nav>
   );
 }
