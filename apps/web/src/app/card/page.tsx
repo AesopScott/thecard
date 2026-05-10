@@ -73,10 +73,10 @@ export default async function CardPage() {
           <p className="text-xs text-[var(--color-text-muted)]">
             Real-money betting launches soon via Kalshi&apos;s regulated exchange.
             In the meantime,{" "}
-            <a href="/learn" className="text-[var(--color-brand-primary)] font-bold hover:underline">
-              try Practice Mode
+            <a href="/blitz" className="text-[var(--color-brand-primary)] font-bold hover:underline">
+              try Blitz
             </a>
-            {" "}— same markets, no money at risk, real calibration tracking.
+            {" "}— 5 markets, 15 seconds each, daily scoring.
           </p>
         </div>
       </div>

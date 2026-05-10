@@ -29,16 +29,16 @@ const SURFACES = [
     desc: "Pick a game and go deep. Real-time markets updating play by play.",
   },
   {
-    emoji: "📚",
-    href: "/learn",
-    label: "Practice Mode",
-    desc: "Same markets, no money at risk. Build your track record before betting real.",
+    emoji: "🔥",
+    href: "/blitz",
+    label: "Blitz",
+    desc: "5 markets, 15 seconds each. Speed bonus for fast picks. Daily reset.",
   },
   {
-    emoji: "🎯",
-    href: "/picks",
-    label: "Picks",
-    desc: "Coming soon — rent a verified forecaster or let an AI agent trade for you.",
+    emoji: "🥊",
+    href: "/h2h",
+    label: "Head-to-Head",
+    desc: "You vs a verified forecaster. Same 5 markets, no timer. Most right wins.",
   },
 ];
 
@@ -50,7 +50,16 @@ const LEADERBOARD = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-dvh flex flex-col bg-[var(--color-surface-0)] text-[var(--color-text-primary)]">
+    <div className="min-h-dvh flex flex-col bg-[var(--color-surface-0)] text-[var(--color-text-primary)] relative overflow-hidden">
+      {/* Breathing Gradient Background */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.12) 50%, transparent 100%)",
+          animation: "breathe 8s ease-in-out infinite",
+          zIndex: 0,
+        }}
+      />
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface-0)]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -66,7 +75,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Main Content Grid ── */}
-      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-12">
+      <main className="flex-1 px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
 
           {/* Left Sidebar - Upcoming Events */}
@@ -372,6 +381,15 @@ export default function LandingPage() {
           }
           50% {
             transform: translateY(-4px);
+          }
+        }
+
+        @keyframes breathe {
+          0%, 100% {
+            opacity: 0.15;
+          }
+          50% {
+            opacity: 0.35;
           }
         }
       `}</style>
