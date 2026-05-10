@@ -235,6 +235,7 @@ export async function savePosition(
     amountUsd: number;
     contracts: number;
     averagePrice: number;
+    leagueIds?: string[];
   }
 ): Promise<void> {
   if (!db) return;
@@ -261,6 +262,10 @@ export async function savePosition(
       amountUsd: nextAmountUsd,
       contracts: nextContracts,
       averagePrice: nextAveragePrice,
+      leagueIds: Array.from(new Set([
+        ...((current.leagueIds as string[] | undefined) ?? []),
+        ...(data.leagueIds ?? []),
+      ])),
       updatedAt: serverTimestamp(),
     });
     return;

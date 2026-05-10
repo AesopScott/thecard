@@ -49,16 +49,20 @@ async function settleUserPositions({
   if (positionsSnap.empty) return { payout: 0, settledPositions: 0 };
 
   let payout = 0;
+  const leagueIds = new Set<string>();
   positionsSnap.docs.forEach((positionDoc) => {
     const data = positionDoc.data();
     if (data.side === outcome) {
       payout += (data.contracts as number | undefined) ?? 0;
+      ((data.leagueIds as string[] | undefined) ?? []).forEach((leagueId) => leagueIds.add(leagueId));
     }
   });
 
   if (payout > 0) {
     await recordUserSeasonPayout(uid, payout);
-    const activeLeagueIds = await getActiveJoinedLeaguesForSportForUser(uid, sport);
+    const activeLeagueIds = leagueIds.size > 0
+      ? Array.from(leagueIds)
+      : await getActiveJoinedLeaguesForSportForUser(uid, sport);
     await Promise.all(
       activeLeagueIds.map((leagueId) => recordUserLeaguePayout(uid, leagueId, payout))
     );

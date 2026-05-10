@@ -52,6 +52,7 @@ export async function placeAccountOrder({
       amountUsd: fill.filledAmountUsd,
       contracts: fill.filledAmountUsd / fill.price,
       averagePrice: fill.price,
+      leagueIds: debitedLeagueIds,
     };
     await savePosition(uid, position);
 
