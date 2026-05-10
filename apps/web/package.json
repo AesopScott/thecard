@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "next build && cp out/opengraph-image out/og.png",
+    "build": "next build && node scripts/copy-og-images.mjs",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
