@@ -81,23 +81,26 @@ export default function LandingPage() {
           {/* Left Sidebar - Upcoming Events */}
           <aside className="lg:col-span-1 order-3 lg:order-1">
             <div className="sticky top-24 space-y-4">
-              <div className="rounded-2xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)] p-5 space-y-4">
-                <h3 className="text-sm font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Upcoming</h3>
-                <div className="space-y-3">
-                  {UPCOMING_EVENTS.map(({ sport, matchup, date, time, icon }, i) => (
-                    <div
-                      key={matchup}
-                      className="rounded-lg bg-[var(--color-surface-0)] border border-[var(--color-border)] p-3 hover:border-[var(--color-brand-primary)]/50 transition-all hover:translate-x-1 cursor-pointer"
-                      style={{
-                        animation: `slideInLeft 0.5s ease-out ${i * 0.1}s both`,
-                      }}
-                    >
-                      <div className="text-2xl mb-2">{icon}</div>
-                      <p className="text-xs font-bold text-[var(--color-brand-primary)] uppercase">{sport}</p>
-                      <p className="text-xs font-semibold text-[var(--color-text-primary)] line-clamp-2 mt-1">{matchup}</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)] mt-2">{date} • {time}</p>
-                    </div>
-                  ))}
+              <div className="rounded-2xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)] p-5 space-y-4 relative overflow-hidden">
+                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
+                <div className="relative z-10">
+                  <h3 className="text-sm font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Upcoming</h3>
+                  <div className="space-y-3">
+                    {UPCOMING_EVENTS.map(({ sport, matchup, date, time, icon }, i) => (
+                      <div
+                        key={matchup}
+                        className="rounded-lg bg-[var(--color-surface-0)] border border-[var(--color-border)] p-3 hover:border-[var(--color-brand-primary)]/50 transition-all hover:translate-x-1 cursor-pointer"
+                        style={{
+                          animation: `slideInLeft 0.5s ease-out ${i * 0.1}s both`,
+                        }}
+                      >
+                        <div className="text-2xl mb-2">{icon}</div>
+                        <p className="text-xs font-bold text-[var(--color-brand-primary)] uppercase">{sport}</p>
+                        <p className="text-xs font-semibold text-[var(--color-text-primary)] line-clamp-2 mt-1">{matchup}</p>
+                        <p className="text-[10px] text-[var(--color-text-muted)] mt-2">{date} • {time}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -206,6 +209,7 @@ export default function LandingPage() {
                   className="absolute inset-0 opacity-10 pointer-events-none"
                   style={{ background: "radial-gradient(ellipse at top left, #ff3c3c 0%, transparent 60%)" }}
                 />
+                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }}
                 <div className="relative">
                   <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
                     🏆 Perfect 10
@@ -255,8 +259,9 @@ export default function LandingPage() {
       </main>
 
       {/* ── Four Surfaces ── */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 border-t border-[var(--color-border)]">
-        <div className="max-w-7xl mx-auto">
+      <section className="px-4 sm:px-6 lg:px-8 py-12 border-t border-[var(--color-border)] relative">
+        <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
+        <div className="max-w-7xl mx-auto relative z-10">
           <h2 className="text-2xl font-display font-black tracking-tight mb-6">One app, four ways to play</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {SURFACES.map(({ emoji, href, label, desc }, i) => (
@@ -275,10 +280,13 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
+        </div>
       </section>
 
       {/* ── Leaderboard ── */}
-      <section className="px-4 sm:px-6 lg:px-8 py-12 border-t border-[var(--color-border)]">
+      <section className="px-4 sm:px-6 lg:px-8 py-12 border-t border-[var(--color-border)] relative">
+        <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
+        <div className="max-w-7xl mx-auto relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-end justify-between mb-6">
             <h2 className="text-2xl font-display font-black tracking-tight">The leaderboard</h2>
@@ -311,6 +319,7 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
         </div>
       </section>
 
