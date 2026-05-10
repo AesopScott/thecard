@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const VERSION = "1.0.22";
+const VERSION = "1.0.23";
 
 const LIVE_MARKETS = [
   { sport: "NFL",    question: "Chiefs cover the spread tonight",     yes: 58, no: 42, time: "8:20 PM ET", logo: "🏈" },
