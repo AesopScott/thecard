@@ -3,12 +3,12 @@
   "version": "1.0.34",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build && node scripts/copy-og-images.mjs",
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs && node scripts/copy-og-images.mjs",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "clean": "rimraf .next"
+    "clean": "rimraf .next .next-dev .next-build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
@@ -38,3 +38,4 @@
     "typescript": "^5.8.3"
   }
 }
+
