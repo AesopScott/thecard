@@ -4,6 +4,7 @@ export interface LocalForecast {
   marketId: string;
   marketTitle: string;
   probability: number; // 0.01–0.99
+  crowdProbability?: number; // market YES odds snapshot at prediction time
   createdAt: number;
   outcome: "yes" | "no" | null;
   brierScore: number | null;
