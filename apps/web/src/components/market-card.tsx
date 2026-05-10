@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import Link from "next/link";
+import { motion } from "framer-motion";
 import type { Market, Odds } from "@thecard/types";
 import { exchange } from "@/lib/exchange";
+import { useAuth } from "@/contexts/auth-context";
 import { OddsPill } from "./odds-pill";
+import { SignInSheet } from "./sign-in-sheet";
+import { OrderSheet } from "./order-sheet";
 import type { HostTake } from "@/lib/editorial";
 
 interface MarketCardProps {
@@ -14,8 +16,9 @@ interface MarketCardProps {
 }
 
 export function MarketCard({ market, hostTake }: MarketCardProps) {
+  const { user, loading: authLoading } = useAuth();
   const [odds, setOdds] = useState<Odds | null>(null);
-  const [betPrompt, setBetPrompt] = useState(false);
+  const [orderSide, setOrderSide] = useState<"yes" | "no" | null>(null);
 
   useEffect(() => {
     exchange.getOdds(market.id).then(setOdds);
@@ -26,6 +29,10 @@ export function MarketCard({ market, hostTake }: MarketCardProps) {
   const sportLabel = market.sport.toUpperCase();
   const yesPct = odds ? Math.round(odds.yes * 100) : null;
   const noPct = odds ? Math.round(odds.no * 100) : null;
+
+  function handleSide(side: "yes" | "no") {
+    if (!authLoading) setOrderSide(side);
+  }
 
   return (
     <article className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
@@ -94,14 +101,16 @@ export function MarketCard({ market, hostTake }: MarketCardProps) {
       {odds && (
         <div className="flex gap-2">
           <button
-            onClick={() => setBetPrompt(true)}
-            className="flex-1 rounded-lg bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)] font-semibold text-sm py-2.5 hover:opacity-80 active:scale-95 transition-all"
+            onClick={() => handleSide("yes")}
+            disabled={authLoading}
+            className="flex-1 rounded-lg bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)] font-semibold text-sm py-2.5 hover:opacity-80 active:scale-95 transition-all disabled:opacity-40"
           >
             YES · {yesPct}¢
           </button>
           <button
-            onClick={() => setBetPrompt(true)}
-            className="flex-1 rounded-lg bg-[var(--color-card-no-dim)] text-[var(--color-card-no)] font-semibold text-sm py-2.5 hover:opacity-80 active:scale-95 transition-all"
+            onClick={() => handleSide("no")}
+            disabled={authLoading}
+            className="flex-1 rounded-lg bg-[var(--color-card-no-dim)] text-[var(--color-card-no)] font-semibold text-sm py-2.5 hover:opacity-80 active:scale-95 transition-all disabled:opacity-40"
           >
             NO · {noPct}¢
           </button>
@@ -114,39 +123,19 @@ export function MarketCard({ market, hostTake }: MarketCardProps) {
         Buy YES if you agree; buy NO if you don&apos;t. Pays $1 per contract if right.
       </p>
 
-      {/* Bet coming-soon prompt */}
-      <AnimatePresence>
-        {betPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 flex flex-col gap-2"
-          >
-            <p className="text-xs font-semibold text-[var(--color-card-text)]">
-              Real-money betting coming soon.
-            </p>
-            <p className="text-xs text-[var(--color-card-muted)] leading-snug">
-              We&apos;re connecting to Kalshi&apos;s regulated exchange. While you wait,
-              build your track record in Practice Mode — same markets, no money at risk.
-            </p>
-            <div className="flex gap-2 mt-1">
-              <Link
-                href="/learn"
-                className="flex-1 text-center text-xs font-semibold text-[var(--color-card-accent)] border border-[var(--color-card-accent-dim)] rounded-lg py-1.5 hover:bg-[var(--color-card-accent-dim)] transition-colors"
-              >
-                Try Practice Mode
-              </Link>
-              <button
-                onClick={() => setBetPrompt(false)}
-                className="text-xs text-[var(--color-card-muted)] px-3 py-1.5 hover:text-[var(--color-card-text)] transition-colors"
-              >
-                Dismiss
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Auth-gated order flow */}
+      {orderSide && !user && (
+        <SignInSheet open onClose={() => setOrderSide(null)} />
+      )}
+      {orderSide && user && odds && (
+        <OrderSheet
+          open
+          market={market}
+          side={orderSide}
+          odds={odds}
+          onClose={() => setOrderSide(null)}
+        />
+      )}
 
     </article>
   );

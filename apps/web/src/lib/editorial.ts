@@ -74,7 +74,6 @@ export async function getHostTake(
         {
           type: "text",
           text: SYSTEM_PROMPT,
-          // @ts-expect-error — cache_control is valid but not yet in SDK types
           cache_control: { type: "ephemeral" },
         },
       ],

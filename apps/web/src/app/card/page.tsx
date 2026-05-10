@@ -2,6 +2,7 @@ import { exchange } from "@/lib/exchange";
 import { getAllHostTakes } from "@/lib/editorial";
 import { MarketCard } from "@/components/market-card";
 import { JackpotBanner } from "@/components/jackpot-banner";
+import { PositionsPanel } from "@/components/positions-panel";
 import type { Odds } from "@thecard/types";
 
 export const dynamic = "force-dynamic";
@@ -87,6 +88,9 @@ export default async function CardPage() {
           />
         ))}
       </div>
+
+      {/* Open positions — only renders when user is signed in and has positions */}
+      <PositionsPanel />
 
     </div>
   );
