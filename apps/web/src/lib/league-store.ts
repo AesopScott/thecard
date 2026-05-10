@@ -1,4 +1,6 @@
 import type { LeagueMembership, Sport } from "@thecard/types";
+import { collection, doc, getDoc, getDocs, runTransaction, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 import { SPORT_LEAGUES, getLeagueStatus } from "./sport-leagues";
 
 export const STARTING_BANKROLL = 1_000;
@@ -79,4 +81,105 @@ export function getActiveJoinedLeaguesForSport(sport: Sport): string[] {
 export function getAllJoinedLeagueIds(): string[] {
   if (typeof window === "undefined") return [];
   return SPORT_LEAGUES.filter((l) => isJoined(l.id)).map((l) => l.id);
+}
+
+function fromFirestore(leagueId: string, data: Record<string, unknown>): LeagueMembership {
+  return {
+    leagueId,
+    seasonId: (data.seasonId as string | undefined) ?? leagueId,
+    startingBankroll: (data.startingBankroll as number | undefined) ?? STARTING_BANKROLL,
+    currentBankroll: (data.currentBankroll as number | undefined) ?? STARTING_BANKROLL,
+    betCount: (data.betCount as number | undefined) ?? 0,
+    isBust: (data.isBust as boolean | undefined) ?? false,
+    joinedAt: (data.joinedAtMs as number | undefined) ?? (data.joinedAt as number | undefined) ?? Date.now(),
+  };
+}
+
+function writeCache(m: LeagueMembership): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(key(m.leagueId), JSON.stringify(m));
+}
+
+function dispatchLeagueEvent(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(LEAGUE_BANKROLL_EVENT));
+}
+
+export async function getUserLeagueMembership(uid: string, leagueId: string): Promise<LeagueMembership | null> {
+  if (!db) return read(leagueId);
+  const snap = await getDoc(doc(db, "users", uid, "leagueMemberships", leagueId));
+  if (!snap.exists()) return null;
+  const membership = fromFirestore(leagueId, snap.data());
+  writeCache(membership);
+  return membership;
+}
+
+export async function getUserLeagueMemberships(uid: string): Promise<LeagueMembership[]> {
+  if (!db) return getAllJoinedLeagueIds().map((leagueId) => read(leagueId)).filter((m): m is LeagueMembership => Boolean(m));
+  const snap = await getDocs(collection(db, "users", uid, "leagueMemberships"));
+  const memberships = snap.docs.map((membershipDoc) => fromFirestore(membershipDoc.id, membershipDoc.data()));
+  memberships.forEach(writeCache);
+  return memberships;
+}
+
+export async function joinUserLeague(uid: string, leagueId: string): Promise<LeagueMembership> {
+  const existing = await getUserLeagueMembership(uid, leagueId);
+  if (existing) return existing;
+  const membership: LeagueMembership = {
+    leagueId,
+    seasonId: leagueId,
+    startingBankroll: STARTING_BANKROLL,
+    currentBankroll: STARTING_BANKROLL,
+    betCount: 0,
+    isBust: false,
+    joinedAt: Date.now(),
+  };
+  if (db) {
+    await setDoc(doc(db, "users", uid, "leagueMemberships", leagueId), {
+      ...membership,
+      joinedAtMs: membership.joinedAt,
+      joinedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+  writeCache(membership);
+  dispatchLeagueEvent();
+  return membership;
+}
+
+export async function placeUserLeagueBet(uid: string, leagueId: string, amount: number): Promise<boolean> {
+  if (!db) return placeLeagueBet(leagueId, amount);
+  const ref = doc(db, "users", uid, "leagueMemberships", leagueId);
+  const updated = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return null;
+    const membership = fromFirestore(leagueId, snap.data());
+    if (membership.isBust || membership.currentBankroll < amount) return null;
+    const newBankroll = Math.max(0, membership.currentBankroll - amount);
+    const next: LeagueMembership = {
+      ...membership,
+      currentBankroll: newBankroll,
+      betCount: membership.betCount + 1,
+      isBust: newBankroll <= 0,
+    };
+    tx.update(ref, {
+      currentBankroll: next.currentBankroll,
+      betCount: next.betCount,
+      isBust: next.isBust,
+      updatedAt: serverTimestamp(),
+    });
+    return next;
+  });
+  if (!updated) return false;
+  writeCache(updated);
+  dispatchLeagueEvent();
+  return true;
+}
+
+export async function getActiveJoinedLeaguesForSportForUser(uid: string, sport: Sport): Promise<string[]> {
+  const memberships = await getUserLeagueMemberships(uid);
+  const joined = new Set(memberships.map((membership) => membership.leagueId));
+  return SPORT_LEAGUES.filter(
+    (league) => league.sport === sport && joined.has(league.id) && getLeagueStatus(league) === "active",
+  ).map((league) => league.id);
 }
