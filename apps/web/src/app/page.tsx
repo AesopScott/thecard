@@ -1,52 +1,59 @@
 import Link from "next/link";
 
-const HOW_IT_WORKS = [
+const SPORTS = ["NFL", "NBA", "MLB", "NHL", "UFC", "Soccer", "Tennis", "Golf"];
+
+const MOCK_QUESTIONS = [
+  { sport: "NFL", question: "Chiefs to win Super Bowl LX", crowd: 62 },
+  { sport: "NBA", question: "LeBron scores 30+ tonight", crowd: 38 },
+  { sport: "UFC", question: "Jones retains heavyweight title", crowd: 71 },
+];
+
+const MOCK_LEADERBOARD = [
+  { rank: 1, name: "SharpScott",   score: 87, predictions: 142 },
+  { rank: 2, name: "MarketMike",   score: 84, predictions:  98 },
+  { rank: 3, name: "CalibKing",    score: 81, predictions: 203 },
+];
+
+const STEPS = [
   {
     n: "01",
-    title: "Predict the outcome",
-    desc: "Set a probability — not just YES or NO. 72% means you think it's likely, not certain. Precision is the whole game.",
+    title: "Pick any question",
+    desc: "NFL, NBA, MLB, NHL, UFC, soccer — new markets every day across every major sport.",
   },
   {
     n: "02",
-    title: "See where the crowd stands",
-    desc: "Every question shows the current market price — the aggregated confidence of everyone playing. Beat it consistently and you have an edge.",
+    title: "Set your probability",
+    desc: "Not just YES or NO. Say 73%. That precision is exactly what gets measured.",
   },
   {
     n: "03",
-    title: "Your Brier score updates",
-    desc: "Markets resolve with the real event. Your calibration score measures whether your confidence matched reality — not just whether you were right.",
+    title: "Get your Brier score",
+    desc: "Calibration scoring tells you whether your 70% calls actually land 70% of the time. Most people are shocked.",
   },
   {
     n: "04",
-    title: "Climb the leaderboard. Win prizes.",
-    desc: "Top forecasters each season split a real cash prize pool. Season 1: $25,000. No subscription required to compete.",
+    title: "Climb the leaderboard",
+    desc: "Seasonal rankings. The sharpest forecasters at the end of the season split the prize pool.",
   },
 ];
 
 const FEATURES = [
   {
-    title: "Calibration score",
-    desc: "Brier-scored accuracy across every prediction you've ever made. The same method used by meteorologists and military analysts.",
+    title: "Every major sport",
+    desc: "NFL, NBA, MLB, NHL, UFC, soccer, tennis, golf, and more. Not curated to ten — the whole board.",
   },
   {
-    title: "You vs the crowd",
-    desc: "Every resolved prediction shows where you were vs where the market was. Find your edge — and know when the crowd is wrong.",
-  },
-  {
-    title: "Daily streak",
-    desc: "Predict something every day. Your streak is public on the leaderboard and factors into seasonal standings.",
+    title: "Calibration scoring",
+    desc: "Brier score measures precision over time. Win rate doesn't matter — accuracy at stated confidence does.",
   },
   {
     title: "Seasonal prizes",
-    desc: "Company-funded prize pools, not user stakes. Not gambling — forecasting. Season 1 launches with $25K for top performers.",
+    desc: "Company-funded prize pool. Top forecasters win real money. No entry fee, no user stakes.",
   },
-];
-
-// Mock resolved predictions for the hero preview
-const MOCK_PREDICTIONS = [
-  { sport: "NFL", title: "Chiefs to win Super Bowl LX", you: 70, mkt: 62, outcome: "yes" as const },
-  { sport: "NBA", title: "Lakers make the playoffs", you: 35, mkt: 54, outcome: "no" as const },
-  { sport: "MKT", title: "Fed holds rates in June", you: 80, mkt: 73, outcome: "yes" as const },
+  {
+    title: "Free to play",
+    desc: "Practice mode is always free. Premium unlocks advanced calibration breakdowns and analytics.",
+  },
 ];
 
 export default function LandingPage() {
@@ -60,9 +67,9 @@ export default function LandingPage() {
         </span>
         <Link
           href="/learn"
-          className="text-sm font-bold px-4 py-2 rounded-lg bg-[var(--color-brand-primary)] text-white hover:bg-red-500 transition-all"
+          className="text-sm font-bold px-4 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-brand-primary)]/50 transition-all"
         >
-          Start free
+          Sign In
         </Link>
       </header>
 
@@ -74,22 +81,25 @@ export default function LandingPage() {
         />
 
         <div className="relative flex flex-col gap-5">
-          <div className="inline-flex items-center gap-2 w-fit rounded-full border border-[var(--color-border)] px-3 py-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand-primary)] animate-pulse" />
-            <span className="text-[11px] font-bold text-[var(--color-brand-primary)] uppercase tracking-widest">
-              Season 1 · Now Open
-            </span>
+          <div className="flex flex-wrap gap-1.5">
+            {SPORTS.map((s) => (
+              <span
+                key={s}
+                className="text-[10px] font-bold px-2 py-0.5 rounded-md border border-[var(--color-border)] text-[var(--color-text-muted)] bg-[var(--color-surface-1)]"
+              >
+                {s}
+              </span>
+            ))}
           </div>
 
-          <h1 className="text-5xl font-display font-black tracking-tight leading-[1.0]">
-            The crowd<br />is wrong.<br />
-            <span className="text-[var(--color-brand-primary)]">Prove it.</span>
+          <h1 className="text-5xl font-display font-black tracking-tight leading-[0.95]">
+            Not picks.<br />
+            <span className="text-[var(--color-brand-primary)]">Probabilities.</span>
           </h1>
 
           <p className="text-base text-[var(--color-text-secondary)] leading-relaxed max-w-sm">
-            Daily predictions on sports, markets, and world events.
-            Track your calibration score. Compete on the leaderboard.
-            Win real prizes.
+            Forecast is a free daily prediction game. Assign probabilities to real sports outcomes,
+            get scored on precision — not just direction — and compete for seasonal prizes.
           </p>
 
           <div className="flex gap-3 pt-1 flex-wrap">
@@ -97,75 +107,46 @@ export default function LandingPage() {
               href="/learn"
               className="px-6 py-3 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-95"
             >
-              Start predicting free
+              Start Predicting Free →
             </Link>
             <Link
               href="/leaderboard"
               className="px-6 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] font-bold text-sm hover:border-[var(--color-brand-primary)]/50 hover:text-[var(--color-text-primary)] transition-all"
             >
-              See leaderboard
+              See the Leaderboard
             </Link>
           </div>
         </div>
 
-        {/* Mock calibration card */}
-        <div className="relative rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden shadow-xl">
-          <div className="absolute top-3 right-3 z-10">
-            <span className="text-[10px] font-bold text-[var(--color-text-muted)] bg-[var(--color-surface-2)] px-2 py-1 rounded-full border border-[var(--color-border)]">
-              Preview
-            </span>
-          </div>
-
-          {/* Score header */}
-          <div className="px-5 pt-5 pb-4 border-b border-[var(--color-border)] flex items-end gap-3">
-            <span className="text-5xl font-black leading-none" style={{ color: "#f59e0b" }}>78</span>
-            <div className="flex flex-col gap-0.5 pb-1">
-              <span className="text-sm font-bold" style={{ color: "#f59e0b" }}>Calibrated</span>
-              <span className="text-xs text-[var(--color-text-muted)]">14 resolved · 6-day streak</span>
+        {/* Mock prediction feed */}
+        <div className="relative flex flex-col gap-2">
+          <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-1">
+            Live now
+          </p>
+          {MOCK_QUESTIONS.map(({ sport, question, crowd }) => (
+            <div
+              key={question}
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-3 flex items-center gap-3"
+            >
+              <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest shrink-0 w-8">
+                {sport}
+              </span>
+              <p className="flex-1 text-sm font-semibold text-[var(--color-text-primary)] leading-snug min-w-0 truncate">
+                {question}
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  Crowd: <span className="font-bold text-[var(--color-text-primary)]">{crowd}%</span>
+                </span>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg border border-[var(--color-border)] text-[var(--color-brand-primary)]">
+                  Predict
+                </span>
+              </div>
             </div>
-          </div>
-
-          {/* Prediction history rows */}
-          <div className="px-5 py-3 flex flex-col gap-3">
-            {MOCK_PREDICTIONS.map((p) => {
-              const outcomeColor = p.outcome === "yes" ? "#22c55e" : "#ef4444";
-              return (
-                <div key={p.title} className="flex flex-col gap-1.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[10px] font-bold text-[var(--color-brand-primary)] uppercase tracking-widest shrink-0">
-                        {p.sport}
-                      </span>
-                      <span className="text-xs text-[var(--color-text-primary)] font-medium truncate">
-                        {p.title}
-                      </span>
-                    </div>
-                    <span
-                      className="text-[11px] font-bold px-2 py-0.5 rounded-md shrink-0"
-                      style={{ color: outcomeColor, background: `${outcomeColor}22` }}
-                    >
-                      {p.outcome === "yes" ? "✓ YES" : "✗ NO"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1 h-1 rounded-full bg-[var(--color-border)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${p.you}%`, backgroundColor: outcomeColor }}
-                      />
-                      <div
-                        className="absolute top-0 bottom-0 w-px bg-white/60"
-                        style={{ left: `${p.mkt}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">
-                      You {p.you}% · Mkt {p.mkt}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          ))}
+          <p className="text-xs text-[var(--color-text-muted)] text-right pt-1">
+            + hundreds more across every sport
+          </p>
         </div>
       </section>
 
@@ -173,7 +154,7 @@ export default function LandingPage() {
       <section className="px-6 py-14 max-w-lg mx-auto w-full flex flex-col gap-7 border-t border-[var(--color-border)]">
         <h2 className="text-2xl font-display font-black tracking-tight">How it works</h2>
         <div className="flex flex-col gap-6">
-          {HOW_IT_WORKS.map(({ n, title, desc }) => (
+          {STEPS.map(({ n, title, desc }) => (
             <div key={n} className="flex gap-5">
               <span className="font-display font-black text-4xl text-[var(--color-brand-primary)] opacity-30 leading-none shrink-0 w-12 pt-0.5">
                 {n}
@@ -189,15 +170,51 @@ export default function LandingPage() {
 
       {/* ── Features ── */}
       <section className="px-6 py-14 max-w-lg mx-auto w-full flex flex-col gap-7 border-t border-[var(--color-border)]">
-        <h2 className="text-2xl font-display font-black tracking-tight">Built to make you sharper</h2>
+        <h2 className="text-2xl font-display font-black tracking-tight">Built different</h2>
         <div className="grid grid-cols-2 gap-3">
           {FEATURES.map(({ title, desc }) => (
             <div
               key={title}
               className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 flex flex-col gap-2 hover:border-[var(--color-brand-primary)]/40 transition-colors"
             >
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand-primary)]" />
               <p className="text-sm font-bold text-[var(--color-text-primary)]">{title}</p>
               <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Leaderboard preview ── */}
+      <section className="px-6 py-14 max-w-lg mx-auto w-full border-t border-[var(--color-border)] flex flex-col gap-7">
+        <div className="flex items-end justify-between">
+          <h2 className="text-2xl font-display font-black tracking-tight">The leaderboard</h2>
+          <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline">
+            See all →
+          </Link>
+        </div>
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden">
+          <div className="grid grid-cols-4 px-4 py-2 border-b border-[var(--color-border)] text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+            <span>#</span>
+            <span className="col-span-2">Forecaster</span>
+            <span className="text-right">Score</span>
+          </div>
+          {MOCK_LEADERBOARD.map(({ rank, name, score, predictions }) => (
+            <div
+              key={rank}
+              className="grid grid-cols-4 px-4 py-3 border-b border-[var(--color-border)] last:border-0 items-center"
+            >
+              <span className="text-sm font-black text-[var(--color-text-muted)]">{rank}</span>
+              <div className="col-span-2 flex flex-col">
+                <span className="text-sm font-bold text-[var(--color-text-primary)]">{name}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)]">{predictions} predictions</span>
+              </div>
+              <span
+                className="text-right text-sm font-black"
+                style={{ color: score >= 85 ? "var(--color-success)" : score >= 70 ? "var(--color-warning)" : "var(--color-text-primary)" }}
+              >
+                {score}
+              </span>
             </div>
           ))}
         </div>
@@ -212,24 +229,21 @@ export default function LandingPage() {
           />
           <div className="relative flex flex-col gap-3">
             <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-              Season 1 Prize Pool
+              Season 1 — NFL through Super Bowl
             </p>
             <p className="text-7xl font-display font-black text-[var(--color-brand-primary)] tracking-tight leading-none">
               $25K
             </p>
             <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              Top forecasters split the pool at season end.
-              Free to enter. Ranked by calibration score — not luck.
+              Company-funded prize pool. The sharpest forecasters at season end split it.
+              No buy-in. No user stakes. Just prove you&apos;re sharp.
             </p>
             <Link
               href="/learn"
               className="mt-2 w-full text-center px-6 py-4 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-base hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-[0.98]"
             >
-              Start predicting free
+              Start Predicting Free →
             </Link>
-            <p className="text-xs text-center text-[var(--color-text-muted)]">
-              No credit card. No real money at risk.
-            </p>
           </div>
         </div>
       </section>
@@ -241,8 +255,8 @@ export default function LandingPage() {
             Forecast
           </span>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed max-w-sm">
-            A calibration-based forecasting competition. Not a sportsbook.
-            Prizes are company-funded incentives, not player stakes.
+            Not a sportsbook. Not gambling. A free forecasting competition scored on
+            calibration — the same method used by professional analysts and superforecasters.
           </p>
           <div className="flex gap-5 pt-1">
             <Link href="/learn" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Practice Mode</Link>
