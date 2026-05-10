@@ -15,6 +15,8 @@ const NAV_ITEMS = [
 export function Nav() {
   const pathname = usePathname();
 
+  if (pathname === "/") return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] backdrop-blur-sm">
       <ul className="flex items-center justify-around px-2 py-3 max-w-lg mx-auto">
