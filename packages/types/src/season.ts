@@ -1,5 +1,8 @@
+import type { Sport } from "./market";
+
 export type SeasonStatus = "upcoming" | "active" | "closed";
-export type LeagueType = "global" | "private" | "university";
+export type LeagueType = "global" | "sport_season" | "sport_half_season" | "sport_playoffs" | "sport_tournament" | "private" | "university";
+export type SportLeagueHalf = "first" | "second";
 
 export interface Season {
   readonly id: string;
@@ -16,6 +19,18 @@ export interface League {
   readonly type: LeagueType;
   readonly memberCount: number;
   readonly inviteCode?: string;
+}
+
+export interface SportLeague {
+  readonly id: string;
+  readonly sport: Sport;
+  readonly name: string;
+  readonly description: string;
+  readonly type: Extract<LeagueType, "sport_season" | "sport_half_season" | "sport_playoffs" | "sport_tournament">;
+  readonly half?: SportLeagueHalf;
+  readonly startDate: Date;
+  readonly endDate: Date;
+  readonly memberCount: number;
 }
 
 export interface LeagueMembership {

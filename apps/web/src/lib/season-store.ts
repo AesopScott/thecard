@@ -84,7 +84,10 @@ export const SEASON_BANKROLL_EVENT = "thecard:season:bankroll";
 function read(): SeasonState {
   if (typeof window === "undefined") return { memberships: {} };
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as SeasonState;
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    return (typeof parsed === "object" && parsed !== null && "memberships" in parsed)
+      ? (parsed as SeasonState)
+      : { memberships: {} };
   } catch {
     return { memberships: {} };
   }

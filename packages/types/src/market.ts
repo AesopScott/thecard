@@ -2,6 +2,7 @@ export type Sport =
   | "nfl"
   | "nba"
   | "mlb"
+  | "nhl"
   | "ufc"
   | "ncaaf"
   | "ncaab"
