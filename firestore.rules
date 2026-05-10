@@ -92,6 +92,20 @@ service cloud.firestore {
           && request.resource.data.correct is number;
         allow update, delete: if false;
       }
+
+      match /h2hRuns/{dateId} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isVerified()
+          && request.auth.uid == uid
+          && request.resource.data.date == dateId
+          && request.resource.data.picks is list
+          && request.resource.data.opponentPicks is map
+          && request.resource.data.outcomes is map
+          && request.resource.data.yourCorrect is number
+          && request.resource.data.opponentCorrect is number
+          && request.resource.data.result in ['win', 'loss', 'tie-win'];
+        allow update, delete: if false;
+      }
     }
   }
 }
