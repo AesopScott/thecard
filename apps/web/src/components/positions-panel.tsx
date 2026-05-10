@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { exchange } from "@/lib/exchange";
 import { closeAccountPosition, placeAccountOrder } from "@/lib/account-order";
@@ -81,8 +81,6 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
   const [orders, setOrders] = useState<LimitOrders | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const firedRef = useRef({ takeProfit: false, stopLoss: false, autoBuy: false });
-  const ordersRef = useRef(orders);
-  useEffect(() => { ordersRef.current = orders; }, [orders]);
 
   const isYes = position.side === "yes";
   const sideColor = isYes ? "var(--color-card-yes)" : "var(--color-card-no)";
@@ -105,12 +103,15 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
     return exchange.subscribeToMarket(position.marketId, setOdds);
   }, [position.marketId]);
 
-  // Check limit order thresholds on every odds tick
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fireOrder = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
   useEffect(() => {
     if (!odds || !user || !position.id) return;
     const cp = isYes ? odds.yes : odds.no;
-    const o = ordersRef.current;
+    const o = orders;
     const fired = firedRef.current;
     if (!o) return;
 
@@ -144,12 +145,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
         .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
         .catch(() => fireOrder("Auto-buy skipped - insufficient bankroll"));
     }
-  }, [odds]);
-
-  function fireOrder(msg: string) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }
+  }, [currentValue, fireOrder, isYes, market, odds, orders, position.id, position.side, user]);
 
   async function handleSell() {
     if (!user || !position.id || !market || selling) return;
