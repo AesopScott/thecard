@@ -1,4 +1,11 @@
 import { LeaderboardClient } from "./leaderboard-client";
+import { VERSION } from "@/lib/version";
+
+export const metadata = {
+  title: "Leaderboard — The Card",
+  openGraph: { images: [{ url: `/leaderboard/opengraph-image.png?v=${VERSION}`, width: 1200, height: 630 }] },
+  twitter: { card: "summary_large_image", images: [`/leaderboard/opengraph-image.png?v=${VERSION}`] },
+};
 
 export default function LeaderboardPage() {
   return (
