@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/live",       label: "Live",     emoji: "⚡" },
   { href: "/blitz",      label: "Blitz",    emoji: "🔥" },
   { href: "/h2h",        label: "H2H",      emoji: "🥊" },
-  { href: "/forecast",   label: "Forecast", emoji: "🎯" },
+  { href: "/learn",      label: "Forecast", emoji: "🎯" },
   { href: "/leaderboard",label: "Board",    emoji: "🏆" },
 ] as const;
 

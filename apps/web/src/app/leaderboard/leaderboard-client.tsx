@@ -182,7 +182,7 @@ function CalibrationTab() {
           <p className="text-xs text-[var(--color-card-muted)] max-w-xs leading-relaxed">
             Make predictions in Forecast. After 5 resolved predictions your calibration score unlocks.
           </p>
-          <Link href="/forecast" className="mt-2 text-xs font-semibold text-[var(--color-card-accent)] border border-[var(--color-card-accent-dim)] rounded-lg px-4 py-1.5 hover:bg-[var(--color-card-accent-dim)] transition-colors">
+          <Link href="/learn" className="mt-2 text-xs font-semibold text-[var(--color-card-accent)] border border-[var(--color-card-accent-dim)] rounded-lg px-4 py-1.5 hover:bg-[var(--color-card-accent-dim)] transition-colors">
             Start Predicting Free
           </Link>
         </div>

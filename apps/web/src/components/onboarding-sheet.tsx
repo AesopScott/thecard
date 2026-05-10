@@ -165,7 +165,7 @@ export function OnboardingSheet() {
 
   function handleStartPredicting() {
     completeOnboarding();
-    router.push("/forecast");
+    router.push("/learn");
   }
 
   return (

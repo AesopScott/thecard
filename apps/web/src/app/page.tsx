@@ -43,7 +43,7 @@ const SURFACES = [
   },
   {
     emoji: "🎯",
-    href: "/forecast",
+    href: "/learn",
     label: "Forecast",
     desc: "Build your calibration record. Predict outcomes, track your accuracy over time.",
   },
