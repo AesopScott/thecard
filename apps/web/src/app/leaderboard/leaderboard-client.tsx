@@ -11,6 +11,7 @@ import {
   buildSeasonLeaderboard,
   getBankroll,
   getMembership,
+  getSeasonNumber,
   getSeasonStatus,
   initGlobalLeague,
 } from "@/lib/season-store";
@@ -48,7 +49,7 @@ function SeasonTab() {
 
       {status === "upcoming" && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-4 py-8 flex flex-col items-center gap-2 text-center">
-          <p className="text-sm font-semibold text-[var(--color-card-text)]">Season 1 preview</p>
+          <p className="text-sm font-semibold text-[var(--color-card-text)]">Season {getSeasonNumber(ACTIVE_SEASON)} preview</p>
           <p className="text-xs text-[var(--color-card-muted)] max-w-xs leading-relaxed">
             Everyone enters with $1,000. Grow it highest to win a share of the prize pool.
             The leaderboard locks in on{" "}
@@ -96,7 +97,7 @@ function SeasonTab() {
       {membership.isBust && (
         <div className="rounded-xl border border-[var(--color-card-no)]/30 bg-[var(--color-card-no-dim)] p-4 text-center">
           <p className="text-sm font-bold text-[var(--color-card-no)]">Bust — bankroll reached $0</p>
-          <p className="text-xs text-[var(--color-card-muted)] mt-1">Season 1 resets {ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
+          <p className="text-xs text-[var(--color-card-muted)] mt-1">Season {getSeasonNumber(ACTIVE_SEASON)} resets {ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
         </div>
       )}
     </div>

@@ -24,6 +24,14 @@ function buildSeason(year: number, month: number): Season {
   };
 }
 
+// Returns 1-based season number (August 2026 = Season 1)
+export function getSeasonNumber(season: Season): number {
+  const [yearStr, monthStr] = season.id.split("-");
+  const year = parseInt(yearStr ?? "2026", 10);
+  const month = parseInt(monthStr ?? "8", 10); // 1-indexed
+  return (year - FIRST_SEASON_YEAR) * 12 + (month - (FIRST_SEASON_MONTH + 1)) + 1;
+}
+
 // Returns the active or upcoming season. Before Season 1, returns Season 1 as upcoming.
 export function getActiveSeason(): Season {
   const now = new Date();

@@ -9,6 +9,7 @@ import {
   daysLeftInSeason,
   daysUntilSeason,
   getBankroll,
+  getSeasonNumber,
   getSeasonStatus,
   initGlobalLeague,
 } from "@/lib/season-store";
@@ -78,7 +79,7 @@ export function SeasonBanner({ variant = "compact" }: SeasonBannerProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <p className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-            🏆 Season 1
+            🏆 Season {getSeasonNumber(ACTIVE_SEASON)}
           </p>
           <p className="text-lg font-black text-[var(--color-card-text)] leading-tight">
             {ACTIVE_SEASON.name}
