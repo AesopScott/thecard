@@ -19,7 +19,7 @@ export function UserButton() {
       <>
         <button
           onClick={() => setSignInOpen(true)}
-          className="fixed top-4 right-4 z-30 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors"
+          className="fixed top-4 right-4 z-50 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors"
         >
           Sign in
         </button>

@@ -133,6 +133,7 @@ export function OnboardingSheet() {
       {needsOnboarding && (
         <>
           <motion.div
+            key="onboarding-backdrop"
             className="fixed inset-0 z-40 bg-black/60"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
