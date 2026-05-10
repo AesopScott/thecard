@@ -7,6 +7,9 @@ import {
   signInWithPopup,
   signOut as fbSignOut,
   onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { upsertUserProfile, getUserUsername } from "@/lib/user-store";
@@ -17,6 +20,9 @@ interface AuthContextValue {
   needsOnboarding: boolean;
   completeOnboarding: () => void;
   signInWithGoogle: () => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  sendVerificationEmail: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -56,13 +62,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, provider);
   }
 
+  async function signUpWithEmail(email: string, password: string) {
+    if (!auth) throw new Error("Firebase not configured");
+    await createUserWithEmailAndPassword(auth, email, password);
+    await sendVerificationEmail();
+  }
+
+  async function signInWithEmail(email: string, password: string) {
+    if (!auth) throw new Error("Firebase not configured");
+    await signInWithEmailAndPassword(auth, email, password);
+  }
+
+  async function sendVerificationEmail() {
+    if (!auth || !auth.currentUser) throw new Error("No user signed in");
+    await sendEmailVerification(auth.currentUser);
+  }
+
   async function signOut() {
     if (!auth) return;
     await fbSignOut(auth);
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, needsOnboarding, completeOnboarding, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, needsOnboarding, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );
