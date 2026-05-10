@@ -179,6 +179,24 @@ export function recordPayout(leagueId: string, payout: number): void {
   write(state);
 }
 
+export function refundBet(leagueId: string, amount: number): void {
+  let state = ensureMembership(read(), leagueId, ACTIVE_SEASON.id);
+  const m = state.memberships[leagueId]!;
+  state = {
+    ...state,
+    memberships: {
+      ...state.memberships,
+      [leagueId]: {
+        ...m,
+        currentBankroll: m.currentBankroll + amount,
+        betCount: Math.max(0, m.betCount - 1),
+        isBust: false,
+      },
+    },
+  };
+  write(state);
+}
+
 function fromFirestore(leagueId: string, data: Record<string, unknown>): LeagueMembership {
   return {
     leagueId,
@@ -312,6 +330,53 @@ export async function recordUserSeasonPayout(uid: string, payout: number, league
     if (snap.exists()) {
       tx.update(ref, {
         currentBankroll: next.currentBankroll,
+        isBust: next.isBust,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      tx.set(ref, {
+        ...next,
+        joinedAtMs: next.joinedAt,
+        joinedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return next;
+  });
+  cacheMembership(updated);
+  dispatchSeasonEvent();
+  return updated;
+}
+
+export async function refundUserSeasonBet(uid: string, amount: number, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
+  if (!db) {
+    refundBet(leagueId, amount);
+    return getMembership(leagueId);
+  }
+  const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
+  const updated = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const membership = snap.exists()
+      ? fromFirestore(leagueId, snap.data())
+      : {
+          leagueId,
+          seasonId: ACTIVE_SEASON.id,
+          startingBankroll: STARTING_BANKROLL,
+          currentBankroll: STARTING_BANKROLL,
+          betCount: 0,
+          isBust: false,
+          joinedAt: Date.now(),
+        };
+    const next: LeagueMembership = {
+      ...membership,
+      currentBankroll: membership.currentBankroll + amount,
+      betCount: Math.max(0, membership.betCount - 1),
+      isBust: false,
+    };
+    if (snap.exists()) {
+      tx.update(ref, {
+        currentBankroll: next.currentBankroll,
+        betCount: next.betCount,
         isBust: next.isBust,
         updatedAt: serverTimestamp(),
       });

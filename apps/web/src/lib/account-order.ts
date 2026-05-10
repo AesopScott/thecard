@@ -1,7 +1,12 @@
 import type { Market } from "@thecard/types";
 import { exchange } from "./exchange";
-import { getActiveJoinedLeaguesForSportForUser, placeUserLeagueBet, recordUserLeaguePayout } from "./league-store";
-import { placeUserSeasonBet, recordUserSeasonPayout } from "./season-store";
+import {
+  getActiveJoinedLeaguesForSportForUser,
+  placeUserLeagueBet,
+  recordUserLeaguePayout,
+  refundUserLeagueBet,
+} from "./league-store";
+import { placeUserSeasonBet, recordUserSeasonPayout, refundUserSeasonBet } from "./season-store";
 import { closePosition, savePosition } from "./user-store";
 
 export interface AccountOrderResult {
@@ -27,29 +32,40 @@ export async function placeAccountOrder({
   const seasonMembership = await placeUserSeasonBet(uid, amountUsd);
   if (!seasonMembership) throw new Error("Insufficient bankroll");
 
-  const fill = await exchange.placeOrder(uid, {
-    marketId: market.id,
-    side,
-    amountUsd,
-  });
+  const debitedLeagueIds: string[] = [];
+  try {
+    for (const leagueId of await getActiveJoinedLeaguesForSportForUser(uid, market.sport)) {
+      const debited = await placeUserLeagueBet(uid, leagueId, amountUsd);
+      if (!debited) throw new Error("Insufficient league bankroll");
+      debitedLeagueIds.push(leagueId);
+    }
 
-  for (const leagueId of await getActiveJoinedLeaguesForSportForUser(uid, market.sport)) {
-    await placeUserLeagueBet(uid, leagueId, amountUsd);
+    const fill = await exchange.placeOrder(uid, {
+      marketId: market.id,
+      side,
+      amountUsd,
+    });
+
+    const position = {
+      marketId: fill.marketId,
+      side: fill.side,
+      amountUsd: fill.filledAmountUsd,
+      contracts: fill.filledAmountUsd / fill.price,
+      averagePrice: fill.price,
+    };
+    await savePosition(uid, position);
+
+    return {
+      ...position,
+      seasonBankroll: seasonMembership.currentBankroll,
+    };
+  } catch (error) {
+    await Promise.allSettled([
+      refundUserSeasonBet(uid, amountUsd),
+      ...debitedLeagueIds.map((leagueId) => refundUserLeagueBet(uid, leagueId, amountUsd)),
+    ]);
+    throw error;
   }
-
-  const position = {
-    marketId: fill.marketId,
-    side: fill.side,
-    amountUsd: fill.filledAmountUsd,
-    contracts: fill.filledAmountUsd / fill.price,
-    averagePrice: fill.price,
-  };
-  await savePosition(uid, position);
-
-  return {
-    ...position,
-    seasonBankroll: seasonMembership.currentBankroll,
-  };
 }
 
 export async function closeAccountPosition({

@@ -69,6 +69,17 @@ export function recordLeaguePayout(leagueId: string, payout: number): void {
   write({ ...m, currentBankroll: m.currentBankroll + payout });
 }
 
+export function refundLeagueBet(leagueId: string, amount: number): void {
+  const m = read(leagueId);
+  if (!m) return;
+  write({
+    ...m,
+    currentBankroll: m.currentBankroll + amount,
+    betCount: Math.max(0, m.betCount - 1),
+    isBust: false,
+  });
+}
+
 // Returns all currently-active sport leagues that the user has joined for a given sport.
 // Used by order-sheet to know which leagues to also deduct from when a bet is placed.
 export function getActiveJoinedLeaguesForSport(sport: Sport): string[] {
@@ -193,6 +204,36 @@ export async function recordUserLeaguePayout(uid: string, leagueId: string, payo
     };
     tx.update(ref, {
       currentBankroll: next.currentBankroll,
+      isBust: next.isBust,
+      updatedAt: serverTimestamp(),
+    });
+    return next;
+  });
+  if (!updated) return false;
+  writeCache(updated);
+  dispatchLeagueEvent();
+  return true;
+}
+
+export async function refundUserLeagueBet(uid: string, leagueId: string, amount: number): Promise<boolean> {
+  if (!db) {
+    refundLeagueBet(leagueId, amount);
+    return true;
+  }
+  const ref = doc(db, "users", uid, "leagueMemberships", leagueId);
+  const updated = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return null;
+    const membership = fromFirestore(leagueId, snap.data());
+    const next: LeagueMembership = {
+      ...membership,
+      currentBankroll: membership.currentBankroll + amount,
+      betCount: Math.max(0, membership.betCount - 1),
+      isBust: false,
+    };
+    tx.update(ref, {
+      currentBankroll: next.currentBankroll,
+      betCount: next.betCount,
       isBust: next.isBust,
       updatedAt: serverTimestamp(),
     });
