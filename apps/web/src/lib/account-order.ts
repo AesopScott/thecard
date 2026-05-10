@@ -1,8 +1,8 @@
 import type { Market } from "@thecard/types";
 import { exchange } from "./exchange";
-import { getActiveJoinedLeaguesForSportForUser, placeUserLeagueBet } from "./league-store";
-import { placeUserSeasonBet } from "./season-store";
-import { savePosition } from "./user-store";
+import { getActiveJoinedLeaguesForSportForUser, placeUserLeagueBet, recordUserLeaguePayout } from "./league-store";
+import { placeUserSeasonBet, recordUserSeasonPayout } from "./season-store";
+import { closePosition, savePosition } from "./user-store";
 
 export interface AccountOrderResult {
   marketId: string;
@@ -50,4 +50,24 @@ export async function placeAccountOrder({
     ...position,
     seasonBankroll: seasonMembership.currentBankroll,
   };
+}
+
+export async function closeAccountPosition({
+  uid,
+  positionId,
+  market,
+  currentValue,
+}: {
+  uid: string;
+  positionId: string;
+  market: Pick<Market, "sport">;
+  currentValue: number;
+}): Promise<void> {
+  await recordUserSeasonPayout(uid, currentValue);
+
+  for (const leagueId of await getActiveJoinedLeaguesForSportForUser(uid, market.sport)) {
+    await recordUserLeaguePayout(uid, leagueId, currentValue);
+  }
+
+  await closePosition(uid, positionId);
 }

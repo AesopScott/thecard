@@ -176,6 +176,34 @@ export async function placeUserLeagueBet(uid: string, leagueId: string, amount: 
   return true;
 }
 
+export async function recordUserLeaguePayout(uid: string, leagueId: string, payout: number): Promise<boolean> {
+  if (!db) {
+    recordLeaguePayout(leagueId, payout);
+    return true;
+  }
+  const ref = doc(db, "users", uid, "leagueMemberships", leagueId);
+  const updated = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return null;
+    const membership = fromFirestore(leagueId, snap.data());
+    const next: LeagueMembership = {
+      ...membership,
+      currentBankroll: membership.currentBankroll + payout,
+      isBust: false,
+    };
+    tx.update(ref, {
+      currentBankroll: next.currentBankroll,
+      isBust: next.isBust,
+      updatedAt: serverTimestamp(),
+    });
+    return next;
+  });
+  if (!updated) return false;
+  writeCache(updated);
+  dispatchLeagueEvent();
+  return true;
+}
+
 export async function getActiveJoinedLeaguesForSportForUser(uid: string, sport: Sport): Promise<string[]> {
   const memberships = await getUserLeagueMemberships(uid);
   const joined = new Set(memberships.map((membership) => membership.leagueId));

@@ -285,6 +285,51 @@ export async function placeUserSeasonBet(uid: string, amount: number, leagueId =
   return updated;
 }
 
+export async function recordUserSeasonPayout(uid: string, payout: number, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
+  if (!db) {
+    recordPayout(leagueId, payout);
+    return getMembership(leagueId);
+  }
+  const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
+  const updated = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    const membership = snap.exists()
+      ? fromFirestore(leagueId, snap.data())
+      : {
+          leagueId,
+          seasonId: ACTIVE_SEASON.id,
+          startingBankroll: STARTING_BANKROLL,
+          currentBankroll: STARTING_BANKROLL,
+          betCount: 0,
+          isBust: false,
+          joinedAt: Date.now(),
+        };
+    const next: LeagueMembership = {
+      ...membership,
+      currentBankroll: membership.currentBankroll + payout,
+      isBust: false,
+    };
+    if (snap.exists()) {
+      tx.update(ref, {
+        currentBankroll: next.currentBankroll,
+        isBust: next.isBust,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      tx.set(ref, {
+        ...next,
+        joinedAtMs: next.joinedAt,
+        joinedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return next;
+  });
+  cacheMembership(updated);
+  dispatchSeasonEvent();
+  return updated;
+}
+
 // Inserts the user's real bankroll + betCount into mock standings at the correct rank
 export function buildSeasonLeaderboard(userBankroll: number, userBetCount: number): SeasonLeaderboardEntry[] {
   const mocks: Omit<SeasonLeaderboardEntry, "rank">[] = [
