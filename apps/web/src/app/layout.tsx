@@ -17,11 +17,13 @@ export const metadata: Metadata = {
     description: "Sports prediction markets for fans, not traders.",
     siteName: "The Card",
     type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "The Card" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The Card",
     description: "Sports prediction markets for fans, not traders.",
+    images: ["/og.png"],
   },
 };
 
