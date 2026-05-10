@@ -1,23 +1,54 @@
 import type { Season, League, LeagueMembership, SeasonLeaderboardEntry } from "@thecard/types";
 
-const STORAGE_KEY = "thecard:season:v1";
 export const STARTING_BANKROLL = 1_000;
 
-export const ACTIVE_SEASON: Season = {
-  id: "s1-nfl-fall-2026",
-  name: "NFL + College Fall 2026",
-  startDate: new Date("2026-08-04"),
-  endDate: new Date("2026-10-26"),
-  prizePoolEstimate: 5_000,
-};
+// First season is August 2026 (NFL preseason opens)
+const FIRST_SEASON_YEAR = 2026;
+const FIRST_SEASON_MONTH = 7; // 0-indexed: July=6, August=7
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function buildSeason(year: number, month: number): Season {
+  const id = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0, 23, 59, 59, 999);
+  return {
+    id,
+    name: `${MONTH_NAMES[month]} ${year}`,
+    startDate,
+    endDate,
+    prizePoolEstimate: 5_000,
+  };
+}
+
+// Returns the active or upcoming season. Before Season 1, returns Season 1 as upcoming.
+export function getActiveSeason(): Season {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed
+
+  const firstSeasonMs = new Date(FIRST_SEASON_YEAR, FIRST_SEASON_MONTH, 1).getTime();
+  if (now.getTime() < firstSeasonMs) {
+    return buildSeason(FIRST_SEASON_YEAR, FIRST_SEASON_MONTH);
+  }
+  return buildSeason(year, month);
+}
+
+export const ACTIVE_SEASON: Season = getActiveSeason();
 
 export const GLOBAL_LEAGUE: League = {
-  id: "global-s1",
+  id: `global-${ACTIVE_SEASON.id}`,
   seasonId: ACTIVE_SEASON.id,
   name: "Global",
   type: "global",
   memberCount: 1_247,
 };
+
+// Storage key includes season ID so bankrolls naturally reset each month
+const STORAGE_KEY = `thecard:season:v1:${ACTIVE_SEASON.id}`;
 
 export function getSeasonStatus(season: Season): "upcoming" | "active" | "closed" {
   const now = Date.now();
