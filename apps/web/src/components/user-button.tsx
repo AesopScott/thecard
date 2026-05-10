@@ -28,7 +28,7 @@ export function UserButton() {
 
   const displayName = username ? `@${username}` : user.displayName ?? user.email ?? "Forecaster";
   const initial = username?.[0]?.toUpperCase() ?? user.displayName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "?";
-  const profileHref = username ? `/profile/${username}` : "/card";
+  const profileHref = username ? `/profile?u=${encodeURIComponent(username)}` : "/card";
 
   return (
     <>

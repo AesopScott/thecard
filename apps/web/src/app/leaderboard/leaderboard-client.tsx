@@ -227,7 +227,7 @@ function CalibrationRow({ rank, entry }: { rank: number; entry: LeaderboardEntry
     "var(--color-card-no)";
 
   return (
-    <Link href={`/profile/${entry.username}`} className="px-4 py-3 flex items-center gap-3 hover:bg-[var(--color-surface-2)] transition-colors">
+    <Link href={`/profile?u=${encodeURIComponent(entry.username)}`} className="px-4 py-3 flex items-center gap-3 hover:bg-[var(--color-surface-2)] transition-colors">
       <span className="text-xs font-bold text-[var(--color-card-muted)] w-5 shrink-0 text-right">{rank}</span>
       <div className="w-7 h-7 rounded-full bg-[var(--color-card-accent)] flex items-center justify-center text-white text-[10px] font-black shrink-0">
         {entry.photoURL
