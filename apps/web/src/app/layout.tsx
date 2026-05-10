@@ -49,7 +49,7 @@ export default function RootLayout({
           <UserButton />
           <EmailVerificationNotice />
           <OnboardingSheet />
-          <main className="pb-20 min-h-dvh">{children}</main>
+          <main className="pb-32 min-h-dvh">{children}</main>
           <Nav />
         </Providers>
       </body>

@@ -25,22 +25,22 @@ export function Nav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] backdrop-blur-sm">
-      <ul className="flex items-center gap-1 overflow-x-auto px-2 pt-2 pb-1 max-w-lg mx-auto">
+      <ul className="grid grid-cols-5 gap-1 px-2 pt-2 pb-1 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ href, label, emoji }) => {
           const isActive = pathname.startsWith(href);
           return (
-            <li key={href} className="shrink-0">
+            <li key={href} className="min-w-0">
               <Link
                 href={href}
                 className={clsx(
-                  "flex w-[58px] flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200",
+                  "flex min-w-0 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200",
                   isActive
                     ? "text-[var(--color-brand-primary)] bg-[var(--color-surface-2)]"
                     : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]"
                 )}
               >
                 <span className="text-lg leading-none">{emoji}</span>
-                <span className="text-[10px] font-bold tracking-tight">{label}</span>
+                <span className="max-w-full truncate text-[10px] font-bold tracking-tight">{label}</span>
               </Link>
             </li>
           );
