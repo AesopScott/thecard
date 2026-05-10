@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { getUserProfileByUsername, type UserProfile } from "@/lib/user-store";
 
@@ -57,7 +58,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-card-accent)] text-xl font-black text-white">
             {profile.photoURL ? (
-              <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
+              <Image src={profile.photoURL} alt="" width={64} height={64} className="h-full w-full object-cover" unoptimized />
             ) : (
               profile.username[0]?.toUpperCase() ?? "?"
             )}

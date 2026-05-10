@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-store";
@@ -230,7 +231,7 @@ function CalibrationRow({ rank, entry }: { rank: number; entry: LeaderboardEntry
       <span className="text-xs font-bold text-[var(--color-card-muted)] w-5 shrink-0 text-right">{rank}</span>
       <div className="w-7 h-7 rounded-full bg-[var(--color-card-accent)] flex items-center justify-center text-white text-[10px] font-black shrink-0">
         {entry.photoURL
-          ? <img src={entry.photoURL} alt="" className="w-full h-full rounded-full object-cover" />
+          ? <Image src={entry.photoURL} alt="" width={28} height={28} className="w-full h-full rounded-full object-cover" unoptimized />
           : (entry.displayName[0] ?? "?").toUpperCase()}
       </div>
       <div className="flex-1 min-w-0">

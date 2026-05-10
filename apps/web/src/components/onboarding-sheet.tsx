@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
@@ -273,7 +274,7 @@ export function OnboardingSheet() {
                     className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-dashed border-[var(--color-card-border)] hover:border-[var(--color-brand-primary)] transition-colors shrink-0 group"
                   >
                     {displayedAvatar ? (
-                      <img src={displayedAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                      <Image src={displayedAvatar} alt="Avatar" width={80} height={80} className="w-full h-full object-cover" unoptimized />
                     ) : (
                       <span className="w-full h-full flex items-center justify-center bg-[var(--color-card-accent)] text-white text-2xl font-black">{initial}</span>
                     )}
@@ -347,7 +348,7 @@ export function OnboardingSheet() {
                     className="flex items-center gap-3 w-full rounded-xl border border-dashed border-[var(--color-card-border)] hover:border-[var(--color-brand-primary)] bg-[var(--color-surface-1)] px-4 py-3 transition-colors"
                   >
                     {teamPhotoPreview ? (
-                      <img src={teamPhotoPreview} alt="Team" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <Image src={teamPhotoPreview} alt="Team" width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" unoptimized />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-[var(--color-card-accent)]/20 flex items-center justify-center shrink-0">
                         <span className="text-lg">Photo</span>
