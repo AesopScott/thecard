@@ -58,6 +58,7 @@ export interface SettledPositionRecord {
   payout: number;
   pnl: number;
   outcome: "yes" | "no" | "sold";
+  openedAtMs: number;
   closedAtMs: number;
 }
 
@@ -257,6 +258,7 @@ export async function savePosition(
   }
 ): Promise<void> {
   if (!db) return;
+  const now = Date.now();
   const positionsRef = collection(db, "users", uid, "positions");
   const existing = await getDocs(query(
     positionsRef,
@@ -282,6 +284,8 @@ export async function savePosition(
       averagePrice: nextAveragePrice,
       ...(data.marketTitle && { marketTitle: data.marketTitle }),
       ...(data.sport && { sport: data.sport }),
+      openedAtMs: (current.openedAtMs as number | undefined) ?? now,
+      lastTradeAtMs: now,
       leagueIds: Array.from(new Set([
         ...((current.leagueIds as string[] | undefined) ?? []),
         ...(data.leagueIds ?? []),
@@ -293,6 +297,8 @@ export async function savePosition(
 
   await addDoc(positionsRef, {
     ...data,
+    openedAtMs: now,
+    lastTradeAtMs: now,
     placedAt: serverTimestamp(),
   });
 }
@@ -361,15 +367,19 @@ export async function consolidatePositions(uid: string): Promise<void> {
           contracts: acc.contracts + contracts,
           amountUsd: acc.amountUsd + amountUsd,
           costBasis: acc.costBasis + contracts * averagePrice,
+          openedAtMs: Math.min(acc.openedAtMs, (data.openedAtMs as number | undefined) ?? Date.now()),
+          lastTradeAtMs: Math.max(acc.lastTradeAtMs, (data.lastTradeAtMs as number | undefined) ?? Date.now()),
         };
       },
-      { contracts: 0, amountUsd: 0, costBasis: 0 }
+      { contracts: 0, amountUsd: 0, costBasis: 0, openedAtMs: Number.POSITIVE_INFINITY, lastTradeAtMs: 0 }
     );
 
     batch.update(primary.ref, {
       amountUsd: aggregate.amountUsd,
       contracts: aggregate.contracts,
       averagePrice: aggregate.contracts > 0 ? aggregate.costBasis / aggregate.contracts : 0,
+      openedAtMs: Number.isFinite(aggregate.openedAtMs) ? aggregate.openedAtMs : Date.now(),
+      lastTradeAtMs: aggregate.lastTradeAtMs || Date.now(),
       updatedAt: serverTimestamp(),
     });
     duplicates.forEach((positionDoc) => batch.delete(positionDoc.ref));
@@ -415,10 +425,12 @@ export async function closeMatchingPositions(
           contracts: acc.contracts + contracts,
           costBasis: acc.costBasis + amountUsd,
           weightedPrice: acc.weightedPrice + contracts * averagePrice,
+          openedAtMs: Math.min(acc.openedAtMs, (data.openedAtMs as number | undefined) ?? Date.now()),
         };
       },
-      { contracts: 0, costBasis: 0, weightedPrice: 0 }
+      { contracts: 0, costBasis: 0, weightedPrice: 0, openedAtMs: Number.POSITIVE_INFINITY }
     );
+    const closedAtMs = Date.now();
     batch.set(doc(collection(db, "users", uid, "settledPositions")), {
       marketId,
       marketTitle: settlement.marketTitle,
@@ -430,7 +442,8 @@ export async function closeMatchingPositions(
       payout: settlement.payout,
       pnl: settlement.payout - aggregate.costBasis,
       outcome: settlement.outcome,
-      closedAtMs: Date.now(),
+      openedAtMs: Number.isFinite(aggregate.openedAtMs) ? aggregate.openedAtMs : closedAtMs,
+      closedAtMs,
       closedAt: serverTimestamp(),
     });
   }
@@ -459,6 +472,7 @@ export async function getPublicSettledPositions(uid: string, max = 50): Promise<
       payout: (data.payout as number | undefined) ?? 0,
       pnl: (data.pnl as number | undefined) ?? 0,
       outcome: (data.outcome as "yes" | "no" | "sold" | undefined) ?? "sold",
+      openedAtMs: (data.openedAtMs as number | undefined) ?? (data.closedAtMs as number | undefined) ?? Date.now(),
       closedAtMs: (data.closedAtMs as number | undefined) ?? Date.now(),
     };
   });

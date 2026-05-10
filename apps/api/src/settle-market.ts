@@ -134,6 +134,7 @@ async function settleUser(userRef: DocumentReference, input: Args): Promise<User
       payout: positionPayout,
       pnl: positionPayout - costBasis,
       outcome: input.outcome,
+      openedAtMs: Number(position.openedAtMs ?? Date.now()),
       closedAtMs: Date.now(),
       closedAt: FieldValue.serverTimestamp(),
     });

@@ -160,6 +160,7 @@ export function ProfilePositionsClient() {
 
 function PositionRow({ position }: { position: SettledPositionRecord }) {
   const isProfit = position.pnl >= 0;
+  const opened = new Date(position.openedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const closed = new Date(position.closedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
   return (
@@ -175,7 +176,7 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
           <p className={`text-base font-black ${isProfit ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>
             {isProfit ? "+" : ""}${position.pnl.toFixed(2)}
           </p>
-          <p className="text-[10px] text-[var(--color-card-muted)]">{closed}</p>
+          <p className="text-[10px] text-[var(--color-card-muted)]">{opened} to {closed}</p>
         </div>
       </div>
 

@@ -88,6 +88,7 @@ async function settleUserPositions({
       payout: positionPayout,
       pnl: positionPayout - costBasis,
       outcome,
+      openedAtMs: (data.openedAtMs as number | undefined) ?? closedAtMs,
       closedAtMs,
       closedAt: serverTimestamp(),
     });
