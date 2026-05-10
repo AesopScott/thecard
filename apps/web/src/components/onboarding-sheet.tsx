@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { EmailVerificationNotice } from "./email-verification-notice";
 import { checkUsernameAvailable, setUsername as persistUsername, uploadAvatar } from "@/lib/user-store";
-import { createTeam, joinTeamByCode } from "@/lib/team-store";
+import { createTeam, joinTeamByCode, type Team } from "@/lib/team-store";
 
 type Step = "username" | "photo" | "team" | "done";
 type TeamMode = "choose" | "create" | "join";
@@ -56,6 +56,7 @@ export function OnboardingSheet() {
     setInviteCode("");
     setTeamError(null);
     setTeamBusy(false);
+    setJoinedTeam(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsOnboarding]);
 
@@ -75,6 +76,7 @@ export function OnboardingSheet() {
   const [inviteCode, setInviteCode] = useState("");
   const [teamError, setTeamError] = useState<string | null>(null);
   const [teamBusy, setTeamBusy] = useState(false);
+  const [joinedTeam, setJoinedTeam] = useState<Team | null>(null);
 
   if (!user || !needsOnboarding) return null;
 
@@ -168,7 +170,9 @@ export function OnboardingSheet() {
     setTeamBusy(true);
     setTeamError(null);
     try {
-      await createTeam(user.uid, teamName.trim(), teamPhotoFile);
+      const team = await createTeam(user.uid, teamName.trim(), teamPhotoFile);
+      setJoinedTeam(team);
+      await refreshUser();
       setStep("done");
     } catch {
       setTeamError("Could not create team. Try again.");
@@ -182,7 +186,9 @@ export function OnboardingSheet() {
     setTeamBusy(true);
     setTeamError(null);
     try {
-      await joinTeamByCode(user.uid, inviteCode.trim());
+      const team = await joinTeamByCode(user.uid, inviteCode.trim());
+      setJoinedTeam(team);
+      await refreshUser();
       setStep("done");
     } catch (e) {
       setTeamError(e instanceof Error ? e.message : "Invalid code.");
@@ -398,8 +404,21 @@ export function OnboardingSheet() {
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">You are in</p>
                   <h2 className="text-xl font-black text-[var(--color-card-text)]">@{username.trim().toLowerCase()} - ready.</h2>
-                  <p className="text-sm text-[var(--color-card-muted)]">Make your first prediction to unlock your calibration score and appear on the leaderboard.</p>
+                  <p className="text-sm text-[var(--color-card-muted)]">
+                    {joinedTeam ? `You're on ${joinedTeam.name}. Make your first prediction to unlock your calibration score.` : "Make your first prediction to unlock your calibration score and appear on the leaderboard."}
+                  </p>
                 </div>
+                {joinedTeam?.inviteCode && (
+                  <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] p-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Team invite</p>
+                      <p className="mt-1 text-xs text-[var(--color-card-muted)]">Share this code with your team.</p>
+                    </div>
+                    <span className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 font-mono text-sm font-black text-[var(--color-card-text)]">
+                      {joinedTeam.inviteCode}
+                    </span>
+                  </div>
+                )}
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] p-4 flex flex-col gap-2">
                   <p className="text-xs font-bold text-[var(--color-card-text)]">How calibration scoring works</p>
                   <ul className="text-xs text-[var(--color-card-muted)] space-y-1.5">
