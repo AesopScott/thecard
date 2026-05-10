@@ -5,14 +5,9 @@ import { JackpotBanner } from "@/components/jackpot-banner";
 import { PositionsPanel } from "@/components/positions-panel";
 import { UpcomingSportsCard } from "@/components/upcoming-sports-card";
 import { SeasonBanner } from "@/components/season-banner";
-import { VERSION } from "@/lib/version";
 import type { Odds } from "@thecard/types";
 
-export const metadata = {
-  title: "Tonight's Card — The Card",
-  openGraph: { images: [{ url: `/card/opengraph-image.png?v=${VERSION}`, width: 1200, height: 630 }] },
-  twitter: { card: "summary_large_image", images: [`/card/opengraph-image.png?v=${VERSION}`] },
-};
+export const metadata = { title: "Tonight's Card — The Card" };
 
 export default async function CardPage() {
   const markets = await exchange.getMarkets({ limit: 25 });

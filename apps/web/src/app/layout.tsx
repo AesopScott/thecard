@@ -3,13 +3,13 @@ import { Inter, Outfit } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { Nav } from "@/components/nav";
 import { UserButton } from "@/components/user-button";
-import { VERSION } from "@/lib/version";
 import "@/styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-display", weight: ["400", "600", "700", "800", "900"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://thecard.bet"),
   title: "The Card",
   description: "Sports prediction markets for fans, not traders. Real odds, live updates, compete for the jackpot.",
   openGraph: {
@@ -17,13 +17,11 @@ export const metadata: Metadata = {
     description: "Sports prediction markets for fans, not traders.",
     siteName: "The Card",
     type: "website",
-    images: [{ url: `/opengraph-image.png?v=${VERSION}`, width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary_large_image",
     title: "The Card",
     description: "Sports prediction markets for fans, not traders.",
-    images: [`/opengraph-image.png?v=${VERSION}`],
   },
 };
 
