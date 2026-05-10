@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { exchange } from "@/lib/exchange";
-import { ORDER_PLACED_EVENT } from "./order-sheet";
+import { subscribeToPositions } from "@/lib/user-store";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import type { Market, Position } from "@thecard/types";
 
 export function PositionsPanel() {
@@ -21,14 +22,16 @@ export function PositionsPanel() {
       return;
     }
 
-    async function load() {
-      setPositions(await exchange.getPositions(user!.uid));
+    if (isFirebaseConfigured) {
+      return subscribeToPositions(user.uid, setPositions);
     }
-    load();
 
-    const handler = () => load();
-    window.addEventListener(ORDER_PLACED_EVENT, handler);
-    return () => window.removeEventListener(ORDER_PLACED_EVENT, handler);
+    // Fallback: in-memory MockAdapter positions
+    const uid = user.uid;
+    exchange.getPositions(uid).then(setPositions);
+    const handler = () => exchange.getPositions(uid).then(setPositions);
+    window.addEventListener("thecard:order:placed", handler);
+    return () => window.removeEventListener("thecard:order:placed", handler);
   }, [user]);
 
   if (!user || positions.length === 0) return null;
@@ -36,7 +39,9 @@ export function PositionsPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-[var(--color-card-text)]">Your Positions</h2>
+        <h2 className="text-sm font-bold text-[var(--color-card-text)]">
+          Your Positions
+        </h2>
         <span className="text-xs text-[var(--color-card-muted)]">
           {positions.length} open
         </span>
@@ -66,7 +71,10 @@ function PositionRow({
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3.5 flex items-center gap-3">
       <div
         className="rounded-md px-2 py-1 text-[10px] font-black uppercase tracking-wider shrink-0"
-        style={{ color: sideColor, backgroundColor: `color-mix(in srgb, ${sideColor} 15%, transparent)` }}
+        style={{
+          color: sideColor,
+          backgroundColor: `color-mix(in srgb, ${sideColor} 15%, transparent)`,
+        }}
       >
         {position.side}
       </div>
@@ -75,7 +83,8 @@ function PositionRow({
           {market?.title ?? position.marketId}
         </p>
         <p className="text-[10px] text-[var(--color-card-muted)]">
-          {position.contracts.toFixed(1)} contracts · avg {Math.round(position.averagePrice * 100)}¢
+          {position.contracts.toFixed(1)} contracts · avg{" "}
+          {Math.round(position.averagePrice * 100)}¢
         </p>
       </div>
       <div className="flex flex-col items-end shrink-0">

@@ -10,9 +10,15 @@ import {
   resolveForecast,
   type LocalForecast,
 } from "@/lib/forecast-store";
+import {
+  saveForecast,
+  resolveFirestoreForecast,
+  subscribeToForecasts,
+  clearFirestoreForecasts,
+} from "@/lib/user-store";
+import { useAuth } from "@/contexts/auth-context";
 
 const MIN_PREDICTIONS_FOR_SCORE = 5;
-// Simulated resolution delay in ms — makes the demo feel alive
 const MOCK_RESOLVE_DELAY_MS = 4500;
 
 interface UseForecastReturn {
@@ -26,8 +32,10 @@ interface UseForecastReturn {
 }
 
 export function useForecast(): UseForecastReturn {
+  const { user } = useAuth();
   const [forecasts, setForecasts] = useState<Record<string, LocalForecast>>({});
 
+  // Seed from localStorage on mount
   const refresh = useCallback(() => setForecasts(loadForecasts()), []);
 
   useEffect(() => {
@@ -36,17 +44,42 @@ export function useForecast(): UseForecastReturn {
     return () => window.removeEventListener(FORECAST_UPDATED_EVENT, refresh);
   }, [refresh]);
 
+  // When signed in, subscribe to Firestore and merge into local state
+  useEffect(() => {
+    if (!user) return;
+    return subscribeToForecasts(user.uid, (remote) => {
+      // Write-through to localStorage so the app works offline
+      const local = loadForecasts();
+      const merged = { ...local, ...remote };
+      localStorage.setItem("thecard:forecast:v1", JSON.stringify(merged));
+      setForecasts(merged);
+    });
+  }, [user]);
+
   const predict = useCallback(
     (marketId: string, marketTitle: string, probability: number) => {
+      // Write locally immediately for instant UI response
       addForecast({ marketId, marketTitle, probability, createdAt: Date.now() });
 
-      // Probabilistic mock resolution: outcome weighted by the predicted probability
+      if (user) {
+        saveForecast(user.uid, {
+          marketId,
+          marketTitle,
+          probability,
+          createdAt: Date.now(),
+        }).catch(() => {});
+      }
+
+      // Probabilistic mock resolution weighted by predicted probability
       setTimeout(() => {
         const outcome: "yes" | "no" = Math.random() < probability ? "yes" : "no";
         resolveForecast(marketId, outcome);
+        if (user) {
+          resolveFirestoreForecast(user.uid, marketId, outcome).catch(() => {});
+        }
       }, MOCK_RESOLVE_DELAY_MS);
     },
-    []
+    [user]
   );
 
   const hasPredicted = useCallback(
@@ -73,7 +106,8 @@ export function useForecast(): UseForecastReturn {
 
   const reset = useCallback(() => {
     clearForecasts();
-  }, []);
+    if (user) clearFirestoreForecasts(user.uid).catch(() => {});
+  }, [user]);
 
   return {
     forecasts,

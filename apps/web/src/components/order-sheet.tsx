@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { exchange } from "@/lib/exchange";
+import { savePosition } from "@/lib/user-store";
 import type { Market, Odds } from "@thecard/types";
 
 export const ORDER_PLACED_EVENT = "thecard:order:placed";
@@ -36,11 +37,19 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
     if (!user || dollarAmount <= 0) return;
     setSheetState("confirming");
     try {
-      await exchange.placeOrder(user.uid, {
+      const fill = await exchange.placeOrder(user.uid, {
         marketId: market.id,
         side,
         amountUsd: dollarAmount,
       });
+      // Persist position to Firestore
+      savePosition(user.uid, {
+        marketId: fill.marketId,
+        side: fill.side,
+        amountUsd: fill.filledAmountUsd,
+        contracts: fill.filledAmountUsd / fill.price,
+        averagePrice: fill.price,
+      }).catch(() => {});
       window.dispatchEvent(new Event(ORDER_PLACED_EVENT));
       setSheetState("success");
       setTimeout(() => {
