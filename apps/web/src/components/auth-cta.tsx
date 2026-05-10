@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { SignInSheet } from "./sign-in-sheet";
 
@@ -14,7 +15,14 @@ interface AuthCtaProps {
 
 export function AuthCta({ href, signedOutLabel, signedInLabel, className }: AuthCtaProps) {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const [signInOpen, setSignInOpen] = useState(false);
+
+  useEffect(() => {
+    if (!signInOpen || !user) return;
+    setSignInOpen(false);
+    router.push(href);
+  }, [href, router, signInOpen, user]);
 
   if (user) {
     return (

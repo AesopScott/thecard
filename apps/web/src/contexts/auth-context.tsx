@@ -10,6 +10,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
+  reload,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { upsertUserProfile, getUserUsername } from "@/lib/user-store";
@@ -18,11 +19,14 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   needsOnboarding: boolean;
+  emailVerified: boolean;
+  verificationRequired: boolean;
   completeOnboarding: () => void;
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   sendVerificationEmail: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -32,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
@@ -40,11 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      setEmailVerified(Boolean(u?.emailVerified));
       setLoading(false);
       if (u) {
-        await upsertUserProfile(u);
-        const username = await getUserUsername(u.uid);
-        setNeedsOnboarding(!username);
+        await upsertUserProfile(u).catch((error) => {
+          console.warn("User profile sync failed:", error);
+        });
+        const username = await getUserUsername(u.uid).catch(() => null);
+        setNeedsOnboarding(Boolean(u.emailVerified && !username));
       } else {
         setNeedsOnboarding(false);
       }
@@ -78,13 +86,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await sendEmailVerification(auth.currentUser);
   }
 
+  async function refreshUser() {
+    if (!auth || !auth.currentUser) return;
+    await reload(auth.currentUser);
+    await auth.currentUser.getIdToken(true);
+    setUser(auth.currentUser);
+    setEmailVerified(auth.currentUser.emailVerified);
+    if (auth.currentUser.emailVerified) {
+      const username = await getUserUsername(auth.currentUser.uid).catch(() => null);
+      setNeedsOnboarding(!username);
+    }
+  }
+
   async function signOut() {
     if (!auth) return;
     await fbSignOut(auth);
   }
 
+  const verificationRequired = Boolean(user && !emailVerified);
+
   return (
-    <AuthContext.Provider value={{ user, loading, needsOnboarding, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, signOut }}>
+    <AuthContext.Provider value={{ user, loading, needsOnboarding, emailVerified, verificationRequired, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, refreshUser, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { EmailVerificationNotice } from "./email-verification-notice";
 import { exchange } from "@/lib/exchange";
 import { savePosition } from "@/lib/user-store";
 import {
@@ -28,7 +29,7 @@ interface OrderSheetProps {
 type SheetState = "input" | "confirming" | "success";
 
 export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProps) {
-  const { user } = useAuth();
+  const { user, verificationRequired } = useAuth();
   const [amount, setAmount] = useState("10");
   const [sheetState, setSheetState] = useState<SheetState>("input");
   const [bankroll, setBankroll] = useState(() => {
@@ -51,8 +52,33 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
   const sideColor = side === "yes" ? "var(--color-card-yes)" : "var(--color-card-no)";
   const sideDimColor = side === "yes" ? "var(--color-card-yes-dim)" : "var(--color-card-no-dim)";
 
+  if (open && verificationRequired) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          className="fixed inset-0 z-40 bg-black/50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        />
+        <motion.div
+          className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-6 pb-10"
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        >
+          <div className="mx-auto max-w-sm">
+            <EmailVerificationNotice compact />
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
   async function handleConfirm() {
-    if (!user || dollarAmount <= 0 || dollarAmount > bankroll) return;
+    if (!user || verificationRequired || dollarAmount <= 0 || dollarAmount > bankroll) return;
     setSheetState("confirming");
     try {
       const fill = await exchange.placeOrder(user.uid, {

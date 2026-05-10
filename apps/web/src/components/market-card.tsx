@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { OddsPill } from "./odds-pill";
 import { SignInSheet } from "./sign-in-sheet";
 import { OrderSheet } from "./order-sheet";
+import { EmailVerificationNotice } from "./email-verification-notice";
 import type { HostTake } from "@/lib/editorial";
 
 interface MarketCardProps {
@@ -16,7 +17,7 @@ interface MarketCardProps {
 }
 
 export function MarketCard({ market, hostTake }: MarketCardProps) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, verificationRequired, loading: authLoading } = useAuth();
   const [odds, setOdds] = useState<Odds | null>(null);
   const [orderSide, setOrderSide] = useState<"yes" | "no" | null>(null);
 
@@ -136,7 +137,12 @@ export function MarketCard({ market, hostTake }: MarketCardProps) {
       {orderSide && !user && (
         <SignInSheet open onClose={() => setOrderSide(null)} />
       )}
-      {orderSide && user && odds && (
+      {orderSide && user && verificationRequired && (
+        <div className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm">
+          <EmailVerificationNotice compact />
+        </div>
+      )}
+      {orderSide && user && !verificationRequired && odds && (
         <OrderSheet
           open
           market={market}

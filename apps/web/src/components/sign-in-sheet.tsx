@@ -43,13 +43,9 @@ export function SignInSheet({ open, onClose }: SignInSheetProps) {
     try {
       if (mode === "signup") {
         await signUpWithEmail(email, password);
-        setSuccess("Verification email sent! Check your inbox.");
+        setSuccess("Verification email sent. Check your inbox, then come back and tap I verified.");
         setEmail("");
         setPassword("");
-        setTimeout(() => {
-          setSuccess("");
-          onClose();
-        }, 3000);
       } else {
         await signInWithEmail(email, password);
         onClose();

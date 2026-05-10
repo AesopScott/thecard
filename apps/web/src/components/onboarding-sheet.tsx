@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { EmailVerificationNotice } from "./email-verification-notice";
 import { checkUsernameAvailable, setUsername as persistUsername, uploadAvatar } from "@/lib/user-store";
 import { createTeam, joinTeamByCode } from "@/lib/team-store";
 
@@ -31,7 +32,7 @@ function validateUsername(value: string): string | null {
 }
 
 export function OnboardingSheet() {
-  const { user, needsOnboarding, completeOnboarding } = useAuth();
+  const { user, needsOnboarding, verificationRequired, completeOnboarding } = useAuth();
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const teamPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -76,6 +77,32 @@ export function OnboardingSheet() {
   const [teamBusy, setTeamBusy] = useState(false);
 
   if (!user || !needsOnboarding) return null;
+
+  if (verificationRequired) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          key="verification-backdrop"
+          className="fixed inset-0 z-40 bg-black/60"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+        <motion.div
+          key="verification-required"
+          className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-6 pb-32"
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        >
+          <div className="mx-auto max-w-sm">
+            <EmailVerificationNotice compact />
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   const googlePhoto = user.photoURL;
   const displayedAvatar = avatarPreview ?? googlePhoto;

@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { Nav } from "@/components/nav";
 import { UserButton } from "@/components/user-button";
 import { OnboardingSheet } from "@/components/onboarding-sheet";
+import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import "@/styles/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -46,6 +47,7 @@ export default function RootLayout({
             style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite", zIndex: 0 }}
           />
           <UserButton />
+          <EmailVerificationNotice />
           <OnboardingSheet />
           <main className="pb-20 min-h-dvh">{children}</main>
           <Nav />
