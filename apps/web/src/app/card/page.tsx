@@ -5,8 +5,6 @@ import { JackpotBanner } from "@/components/jackpot-banner";
 import { PositionsPanel } from "@/components/positions-panel";
 import type { Odds } from "@thecard/types";
 
-export const dynamic = "force-dynamic";
-
 // Mock jackpot — will come from Firestore when backend is wired
 const JACKPOT = { amount: 42000, rolloverWeeks: 2, resetsOn: "Sunday" };
 
