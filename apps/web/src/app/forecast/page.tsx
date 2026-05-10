@@ -63,6 +63,19 @@ const FEATURES = [
   },
 ];
 
+const FOOTER_LINKS = [
+  { href: "/card", label: "Tonight's Card" },
+  { href: "/live", label: "Live" },
+  { href: "/blitz", label: "Blitz" },
+  { href: "/h2h", label: "Head-to-Head" },
+  { href: "/forecast", label: "Forecast" },
+  { href: "/perfect-ten", label: "Perfect 10" },
+  { href: "/leagues", label: "Leagues" },
+  { href: "/sports-calendar", label: "Sports Calendar" },
+  { href: "/picks", label: "Picks" },
+  { href: "/leaderboard", label: "Leaderboard" },
+];
+
 export default function LandingPage() {
   return (
     <div className="min-h-dvh flex flex-col bg-[var(--color-surface-0)] text-[var(--color-text-primary)]">
@@ -265,11 +278,12 @@ export default function LandingPage() {
             Not a sportsbook. Not gambling. A free forecasting competition scored on
             calibration — the same method used by professional analysts and superforecasters.
           </p>
-          <div className="flex gap-5 pt-1">
-            <Link href="/blitz" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Blitz</Link>
-            <Link href="/h2h" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Head-to-Head</Link>
-            <Link href="/card" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Tonight&apos;s Card</Link>
-            <Link href="/leaderboard" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Leaderboard</Link>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+            {FOOTER_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">
+                {link.label}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>

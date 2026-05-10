@@ -6,12 +6,16 @@ import { clsx } from "clsx";
 import pkg from "../../package.json";
 
 const NAV_ITEMS = [
-  { href: "/card",       label: "Card",     emoji: "🎴" },
-  { href: "/live",       label: "Live",     emoji: "⚡" },
-  { href: "/blitz",      label: "Blitz",    emoji: "🔥" },
-  { href: "/h2h",        label: "H2H",      emoji: "🥊" },
-  { href: "/forecast",   label: "Forecast", emoji: "🎯" },
-  { href: "/leaderboard",label: "Board",    emoji: "🏆" },
+  { href: "/card",            label: "Card",     emoji: "🎴" },
+  { href: "/live",            label: "Live",     emoji: "⚡" },
+  { href: "/blitz",           label: "Blitz",    emoji: "🔥" },
+  { href: "/h2h",             label: "H2H",      emoji: "🥊" },
+  { href: "/forecast",        label: "Forecast", emoji: "🎯" },
+  { href: "/perfect-ten",     label: "P10",      emoji: "💰" },
+  { href: "/leagues",         label: "Leagues",  emoji: "🏟️" },
+  { href: "/sports-calendar", label: "Calendar", emoji: "📅" },
+  { href: "/picks",           label: "Picks",    emoji: "🤖" },
+  { href: "/leaderboard",     label: "Board",    emoji: "🏆" },
 ] as const;
 
 export function Nav() {
@@ -21,15 +25,15 @@ export function Nav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] backdrop-blur-sm">
-      <ul className="flex items-center justify-around px-1 pt-2 pb-1 max-w-lg mx-auto">
+      <ul className="flex items-center gap-1 overflow-x-auto px-2 pt-2 pb-1 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ href, label, emoji }) => {
           const isActive = pathname.startsWith(href);
           return (
-            <li key={href}>
+            <li key={href} className="shrink-0">
               <Link
                 href={href}
                 className={clsx(
-                  "flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-lg transition-all duration-200",
+                  "flex w-[58px] flex-col items-center gap-0.5 rounded-lg px-1 py-1.5 transition-all duration-200",
                   isActive
                     ? "text-[var(--color-brand-primary)] bg-[var(--color-surface-2)]"
                     : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)]"
