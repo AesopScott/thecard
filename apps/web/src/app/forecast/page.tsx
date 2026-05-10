@@ -73,7 +73,7 @@ export default function LandingPage() {
           Forecast
         </span>
         <AuthCta
-          href="/learn"
+          href="/card"
           signedOutLabel="Sign in"
           signedInLabel="Start"
           className="text-sm font-bold px-4 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-brand-primary)]/50 transition-all"
@@ -111,7 +111,7 @@ export default function LandingPage() {
 
           <div className="flex gap-3 pt-1 flex-wrap">
             <AuthCta
-              href="/learn"
+              href="/card"
               signedOutLabel="Start Predicting Free ->"
               signedInLabel="Start Predicting Free ->"
               className="px-6 py-3 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-95"
@@ -246,7 +246,7 @@ export default function LandingPage() {
               No buy-in. No user stakes. Just prove you&apos;re sharp.
             </p>
             <AuthCta
-              href="/learn"
+              href="/card"
               signedOutLabel="Start Predicting Free ->"
               signedInLabel="Start Predicting Free ->"
               className="mt-2 w-full text-center px-6 py-4 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-base hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-[0.98]"
