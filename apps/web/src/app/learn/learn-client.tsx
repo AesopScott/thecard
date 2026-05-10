@@ -10,17 +10,24 @@ interface LearnClientProps {
 }
 
 export function LearnClient({ markets }: LearnClientProps) {
-  const { forecasts, predict, calibration, resolvedCount, predictionsUntilScore } =
+  const { forecasts, predict, calibration, resolvedCount, predictionsUntilScore, streak } =
     useForecast();
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5">
 
-      <header>
-        <h1 className="text-2xl font-black tracking-tight text-[var(--color-card-text)]">
-          Practice Mode
-        </h1>
-        <p className="text-sm text-[var(--color-card-muted)] mt-1">
+      <header className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-black tracking-tight text-[var(--color-card-text)]">
+            Practice Mode
+          </h1>
+          {streak > 0 && (
+            <span className="text-xs font-bold text-[var(--color-brand-primary)] bg-[var(--color-card-accent-dim)] rounded-full px-2.5 py-1">
+              {streak}-day streak
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-[var(--color-card-muted)]">
           Build calibration on real markets. No account, no money at risk.
         </p>
       </header>

@@ -7,12 +7,13 @@ import { ProbabilitySlider } from "./probability-slider";
 
 interface PredictSheetProps {
   market: Market;
+  crowdProbability?: number; // 0–100, current market YES price in cents
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (probability: number) => void;
 }
 
-export function PredictSheet({ market, isOpen, onClose, onSubmit }: PredictSheetProps) {
+export function PredictSheet({ market, crowdProbability, isOpen, onClose, onSubmit }: PredictSheetProps) {
   const [probability, setProbability] = useState(50);
 
   function handleSubmit() {
@@ -58,6 +59,15 @@ export function PredictSheet({ market, isOpen, onClose, onSubmit }: PredictSheet
               <p className="text-sm text-[var(--color-card-muted)] mt-0.5">
                 {market.subtitle}
               </p>
+              {crowdProbability !== undefined && (
+                <p className="text-xs text-[var(--color-card-muted)] mt-2">
+                  The crowd says{" "}
+                  <span className="font-bold text-[var(--color-card-text)]">
+                    {crowdProbability}% YES
+                  </span>
+                  . What do you think?
+                </p>
+              )}
             </div>
 
             {/* Probability slider */}

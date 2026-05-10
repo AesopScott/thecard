@@ -23,11 +23,12 @@ const MOCK_RESOLVE_DELAY_MS = 4500;
 
 interface UseForecastReturn {
   forecasts: Record<string, LocalForecast>;
-  predict: (marketId: string, marketTitle: string, probability: number) => void;
+  predict: (marketId: string, marketTitle: string, probability: number, crowdProbability?: number) => void;
   hasPredicted: (marketId: string) => boolean;
   calibration: number | null;
   resolvedCount: number;
   predictionsUntilScore: number;
+  streak: number;
   reset: () => void;
 }
 
@@ -57,9 +58,9 @@ export function useForecast(): UseForecastReturn {
   }, [user]);
 
   const predict = useCallback(
-    (marketId: string, marketTitle: string, probability: number) => {
+    (marketId: string, marketTitle: string, probability: number, crowdProbability?: number) => {
       // Write locally immediately for instant UI response
-      addForecast({ marketId, marketTitle, probability, createdAt: Date.now() });
+      addForecast({ marketId, marketTitle, probability, crowdProbability, createdAt: Date.now() });
 
       if (user) {
         saveForecast(user.uid, {
@@ -104,6 +105,8 @@ export function useForecast(): UseForecastReturn {
 
   const predictionsUntilScore = Math.max(0, MIN_PREDICTIONS_FOR_SCORE - resolvedCount);
 
+  const streak = calcStreak(forecasts);
+
   const reset = useCallback(() => {
     clearForecasts();
     if (user) clearFirestoreForecasts(user.uid).catch(() => {});
@@ -116,6 +119,30 @@ export function useForecast(): UseForecastReturn {
     calibration,
     resolvedCount,
     predictionsUntilScore,
+    streak,
     reset,
   };
+}
+
+function calcStreak(forecasts: Record<string, LocalForecast>): number {
+  const days = new Set(
+    Object.values(forecasts).map((f) => new Date(f.createdAt).toDateString())
+  );
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const startOffset = days.has(today.toDateString())
+    ? 0
+    : days.has(yesterday.toDateString())
+    ? 1
+    : null;
+  if (startOffset === null) return 0;
+  let count = 0;
+  for (let i = startOffset; ; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    if (days.has(d.toDateString())) count++;
+    else break;
+  }
+  return count;
 }

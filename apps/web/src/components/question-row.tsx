@@ -1,30 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { Market } from "@thecard/types";
+import type { Market, Odds } from "@thecard/types";
 import type { LocalForecast } from "@/lib/forecast-store";
+import { exchange } from "@/lib/exchange";
 import { PredictSheet } from "./predict-sheet";
 
 interface QuestionRowProps {
   market: Market;
   forecast: LocalForecast | undefined;
-  onPredict: (marketId: string, marketTitle: string, probability: number) => void;
+  onPredict: (marketId: string, marketTitle: string, probability: number, crowdProbability?: number) => void;
 }
 
 export function QuestionRow({ market, forecast, onPredict }: QuestionRowProps) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [odds, setOdds] = useState<Odds | null>(null);
 
+  useEffect(() => {
+    exchange.getOdds(market.id).then(setOdds);
+    return exchange.subscribeToMarket(market.id, setOdds);
+  }, [market.id]);
+
+  const crowdPct = odds ? Math.round(odds.yes * 100) : null;
   const sportLabel = market.sport.toUpperCase();
+
+  const outcomeColor = forecast?.outcome === "yes" ? "#22c55e" : "#ef4444";
 
   return (
     <>
       <li className="flex flex-col gap-2 py-3 border-b border-[var(--color-card-border)] last:border-0">
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5 min-w-0">
-            <span className="text-[10px] font-semibold text-[var(--color-card-accent)] uppercase tracking-widest">
-              {sportLabel}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold text-[var(--color-card-accent)] uppercase tracking-widest">
+                {sportLabel}
+              </span>
+              {crowdPct !== null && (
+                <span className="text-[10px] text-[var(--color-card-muted)]">
+                  Market: {crowdPct}%
+                </span>
+              )}
+            </div>
             <p className="text-sm font-semibold text-[var(--color-card-text)] leading-snug">
               {market.title}
             </p>
@@ -53,13 +70,14 @@ export function QuestionRow({ market, forecast, onPredict }: QuestionRowProps) {
                   className="text-xs font-bold px-2.5 py-1 rounded-lg"
                   style={{
                     color: forecast.probability >= 0.5 ? "#22c55e" : "#ef4444",
-                    background:
-                      forecast.probability >= 0.5 ? "#22c55e22" : "#ef444422",
+                    background: forecast.probability >= 0.5 ? "#22c55e22" : "#ef444422",
                   }}
                 >
-                  {Math.round(forecast.probability * 100)}% YES
+                  You: {Math.round(forecast.probability * 100)}% YES
                 </span>
-                <span className="text-[10px] text-[var(--color-card-muted)]">resolving…</span>
+                <span className="text-[10px] text-[var(--color-card-muted)]">
+                  {crowdPct !== null ? `Crowd: ${crowdPct}% · ` : ""}resolving…
+                </span>
               </motion.div>
             ) : (
               <motion.div
@@ -71,9 +89,8 @@ export function QuestionRow({ market, forecast, onPredict }: QuestionRowProps) {
                 <span
                   className="text-xs font-bold px-2.5 py-1 rounded-lg"
                   style={{
-                    color: forecast.outcome === "yes" ? "#22c55e" : "#ef4444",
-                    background:
-                      forecast.outcome === "yes" ? "#22c55e22" : "#ef444422",
+                    color: outcomeColor,
+                    background: forecast.outcome === "yes" ? "#22c55e22" : "#ef444422",
                   }}
                 >
                   {forecast.outcome === "yes" ? "✓ YES" : "✗ NO"}
@@ -88,7 +105,7 @@ export function QuestionRow({ market, forecast, onPredict }: QuestionRowProps) {
           </AnimatePresence>
         </div>
 
-        {/* Probability bar for resolved predictions */}
+        {/* You vs Market comparison bar for resolved predictions */}
         {forecast && forecast.outcome !== null && (
           <motion.div
             initial={{ opacity: 0, scaleX: 0 }}
@@ -96,18 +113,26 @@ export function QuestionRow({ market, forecast, onPredict }: QuestionRowProps) {
             className="flex items-center gap-2"
             style={{ originX: 0 }}
           >
-            <div className="flex-1 h-1 rounded-full bg-[var(--color-card-border)] overflow-hidden">
+            <div className="relative flex-1 h-1.5 rounded-full bg-[var(--color-card-border)] overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${Math.round(forecast.probability * 100)}%`,
-                  background:
-                    forecast.outcome === "yes" ? "#22c55e" : "#ef4444",
+                  backgroundColor: outcomeColor,
                 }}
               />
+              {forecast.crowdProbability !== undefined && (
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-white/70"
+                  style={{ left: `${Math.round(forecast.crowdProbability * 100)}%` }}
+                />
+              )}
             </div>
             <span className="text-[10px] text-[var(--color-card-muted)] shrink-0">
-              You: {Math.round(forecast.probability * 100)}%
+              You {Math.round(forecast.probability * 100)}%
+              {forecast.crowdProbability !== undefined
+                ? ` · Mkt ${Math.round(forecast.crowdProbability * 100)}%`
+                : ""}
             </span>
           </motion.div>
         )}
@@ -115,9 +140,10 @@ export function QuestionRow({ market, forecast, onPredict }: QuestionRowProps) {
 
       <PredictSheet
         market={market}
+        crowdProbability={crowdPct ?? undefined}
         isOpen={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onSubmit={(prob) => onPredict(market.id, market.title, prob)}
+        onSubmit={(prob) => onPredict(market.id, market.title, prob, odds?.yes)}
       />
     </>
   );
