@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { SignInSheet } from "./sign-in-sheet";
 
@@ -10,9 +9,8 @@ export function UserButton() {
   const { user, loading, signOut } = useAuth();
   const [signInOpen, setSignInOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname();
 
-  if (loading || pathname === "/") return null;
+  if (loading) return null;
 
   if (!user) {
     return (

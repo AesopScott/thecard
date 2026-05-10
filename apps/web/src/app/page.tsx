@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthCta } from "@/components/auth-cta";
 import { VERSION } from "@/lib/version";
 
 const LIVE_MARKETS = [
@@ -63,12 +64,12 @@ export default function LandingPage() {
         <span className="font-display font-black text-xl tracking-tight">
           The Card
         </span>
-        <Link
+        <AuthCta
           href="/card"
+          signedOutLabel="Sign in"
+          signedInLabel="Enter ->"
           className="text-sm font-bold px-4 py-2 rounded-lg bg-[var(--color-brand-primary)] text-white hover:bg-red-500 transition-all hover:shadow-lg hover:scale-105"
-        >
-          Enter →
-        </Link>
+        />
       </header>
 
       {/* ── Main Content Grid ── */}

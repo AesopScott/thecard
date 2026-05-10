@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthCta } from "@/components/auth-cta";
 
 export const metadata = {
   title: "Forecast — The Card",
@@ -71,12 +72,12 @@ export default function LandingPage() {
         <span className="font-display font-black text-xl tracking-tight">
           Forecast
         </span>
-        <Link
+        <AuthCta
           href="/learn"
+          signedOutLabel="Sign in"
+          signedInLabel="Start"
           className="text-sm font-bold px-4 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-brand-primary)]/50 transition-all"
-        >
-          Start
-        </Link>
+        />
       </header>
 
       {/* ── Hero ── */}
@@ -109,12 +110,12 @@ export default function LandingPage() {
           </p>
 
           <div className="flex gap-3 pt-1 flex-wrap">
-            <Link
+            <AuthCta
               href="/learn"
+              signedOutLabel="Start Predicting Free ->"
+              signedInLabel="Start Predicting Free ->"
               className="px-6 py-3 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-95"
-            >
-              Start Predicting Free →
-            </Link>
+            />
             <Link
               href="/leaderboard"
               className="px-6 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] font-bold text-sm hover:border-[var(--color-brand-primary)]/50 hover:text-[var(--color-text-primary)] transition-all"
@@ -244,12 +245,12 @@ export default function LandingPage() {
               Company-funded prize pool. The sharpest forecasters at season end split it.
               No buy-in. No user stakes. Just prove you&apos;re sharp.
             </p>
-            <Link
+            <AuthCta
               href="/learn"
+              signedOutLabel="Start Predicting Free ->"
+              signedInLabel="Start Predicting Free ->"
               className="mt-2 w-full text-center px-6 py-4 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-base hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-[0.98]"
-            >
-              Start Predicting Free →
-            </Link>
+            />
           </div>
         </div>
       </section>
