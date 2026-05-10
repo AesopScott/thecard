@@ -162,7 +162,7 @@ export function SignInSheet({ open, onClose }: SignInSheetProps) {
                 }}
                 className="text-xs text-center text-[var(--color-card-muted)] hover:text-[var(--color-brand-primary)] transition-colors"
               >
-                {mode === "signin" ? "Don&apos;t have an account? Sign up" : "Already have an account? Sign in"}
+                {mode === "signin" ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
               </button>
 
               <p className="text-[10px] text-center text-[var(--color-card-muted)]">
