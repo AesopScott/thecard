@@ -75,7 +75,7 @@ export default function LandingPage() {
           href="/learn"
           className="text-sm font-bold px-4 py-2 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-brand-primary)]/50 transition-all"
         >
-          Sign In
+          Start
         </Link>
       </header>
 
