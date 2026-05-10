@@ -107,12 +107,12 @@ export function ProfileClient({ username }: ProfileClientProps) {
         ))}
       </section>
 
-      <PositionHistory positions={settledPositions} />
+      <PositionHistory positions={settledPositions} username={profile.username} />
     </div>
   );
 }
 
-function PositionHistory({ positions }: { positions: SettledPositionRecord[] }) {
+function PositionHistory({ positions, username }: { positions: SettledPositionRecord[]; username: string }) {
   const stats = positions.reduce(
     (acc, position) => ({
       costBasis: acc.costBasis + position.costBasis,
@@ -130,7 +130,9 @@ function PositionHistory({ positions }: { positions: SettledPositionRecord[] }) 
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position History</p>
-        <span className="text-xs font-semibold text-[var(--color-card-muted)]">{positions.length} closed</span>
+        <Link href={`/profile/positions?u=${username}`} className="text-xs font-semibold text-[var(--color-card-muted)] hover:text-[var(--color-brand-primary)]">
+          {positions.length} closed
+        </Link>
       </div>
 
       {positions.length === 0 ? (
