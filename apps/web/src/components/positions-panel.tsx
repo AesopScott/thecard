@@ -105,6 +105,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
   }, [position.marketId]);
 
   // Check limit order thresholds on every odds tick
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!odds || !user || !position.id) return;
     const cp = isYes ? odds.yes : odds.no;
@@ -115,13 +116,13 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
     if (o.takeProfit.enabled && !fired.takeProfit && cp >= o.takeProfit.price / 100) {
       fired.takeProfit = true;
       fireOrder(`Take-profit hit at ${Math.round(cp * 100)}¢ — selling`);
-      setTimeout(() => closePosition(user.uid, position.id!).catch(() => {}), 400);
+      setTimeout(() => closePosition(user.uid, position.id!), 400);
     }
 
     if (o.stopLoss.enabled && !fired.stopLoss && cp <= o.stopLoss.price / 100) {
       fired.stopLoss = true;
       fireOrder(`Stop-loss hit at ${Math.round(cp * 100)}¢ — selling`);
-      setTimeout(() => closePosition(user.uid, position.id!).catch(() => {}), 400);
+      setTimeout(() => closePosition(user.uid, position.id!), 400);
     }
 
     if (o.autoBuy.enabled && !fired.autoBuy && cp <= o.autoBuy.price / 100) {
@@ -131,7 +132,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
         .then((fill) => savePosition(user.uid, { marketId: fill.marketId, side: fill.side, amountUsd: fill.filledAmountUsd, contracts: fill.filledAmountUsd / fill.price, averagePrice: fill.price }))
         .catch(() => {});
     }
-  }, [odds]); // intentionally sparse — mutable values accessed via refs
+  }, [odds]);
 
   function fireOrder(msg: string) {
     setToast(msg);

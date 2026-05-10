@@ -214,7 +214,7 @@ export function LeaguesClient() {
           </Link>
           <h1 className="text-4xl font-display font-black mb-2">Leagues</h1>
           <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-            Each league is its own $1,000 bankroll. Join as many as you want — bets on matching markets count toward every league you're in. Grow it highest to win.
+            Each league is its own $1,000 bankroll. Join as many as you want &mdash; bets on matching markets count toward every league you&apos;re in. Grow it highest to win.
           </p>
         </div>
 

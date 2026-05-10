@@ -67,13 +67,13 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
         placeLeagueBet(leagueId, dollarAmount);
       }
       // Persist position to Firestore
-      savePosition(user.uid, {
+      await savePosition(user.uid, {
         marketId: fill.marketId,
         side: fill.side,
         amountUsd: fill.filledAmountUsd,
         contracts: fill.filledAmountUsd / fill.price,
         averagePrice: fill.price,
-      }).catch(() => {});
+      });
       window.dispatchEvent(new Event(ORDER_PLACED_EVENT));
       setSheetState("success");
       setTimeout(() => {

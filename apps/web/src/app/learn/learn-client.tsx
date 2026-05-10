@@ -102,7 +102,7 @@ export function LearnClient({ markets }: LearnClientProps) {
         </h2>
         <p className="text-sm text-[var(--color-card-muted)] leading-relaxed">
           Calibration measures how well your confidence matches reality.
-          If you say "70% likely" on ten things and seven of them happen —
+          If you say &quot;70% likely&quot; on ten things and seven of them happen &mdash;
           you&apos;re perfectly calibrated. Most people aren&apos;t.
           They say 90% when they mean 65%.
         </p>

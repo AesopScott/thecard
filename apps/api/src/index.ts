@@ -16,10 +16,10 @@ app.get("/health", (c) => c.json({ status: "ok" }));
 app.get("/markets", async (c) => {
   const sport = c.req.query("sport") as string | undefined;
   const limit = c.req.query("limit");
-  const markets = await exchange.getMarkets({
-    sport: sport as any,
-    limit: limit ? Number(limit) : undefined,
-  });
+  const filter: any = {};
+  if (sport) filter.sport = sport;
+  if (limit) filter.limit = Number(limit);
+  const markets = await exchange.getMarkets(filter);
   return c.json(markets);
 });
 
