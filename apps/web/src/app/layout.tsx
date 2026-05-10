@@ -10,7 +10,18 @@ const outfit = Outfit({ subsets: ["latin"], variable: "--font-display", weight: 
 
 export const metadata: Metadata = {
   title: "The Card",
-  description: "Curated markets. Live. Loud.",
+  description: "Sports prediction markets for fans, not traders. Real odds, live updates, compete for the jackpot.",
+  openGraph: {
+    title: "The Card",
+    description: "Sports prediction markets for fans, not traders.",
+    siteName: "The Card",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "The Card",
+    description: "Sports prediction markets for fans, not traders.",
+  },
 };
 
 export const viewport: Viewport = {
