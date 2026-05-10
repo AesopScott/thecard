@@ -107,19 +107,75 @@ export function ProfileClient({ username }: ProfileClientProps) {
         ))}
       </section>
 
-      <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position History</p>
-          <span className="text-xs font-semibold text-[var(--color-card-muted)]">{settledPositions.length} closed</span>
-        </div>
+      <PositionHistory positions={settledPositions} />
+    </div>
+  );
+}
 
-        {settledPositions.length === 0 ? (
-          <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
-            Closed position history will appear here after this player sells a position or a market settles.
-          </p>
-        ) : (
-          <div className="mt-3 flex flex-col gap-2">
-            {settledPositions.map((position) => {
+function PositionHistory({ positions }: { positions: SettledPositionRecord[] }) {
+  const stats = positions.reduce(
+    (acc, position) => ({
+      costBasis: acc.costBasis + position.costBasis,
+      payout: acc.payout + position.payout,
+      pnl: acc.pnl + position.pnl,
+      wins: acc.wins + (position.pnl > 0 ? 1 : 0),
+      losses: acc.losses + (position.pnl < 0 ? 1 : 0),
+    }),
+    { costBasis: 0, payout: 0, pnl: 0, wins: 0, losses: 0 }
+  );
+  const roi = stats.costBasis > 0 ? (stats.pnl / stats.costBasis) * 100 : 0;
+  const winRate = positions.length > 0 ? (stats.wins / positions.length) * 100 : 0;
+
+  return (
+    <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position History</p>
+        <span className="text-xs font-semibold text-[var(--color-card-muted)]">{positions.length} closed</span>
+      </div>
+
+      {positions.length === 0 ? (
+        <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
+          Closed position history will appear here after this player sells a position or a market settles.
+        </p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              {
+                label: "Net P/L",
+                value: `${stats.pnl >= 0 ? "+" : ""}$${stats.pnl.toFixed(2)}`,
+                tone: stats.pnl >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]",
+              },
+              {
+                label: "ROI",
+                value: `${roi >= 0 ? "+" : ""}${roi.toFixed(1)}%`,
+                tone: roi >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]",
+              },
+              {
+                label: "Win Rate",
+                value: `${winRate.toFixed(0)}%`,
+                tone: "text-[var(--color-card-text)]",
+              },
+              {
+                label: "Volume",
+                value: `$${stats.costBasis.toFixed(2)}`,
+                tone: "text-[var(--color-card-text)]",
+              },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+                <p className={`text-lg font-black ${stat.tone}`}>{stat.value}</p>
+                <p className="mt-1 text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
+            <span>Latest positions</span>
+            <span>{stats.wins}W / {stats.losses}L</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {positions.map((position) => {
               const isProfit = position.pnl >= 0;
               return (
                 <div
@@ -132,7 +188,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
                         {position.marketTitle}
                       </p>
                       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
-                        {position.side.toUpperCase()} · {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
+                        {position.side.toUpperCase()} / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
@@ -145,15 +201,15 @@ export function ProfileClient({ username }: ProfileClientProps) {
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-card-muted)]">
-                    <span>{position.contracts.toFixed(1)} contracts · avg {Math.round(position.averagePrice * 100)}c</span>
+                    <span>{position.contracts.toFixed(1)} contracts / avg {Math.round(position.averagePrice * 100)}c</span>
                     <span>cost ${position.costBasis.toFixed(2)}</span>
                   </div>
                 </div>
               );
             })}
           </div>
-        )}
-      </section>
-    </div>
+        </div>
+      )}
+    </section>
   );
 }
