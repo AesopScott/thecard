@@ -148,7 +148,7 @@ export function OnboardingSheet() {
             {step === "username" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Welcome to Forecast</p>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Welcome to The Card</p>
                   <h2 className="text-xl font-black text-[var(--color-card-text)]">Pick your username</h2>
                   <p className="text-sm text-[var(--color-card-muted)]">This is how you&apos;ll appear on the leaderboard.</p>
                 </div>
