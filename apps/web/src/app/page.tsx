@@ -1,44 +1,44 @@
 import Link from "next/link";
 
-const MOCK_MARKETS = [
-  { sport: "NFL", question: "Mahomes throws 2+ touchdown passes", yes: 68, no: 32 },
-  { sport: "NBA", question: "LeBron scores 30+ points tonight", yes: 41, no: 59 },
-  { sport: "UFC", question: "Jones retains heavyweight title Saturday", yes: 74, no: 26 },
-  { sport: "MLB", question: "Dodgers win tonight at home", yes: 57, no: 43 },
-  { sport: "NHL", question: "Ovechkin scores in tonight's game", yes: 33, no: 67 },
-];
-
-const MOCK_LEADERS = [
-  { rank: 1, name: "SharpScott", record: "38–14", hot: true },
-  { rank: 2, name: "MarketMike", record: "31–12", hot: false },
-  { rank: 3, name: "CalibKing",  record: "52–22", hot: false },
+const LIVE_MARKETS = [
+  { sport: "NFL",    question: "Chiefs cover the spread tonight",     yes: 58, no: 42 },
+  { sport: "NBA",    question: "LeBron drops 30+ vs the Celtics",     yes: 44, no: 56 },
+  { sport: "UFC",    question: "Jones retains the heavyweight title",  yes: 71, no: 29 },
+  { sport: "MLB",    question: "Dodgers win Game 3",                  yes: 62, no: 38 },
+  { sport: "NHL",    question: "Ovechkin scores tonight",             yes: 37, no: 63 },
 ];
 
 const SURFACES = [
   {
-    href: "/card",
     emoji: "🎴",
+    href: "/card",
     label: "Tonight's Card",
-    desc: "Ten curated markets. One host take each. Live odds that move as bets come in.",
+    desc: "Ten curated markets every night. Live odds, host take on each, one clean feed.",
   },
   {
-    href: "/live",
     emoji: "⚡",
+    href: "/live",
     label: "Live",
-    desc: "Pick a game and go deep. Micromarkets pop up in real time as the action unfolds.",
+    desc: "Pick a game and go deep. Real-time markets updating play by play.",
   },
   {
-    href: "/learn",
     emoji: "📚",
-    label: "Practice",
-    desc: "Predict for free. Real calibration tracking — no money at risk.",
+    href: "/learn",
+    label: "Practice Mode",
+    desc: "Same markets, no money at risk. Build your track record before betting real.",
   },
   {
-    href: "/picks",
     emoji: "🎯",
+    href: "/picks",
     label: "Picks",
-    desc: "AI agents that trade on your behalf. Set a budget cap and let them run. Coming soon.",
+    desc: "Coming soon — rent a verified forecaster or let an AI agent trade for you.",
   },
+];
+
+const LEADERBOARD = [
+  { rank: 1, name: "SharpScott",  w: 14, l: 3,  pct: 82 },
+  { rank: 2, name: "MarketMike",  w: 11, l: 4,  pct: 73 },
+  { rank: 3, name: "CalibKing",   w: 19, l: 8,  pct: 70 },
 ];
 
 export default function LandingPage() {
@@ -47,30 +47,29 @@ export default function LandingPage() {
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface-0)]/90 backdrop-blur-md px-6 py-4 flex items-center justify-between">
-        <span className="font-display font-black text-xl tracking-tight text-[var(--color-text-primary)]">
+        <span className="font-display font-black text-xl tracking-tight">
           The Card
         </span>
         <Link
           href="/card"
-          className="text-sm font-black px-4 py-2 rounded-lg bg-[var(--color-brand-primary)] text-white hover:bg-red-500 transition-all active:scale-95"
+          className="text-sm font-bold px-4 py-2 rounded-lg bg-[var(--color-brand-primary)] text-white hover:bg-red-500 transition-all"
         >
           Enter →
         </Link>
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden px-6 pt-16 pb-12 flex flex-col gap-8 max-w-lg mx-auto w-full">
-        {/* Glow */}
+      <section className="relative overflow-hidden px-6 py-16 flex flex-col gap-10 max-w-lg mx-auto w-full">
         <div
-          className="absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full blur-3xl opacity-[0.08] pointer-events-none"
-          style={{ background: "radial-gradient(ellipse, #ff3c3c 0%, transparent 65%)" }}
+          className="absolute -top-20 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full blur-3xl opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #ff3c3c 0%, transparent 70%)" }}
         />
 
         <div className="relative flex flex-col gap-5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[var(--color-brand-primary)] animate-pulse" />
             <span className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-              Live now
+              Live Now
             </span>
           </div>
 
@@ -79,33 +78,33 @@ export default function LandingPage() {
             <span className="text-[var(--color-brand-primary)]">Card.</span>
           </h1>
 
-          <p className="text-base text-[var(--color-text-secondary)] leading-relaxed max-w-xs">
-            Ten markets. Live odds. One host take on each.
-            Sports prediction the way it should feel — fast, opinionated, fan-first.
+          <p className="text-base text-[var(--color-text-secondary)] leading-relaxed max-w-sm">
+            Sports prediction markets for fans, not traders. Ten live markets every night.
+            Pick sides, watch odds move, compete for the jackpot.
           </p>
 
-          <div className="flex gap-3 flex-wrap pt-1">
+          <div className="flex gap-3 flex-wrap">
             <Link
               href="/card"
-              className="px-6 py-3.5 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm hover:bg-red-500 transition-all hover:shadow-[0_0_28px_rgba(255,60,60,0.45)] active:scale-95"
+              className="px-6 py-3 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-95"
             >
-              Open Tonight&apos;s Card →
+              Tonight&apos;s Card →
             </Link>
             <Link
               href="/leaderboard"
-              className="px-6 py-3.5 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] font-bold text-sm hover:border-[var(--color-brand-primary)]/50 hover:text-[var(--color-text-primary)] transition-all"
+              className="px-6 py-3 rounded-xl border border-[var(--color-border)] text-[var(--color-text-secondary)] font-bold text-sm hover:border-[var(--color-brand-primary)]/50 hover:text-[var(--color-text-primary)] transition-all"
             >
               Leaderboard
             </Link>
           </div>
         </div>
 
-        {/* Live market feed */}
-        <div className="relative flex flex-col gap-2">
-          <p className="text-[10px] font-black text-[var(--color-text-muted)] uppercase tracking-widest mb-1">
-            Markets on The Card now
+        {/* Live market feed preview */}
+        <div className="flex flex-col gap-2">
+          <p className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-widest mb-1">
+            Tonight&apos;s markets
           </p>
-          {MOCK_MARKETS.map(({ sport, question, yes, no }) => (
+          {LIVE_MARKETS.map(({ sport, question, yes, no }) => (
             <div
               key={question}
               className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-3 flex items-center gap-3"
@@ -116,12 +115,12 @@ export default function LandingPage() {
               <p className="flex-1 text-sm font-semibold text-[var(--color-text-primary)] leading-snug min-w-0 truncate">
                 {question}
               </p>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-[11px] font-black text-[var(--color-success)] px-2 py-1 rounded-md bg-[var(--color-success-dim)]">
-                  YES {yes}¢
+              <div className="flex gap-1.5 shrink-0">
+                <span className="text-xs font-black px-2 py-1 rounded-md bg-[var(--color-success-dim)] text-[var(--color-success)]">
+                  {yes}¢
                 </span>
-                <span className="text-[11px] font-black text-[var(--color-danger)] px-2 py-1 rounded-md bg-[var(--color-danger-dim)]">
-                  NO {no}¢
+                <span className="text-xs font-black px-2 py-1 rounded-md bg-[var(--color-danger-dim)] text-[var(--color-danger)]">
+                  {no}¢
                 </span>
               </div>
             </div>
@@ -133,46 +132,43 @@ export default function LandingPage() {
       </section>
 
       {/* ── Jackpot ── */}
-      <section className="px-6 py-6 max-w-lg mx-auto w-full">
-        <div className="rounded-2xl border-2 border-[var(--color-brand-primary)] bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)] p-7 flex flex-col gap-3 relative overflow-hidden">
+      <section className="px-6 max-w-lg mx-auto w-full">
+        <div className="rounded-2xl border-2 border-[var(--color-brand-primary)] bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)] p-8 flex flex-col gap-3 relative overflow-hidden">
           <div
-            className="absolute inset-0 pointer-events-none opacity-10"
+            className="absolute inset-0 opacity-10 pointer-events-none"
             style={{ background: "radial-gradient(ellipse at top left, #ff3c3c 0%, transparent 60%)" }}
           />
-          <p className="relative text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
+          <p className="relative text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
             Perfect 10 — Rolling Jackpot
           </p>
           <p className="relative text-7xl font-display font-black text-[var(--color-brand-primary)] tracking-tight leading-none">
-            $42,000
+            $42K
           </p>
           <p className="relative text-sm text-[var(--color-text-secondary)] leading-relaxed max-w-xs">
-            Hit all ten markets on tonight&apos;s card and split the jackpot.
-            Nobody&apos;s done it in two weeks. It keeps growing.
+            Call all ten markets right and you split it. It&apos;s been rolling for two weeks.
+            Nobody&apos;s hit it yet.
           </p>
           <Link
             href="/card"
-            className="relative mt-1 w-full text-center px-6 py-4 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-base hover:bg-red-500 transition-all hover:shadow-[0_0_28px_rgba(255,60,60,0.45)] active:scale-[0.98]"
+            className="relative mt-2 w-full text-center px-6 py-4 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-base hover:bg-red-500 transition-all hover:shadow-[0_0_24px_rgba(255,60,60,0.4)] active:scale-[0.98]"
           >
-            Enter Tonight&apos;s Card →
+            Make Your Picks →
           </Link>
         </div>
       </section>
 
       {/* ── Four surfaces ── */}
-      <section className="px-6 py-14 max-w-lg mx-auto w-full flex flex-col gap-6 border-t border-[var(--color-border)]">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-display font-black tracking-tight">Everything on The Card</h2>
-          <p className="text-sm text-[var(--color-text-muted)]">One app. Four ways to play.</p>
-        </div>
+      <section className="px-6 py-14 max-w-lg mx-auto w-full flex flex-col gap-6 border-t border-[var(--color-border)] mt-14">
+        <h2 className="text-2xl font-display font-black tracking-tight">One app, four ways to play</h2>
         <div className="grid grid-cols-2 gap-3">
-          {SURFACES.map(({ href, emoji, label, desc }) => (
+          {SURFACES.map(({ emoji, href, label, desc }) => (
             <Link
               key={href}
               href={href}
-              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 flex flex-col gap-2.5 hover:border-[var(--color-brand-primary)]/40 hover:bg-[var(--color-surface-2)] transition-all active:scale-[0.98]"
+              className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 flex flex-col gap-2 hover:border-[var(--color-brand-primary)]/50 hover:bg-[var(--color-surface-2)] transition-all"
             >
               <span className="text-2xl leading-none">{emoji}</span>
-              <p className="text-sm font-black text-[var(--color-text-primary)]">{label}</p>
+              <p className="text-sm font-bold text-[var(--color-text-primary)]">{label}</p>
               <p className="text-xs text-[var(--color-text-muted)] leading-relaxed">{desc}</p>
             </Link>
           ))}
@@ -182,58 +178,33 @@ export default function LandingPage() {
       {/* ── Leaderboard preview ── */}
       <section className="px-6 py-14 max-w-lg mx-auto w-full border-t border-[var(--color-border)] flex flex-col gap-6">
         <div className="flex items-end justify-between">
-          <div className="flex flex-col gap-0.5">
-            <h2 className="text-2xl font-display font-black tracking-tight">This week&apos;s sharp</h2>
-            <p className="text-sm text-[var(--color-text-muted)]">Ranked by win rate, weighted by calibration</p>
-          </div>
-          <Link href="/leaderboard" className="text-xs font-black text-[var(--color-brand-primary)] hover:underline">
-            Full board →
+          <h2 className="text-2xl font-display font-black tracking-tight">The leaderboard</h2>
+          <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline">
+            See all →
           </Link>
         </div>
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden">
-          {MOCK_LEADERS.map(({ rank, name, record, hot }) => (
+          <div className="grid grid-cols-4 px-4 py-2 border-b border-[var(--color-border)] text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
+            <span>#</span>
+            <span className="col-span-2">Forecaster</span>
+            <span className="text-right">Win %</span>
+          </div>
+          {LEADERBOARD.map(({ rank, name, w, l, pct }) => (
             <div
               key={rank}
-              className="flex items-center gap-4 px-4 py-3.5 border-b border-[var(--color-border)] last:border-0"
+              className="grid grid-cols-4 px-4 py-3 border-b border-[var(--color-border)] last:border-0 items-center"
             >
-              <span className="text-sm font-black text-[var(--color-text-muted)] w-5 shrink-0">{rank}</span>
-              <div className="flex-1 flex items-center gap-2 min-w-0">
-                <span className="text-sm font-bold text-[var(--color-text-primary)] truncate">{name}</span>
-                {hot && (
-                  <span className="text-[10px] font-black text-[var(--color-brand-primary)] px-1.5 py-0.5 rounded-md border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-dim)] shrink-0">
-                    HOT
-                  </span>
-                )}
+              <span className="text-sm font-black text-[var(--color-text-muted)]">{rank}</span>
+              <div className="col-span-2 flex flex-col">
+                <span className="text-sm font-bold text-[var(--color-text-primary)]">{name}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)]">{w}W – {l}L</span>
               </div>
-              <span className="text-sm font-black text-[var(--color-text-secondary)] shrink-0">{record}</span>
+              <span className="text-right text-sm font-black text-[var(--color-success)]">
+                {pct}%
+              </span>
             </div>
           ))}
         </div>
-      </section>
-
-      {/* ── What it is ── */}
-      <section className="px-6 py-14 max-w-lg mx-auto w-full border-t border-[var(--color-border)] flex flex-col gap-5">
-        <h2 className="text-2xl font-display font-black tracking-tight">Not a sportsbook.</h2>
-        <div className="flex flex-col gap-4 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-          <p>
-            The Card is a prediction market. You buy YES or NO contracts on real outcomes at live prices.
-            If you&apos;re right, you get paid. The price <em>is</em> the crowd&apos;s forecast — not set by a house.
-          </p>
-          <p>
-            No house edge. No juice. The market price reflects exactly what bettors think will happen,
-            updated live as money comes in on both sides.
-          </p>
-          <p className="text-[var(--color-text-muted)]">
-            Real-money settlement via Kalshi&apos;s regulated US exchange — launching soon.
-            Practice free on The Card today to get your edge before the stakes are live.
-          </p>
-        </div>
-        <Link
-          href="/card"
-          className="mt-2 inline-flex items-center gap-2 text-sm font-black text-[var(--color-brand-primary)] hover:underline"
-        >
-          Open Tonight&apos;s Card →
-        </Link>
       </section>
 
       {/* ── Footer ── */}
@@ -241,14 +212,13 @@ export default function LandingPage() {
         <div className="max-w-lg mx-auto flex flex-col gap-3">
           <span className="font-display font-black text-sm tracking-tight">The Card</span>
           <p className="text-xs text-[var(--color-text-muted)] leading-relaxed max-w-sm">
-            Fan-first sports prediction. Ten markets. Live odds. One jackpot.
-            Markets powered by Kalshi&apos;s regulated US exchange.
+            Sports prediction markets for fans. Real markets, live odds, no house edge.
+            Powered by Kalshi&apos;s regulated exchange.
           </p>
-          <div className="flex flex-wrap gap-5 pt-1">
+          <div className="flex gap-5 pt-1 flex-wrap">
             <Link href="/card"        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Tonight&apos;s Card</Link>
             <Link href="/live"        className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Live</Link>
-            <Link href="/learn"       className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Practice</Link>
-            <Link href="/picks"       className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Picks</Link>
+            <Link href="/learn"       className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Practice Mode</Link>
             <Link href="/leaderboard" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Leaderboard</Link>
           </div>
         </div>
