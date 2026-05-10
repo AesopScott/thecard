@@ -55,7 +55,7 @@ export default function LandingPage() {
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.12) 50%, transparent 100%)",
+          background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)",
           animation: "breathe 8s ease-in-out infinite",
           zIndex: 0,
         }}
@@ -82,7 +82,7 @@ export default function LandingPage() {
           <aside className="lg:col-span-1 order-3 lg:order-1">
             <div className="sticky top-24 space-y-4">
               <div className="rounded-2xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)] p-5 space-y-4 relative overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
+                <div className="absolute inset-0 pointer-events-none opacity-40" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
                 <div className="relative z-10">
                   <h3 className="text-sm font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Upcoming</h3>
                   <div className="space-y-3">
@@ -209,7 +209,7 @@ export default function LandingPage() {
                   className="absolute inset-0 opacity-10 pointer-events-none"
                   style={{ background: "radial-gradient(ellipse at top left, #ff3c3c 0%, transparent 60%)" }}
                 />
-                <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }}
+                <div className="absolute inset-0 pointer-events-none opacity-40" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
                 <div className="relative">
                   <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
                     🏆 Perfect 10
@@ -279,7 +279,6 @@ export default function LandingPage() {
               </Link>
             ))}
           </div>
-        </div>
         </div>
       </section>
 

@@ -66,10 +66,10 @@ function IntroScreen({
 
   if (saved) {
     const correct = saved.picks.filter(
-      (p, i) => p !== "skip" && p === outcomes[DAILY_MARKETS[i].id]
+      (p, i) => p !== "skip" && p === outcomes[DAILY_MARKETS[i]!.id]
     ).length;
     const total = saved.picks.reduce(
-      (sum, p, i) => sum + pts(p, outcomes[DAILY_MARKETS[i].id], saved.times[i]),
+      (sum, p, i) => sum + pts(p, outcomes[DAILY_MARKETS[i]!.id]!, saved.times[i]!),
       0
     );
 
@@ -261,10 +261,10 @@ function ResultsScreen({
   outcomes: Record<string, "yes" | "no">;
 }) {
   const correct = picks.filter(
-    (p, i) => p !== "skip" && p === outcomes[DAILY_MARKETS[i].id]
+    (p, i) => p !== "skip" && p === outcomes[DAILY_MARKETS[i]!.id]
   ).length;
   const totalPts = picks.reduce(
-    (sum, p, i) => sum + pts(p, outcomes[DAILY_MARKETS[i].id], times[i]),
+    (sum, p, i) => sum + pts(p, outcomes[DAILY_MARKETS[i]!.id]!, times[i]!),
     0
   );
   const maxPts = DAILY_MARKETS.length * 2;
@@ -295,11 +295,11 @@ function ResultsScreen({
       {/* Market breakdown */}
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden">
         {DAILY_MARKETS.map((m, i) => {
-          const p = picks[i];
-          const outcome = outcomes[m.id];
+          const p = picks[i] ?? "skip";
+          const outcome = outcomes[m.id]!;
           const isCorrect = p !== "skip" && p === outcome;
           const isSkip = p === "skip";
-          const earned = pts(p, outcome, times[i]);
+          const earned = pts(p, outcome, times[i]!);
 
           return (
             <div
@@ -459,7 +459,7 @@ export function BlitzClient() {
   if (phase === "playing") {
     return (
       <PlayingScreen
-        market={DAILY_MARKETS[qIdx]}
+        market={DAILY_MARKETS[qIdx]!}
         qIdx={qIdx}
         total={DAILY_MARKETS.length}
         timeLeft={timeLeft}

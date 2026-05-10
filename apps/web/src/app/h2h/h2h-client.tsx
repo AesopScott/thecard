@@ -84,7 +84,7 @@ function PickingScreen({
   onBack: () => void;
   onSubmit: () => void;
 }) {
-  const market = DAILY_MARKETS[qIdx];
+  const market = DAILY_MARKETS[qIdx]!;
   const allPicked = picks.every((p) => p !== null);
   const current = picks[qIdx];
 
