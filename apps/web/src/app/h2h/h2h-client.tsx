@@ -212,7 +212,7 @@ function LockedScreen({
 
         {DAILY_MARKETS.map((m, i) => {
           const yours = picks[i];
-          const theirs = opponentPicks[m.id];
+          const theirs = opponentPicks[m.id]!;
           const diff = yours !== theirs;
 
           return (
@@ -306,9 +306,9 @@ function ResultsScreen({
           <span className="text-center">{OPPONENT.emoji}</span>
         </div>
         {DAILY_MARKETS.map((m, i) => {
-          const outcome = outcomes[m.id];
+          const outcome = outcomes[m.id]!;
           const yours = picks[i];
-          const theirs = opponentPicks[m.id];
+          const theirs = opponentPicks[m.id]!;
           const youGot = yours === outcome;
           const theyGot = theirs === outcome;
 
