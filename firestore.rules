@@ -130,6 +130,30 @@ service cloud.firestore {
           && request.resource.data.isBust is bool;
         allow delete: if false;
       }
+
+      match /seasonMemberships/{leagueId} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isVerified()
+          && request.auth.uid == uid
+          && request.resource.data.leagueId == leagueId
+          && request.resource.data.seasonId is string
+          && request.resource.data.startingBankroll is number
+          && request.resource.data.currentBankroll is number
+          && request.resource.data.betCount is number
+          && request.resource.data.isBust is bool
+          && request.resource.data.joinedAtMs is number;
+        allow update: if isVerified()
+          && request.auth.uid == uid
+          && resource.data.leagueId == leagueId
+          && request.resource.data.leagueId == leagueId
+          && request.resource.data.seasonId == resource.data.seasonId
+          && request.resource.data.startingBankroll == resource.data.startingBankroll
+          && request.resource.data.joinedAtMs == resource.data.joinedAtMs
+          && request.resource.data.currentBankroll is number
+          && request.resource.data.betCount is number
+          && request.resource.data.isBust is bool;
+        allow delete: if false;
+      }
     }
   }
 }

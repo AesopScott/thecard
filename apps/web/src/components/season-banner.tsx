@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
 import {
   ACTIVE_SEASON,
   GLOBAL_LEAGUE,
@@ -11,6 +12,7 @@ import {
   getBankroll,
   getSeasonNumber,
   getSeasonStatus,
+  getUserSeasonMembership,
   initGlobalLeague,
 } from "@/lib/season-store";
 
@@ -19,18 +21,26 @@ interface SeasonBannerProps {
 }
 
 export function SeasonBanner({ variant = "compact" }: SeasonBannerProps) {
+  const { user, verificationRequired } = useAuth();
   const [bankroll, setBankroll] = useState(STARTING_BANKROLL);
 
   useEffect(() => {
     initGlobalLeague();
-    setBankroll(getBankroll(GLOBAL_LEAGUE.id));
-
-    function onUpdate() {
-      setBankroll(getBankroll(GLOBAL_LEAGUE.id));
+    function refresh() {
+      if (user && !verificationRequired) {
+        getUserSeasonMembership(user.uid)
+          .then((membership) => setBankroll(membership.currentBankroll))
+          .catch(() => setBankroll(getBankroll(GLOBAL_LEAGUE.id)));
+      } else {
+        setBankroll(getBankroll(GLOBAL_LEAGUE.id));
+      }
     }
+    refresh();
+
+    function onUpdate() { refresh(); }
     window.addEventListener(SEASON_BANKROLL_EVENT, onUpdate);
     return () => window.removeEventListener(SEASON_BANKROLL_EVENT, onUpdate);
-  }, []);
+  }, [user, verificationRequired]);
 
   const status = getSeasonStatus(ACTIVE_SEASON);
   const pnl = bankroll - STARTING_BANKROLL;

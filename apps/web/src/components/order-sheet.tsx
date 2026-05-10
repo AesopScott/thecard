@@ -10,8 +10,9 @@ import {
   GLOBAL_LEAGUE,
   SEASON_BANKROLL_EVENT,
   getBankroll,
+  getUserSeasonMembership,
   initGlobalLeague,
-  placeBet,
+  placeUserSeasonBet,
 } from "@/lib/season-store";
 import { getActiveJoinedLeaguesForSportForUser, placeUserLeagueBet } from "@/lib/league-store";
 import type { Market, Odds } from "@thecard/types";
@@ -38,10 +39,20 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
   });
 
   useEffect(() => {
-    function onUpdate() { setBankroll(getBankroll(GLOBAL_LEAGUE.id)); }
+    function refresh() {
+      if (user) {
+        getUserSeasonMembership(user.uid)
+          .then((membership) => setBankroll(membership.currentBankroll))
+          .catch(() => setBankroll(getBankroll(GLOBAL_LEAGUE.id)));
+      } else {
+        setBankroll(getBankroll(GLOBAL_LEAGUE.id));
+      }
+    }
+    refresh();
+    function onUpdate() { refresh(); }
     window.addEventListener(SEASON_BANKROLL_EVENT, onUpdate);
     return () => window.removeEventListener(SEASON_BANKROLL_EVENT, onUpdate);
-  }, []);
+  }, [user]);
 
   const price = side === "yes" ? odds.yes : odds.no;
   const priceCents = Math.round(price * 100);
@@ -87,7 +98,12 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
         amountUsd: dollarAmount,
       });
       // Deduct from global monthly bankroll
-      placeBet(GLOBAL_LEAGUE.id, dollarAmount);
+      const seasonMembership = await placeUserSeasonBet(user.uid, dollarAmount);
+      if (!seasonMembership) {
+        setSheetState("input");
+        return;
+      }
+      setBankroll(seasonMembership.currentBankroll);
       // Deduct from any active sport leagues the user has joined for this sport
       for (const leagueId of await getActiveJoinedLeaguesForSportForUser(user.uid, market.sport)) {
         await placeUserLeagueBet(user.uid, leagueId, dollarAmount);

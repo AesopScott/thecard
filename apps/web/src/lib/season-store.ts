@@ -1,4 +1,6 @@
 import type { Season, League, LeagueMembership, SeasonLeaderboardEntry } from "@thecard/types";
+import { doc, getDoc, runTransaction, serverTimestamp, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 export const STARTING_BANKROLL = 1_000;
 
@@ -98,6 +100,16 @@ function write(state: SeasonState): void {
   window.dispatchEvent(new Event(SEASON_BANKROLL_EVENT));
 }
 
+function writeCache(state: SeasonState): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function dispatchSeasonEvent(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(SEASON_BANKROLL_EVENT));
+}
+
 function ensureMembership(state: SeasonState, leagueId: string, seasonId: string): SeasonState {
   if (state.memberships[leagueId]) return state;
   return {
@@ -165,6 +177,112 @@ export function recordPayout(leagueId: string, payout: number): void {
     },
   };
   write(state);
+}
+
+function fromFirestore(leagueId: string, data: Record<string, unknown>): LeagueMembership {
+  return {
+    leagueId,
+    seasonId: (data.seasonId as string | undefined) ?? ACTIVE_SEASON.id,
+    startingBankroll: (data.startingBankroll as number | undefined) ?? STARTING_BANKROLL,
+    currentBankroll: (data.currentBankroll as number | undefined) ?? STARTING_BANKROLL,
+    betCount: (data.betCount as number | undefined) ?? 0,
+    isBust: (data.isBust as boolean | undefined) ?? false,
+    joinedAt: (data.joinedAtMs as number | undefined) ?? (data.joinedAt as number | undefined) ?? Date.now(),
+  };
+}
+
+function cacheMembership(membership: LeagueMembership): void {
+  const state = ensureMembership(read(), membership.leagueId, membership.seasonId);
+  writeCache({
+    ...state,
+    memberships: {
+      ...state.memberships,
+      [membership.leagueId]: membership,
+    },
+  });
+}
+
+export async function getUserSeasonMembership(uid: string, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
+  if (!db) return getMembership(leagueId);
+  const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) {
+    const membership = fromFirestore(leagueId, snap.data());
+    cacheMembership(membership);
+    return membership;
+  }
+  const membership: LeagueMembership = {
+    leagueId,
+    seasonId: ACTIVE_SEASON.id,
+    startingBankroll: STARTING_BANKROLL,
+    currentBankroll: STARTING_BANKROLL,
+    betCount: 0,
+    isBust: false,
+    joinedAt: Date.now(),
+  };
+  await setDoc(ref, {
+    ...membership,
+    joinedAtMs: membership.joinedAt,
+    joinedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  cacheMembership(membership);
+  dispatchSeasonEvent();
+  return membership;
+}
+
+export async function placeUserSeasonBet(uid: string, amount: number, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership | null> {
+  if (!db) {
+    const ok = placeBet(leagueId, amount);
+    return ok ? getMembership(leagueId) : null;
+  }
+  const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
+  const updated = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    let membership: LeagueMembership;
+    const exists = snap.exists();
+    if (exists) {
+      membership = fromFirestore(leagueId, snap.data());
+    } else {
+      membership = {
+        leagueId,
+        seasonId: ACTIVE_SEASON.id,
+        startingBankroll: STARTING_BANKROLL,
+        currentBankroll: STARTING_BANKROLL,
+        betCount: 0,
+        isBust: false,
+        joinedAt: Date.now(),
+      };
+    }
+    if (membership.isBust || membership.currentBankroll < amount) return null;
+    const newBankroll = Math.max(0, membership.currentBankroll - amount);
+    const next: LeagueMembership = {
+      ...membership,
+      currentBankroll: newBankroll,
+      betCount: membership.betCount + 1,
+      isBust: newBankroll <= 0,
+    };
+    if (exists) {
+      tx.update(ref, {
+        currentBankroll: next.currentBankroll,
+        betCount: next.betCount,
+        isBust: next.isBust,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      tx.set(ref, {
+        ...next,
+        joinedAtMs: next.joinedAt,
+        joinedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return next;
+  });
+  if (!updated) return null;
+  cacheMembership(updated);
+  dispatchSeasonEvent();
+  return updated;
 }
 
 // Inserts the user's real bankroll + betCount into mock standings at the correct rank

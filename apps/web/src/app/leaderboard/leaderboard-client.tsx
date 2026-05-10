@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
 import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-store";
 import {
   ACTIVE_SEASON,
@@ -9,10 +10,10 @@ import {
   SEASON_BANKROLL_EVENT,
   STARTING_BANKROLL,
   buildSeasonLeaderboard,
-  getBankroll,
   getMembership,
   getSeasonNumber,
   getSeasonStatus,
+  getUserSeasonMembership,
   initGlobalLeague,
 } from "@/lib/season-store";
 import { SeasonBanner } from "@/components/season-banner";
@@ -23,21 +24,34 @@ type Tab = "season" | "calibration";
 // ── Season tab ──────────────────────────────────────────────────────────────
 
 function SeasonTab() {
+  const { user, verificationRequired } = useAuth();
   const [membership, setMembership] = useState(() => getMembership(GLOBAL_LEAGUE.id));
-  const [board, setBoard] = useState<SeasonLeaderboardEntry[]>([]);
+  const [board, setBoard] = useState<SeasonLeaderboardEntry[]>(() => {
+    const membership = getMembership(GLOBAL_LEAGUE.id);
+    return buildSeasonLeaderboard(membership.currentBankroll, membership.betCount);
+  });
   const status = getSeasonStatus(ACTIVE_SEASON);
 
   useEffect(() => {
     initGlobalLeague();
     function refresh() {
+      const applyMembership = (m: ReturnType<typeof getMembership>) => {
+        setMembership(m);
+        setBoard(buildSeasonLeaderboard(m.currentBankroll, m.betCount));
+      };
+      if (user && !verificationRequired) {
+        getUserSeasonMembership(user.uid)
+          .then(applyMembership)
+          .catch(() => applyMembership(getMembership(GLOBAL_LEAGUE.id)));
+        return;
+      }
       const m = getMembership(GLOBAL_LEAGUE.id);
-      setMembership(m);
-      setBoard(buildSeasonLeaderboard(m.currentBankroll, m.betCount));
+      applyMembership(m);
     }
     refresh();
     window.addEventListener(SEASON_BANKROLL_EVENT, refresh);
     return () => window.removeEventListener(SEASON_BANKROLL_EVENT, refresh);
-  }, []);
+  }, [user, verificationRequired]);
 
   const pnl = membership.currentBankroll - STARTING_BANKROLL;
   const pnlColor = pnl >= 0 ? "var(--color-card-yes)" : "var(--color-card-no)";
