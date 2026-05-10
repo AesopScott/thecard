@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
@@ -25,6 +25,25 @@ export function OnboardingSheet() {
   const teamPhotoInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>("username");
+
+  useEffect(() => {
+    if (!needsOnboarding) return;
+    setStep("username");
+    setUsernameValue("");
+    setUsernameError(null);
+    setSavingUsername(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setUploadingAvatar(false);
+    setTeamMode("choose");
+    setTeamName("");
+    setTeamPhotoFile(null);
+    setTeamPhotoPreview(null);
+    setInviteCode("");
+    setTeamError(null);
+    setTeamBusy(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsOnboarding]);
 
   const [username, setUsernameValue] = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
