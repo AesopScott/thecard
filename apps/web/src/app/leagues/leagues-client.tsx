@@ -15,19 +15,14 @@ import {
 import {
   LEAGUE_BANKROLL_EVENT,
   STARTING_BANKROLL,
+  subscribeFreeLeagueLeaderboard,
   getUserLeagueMemberships,
   joinUserLeague,
+  type FreeLeagueLeaderboardEntry,
 } from "@/lib/league-store";
 
 type MembershipMap = Record<string, LeagueMembership>;
-
-interface FreeLeagueStanding {
-  rank: number;
-  displayName: string;
-  bankroll: number;
-  betCount: number;
-  isYou?: boolean;
-}
+type LeaderboardMap = Record<string, FreeLeagueLeaderboardEntry[]>;
 
 function toMembershipMap(memberships: LeagueMembership[]): MembershipMap {
   return Object.fromEntries(memberships.map((membership) => [membership.leagueId, membership]));
@@ -68,7 +63,7 @@ function seededDelta(seed: string, index: number): number {
   return spread;
 }
 
-function buildFreeLeagueStandings(league: SportLeague, membership: LeagueMembership): FreeLeagueStanding[] {
+function buildFreeLeagueStandings(league: SportLeague, membership: LeagueMembership): FreeLeagueLeaderboardEntry[] {
   const handles = [
     "SharpMike",
     "LineReader",
@@ -80,14 +75,24 @@ function buildFreeLeagueStandings(league: SportLeague, membership: LeagueMembers
     "MarketMover",
   ];
   const mocks = handles.map((displayName, index) => ({
+    uid: `mock-${league.id}-${index}`,
+    username: displayName.toLowerCase(),
     displayName,
+    photoURL: null,
     bankroll: STARTING_BANKROLL + seededDelta(`${league.id}:${displayName}`, index),
+    shadowWinnings: seededDelta(`${league.id}:${displayName}`, index),
     betCount: 8 + Math.abs(seededDelta(`${displayName}:bets`, index)) % 31,
+    joinedAtMs: Date.now() - index * 86_400_000,
   }));
   const you = {
+    uid: "you",
+    username: "you",
     displayName: "You",
+    photoURL: null,
     bankroll: membership.currentBankroll,
+    shadowWinnings: membership.currentBankroll - membership.startingBankroll,
     betCount: membership.betCount,
+    joinedAtMs: membership.joinedAt,
     isYou: true,
   };
   return [...mocks, you]
@@ -95,8 +100,16 @@ function buildFreeLeagueStandings(league: SportLeague, membership: LeagueMembers
     .map((entry, index) => ({ ...entry, rank: index + 1 }));
 }
 
-function FreeLeagueLeaderboard({ league, membership }: { league: SportLeague; membership: LeagueMembership }) {
-  const standings = buildFreeLeagueStandings(league, membership);
+function FreeLeagueLeaderboard({
+  league,
+  membership,
+  entries,
+}: {
+  league: SportLeague;
+  membership: LeagueMembership;
+  entries: FreeLeagueLeaderboardEntry[];
+}) {
+  const standings = entries.length > 0 ? entries : buildFreeLeagueStandings(league, membership);
   const shadowPnl = membership.currentBankroll - membership.startingBankroll;
   const shadowColor = shadowPnl >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]";
 
@@ -137,7 +150,7 @@ function FreeLeagueLeaderboard({ league, membership }: { league: SportLeague; me
   );
 }
 
-function YourLeagues({ memberships }: { memberships: MembershipMap }) {
+function YourLeagues({ memberships, leaderboards }: { memberships: MembershipMap; leaderboards: LeaderboardMap }) {
   const joined = useMemo(
     () => getLeaguesByGroup().flatMap((group) => group.leagues).filter((league) => memberships[league.id]),
     [memberships],
@@ -168,7 +181,7 @@ function YourLeagues({ memberships }: { memberships: MembershipMap }) {
                   </div>
                   <BankrollSummary membership={membership} />
                 </div>
-                <FreeLeagueLeaderboard league={league} membership={membership} />
+                <FreeLeagueLeaderboard league={league} membership={membership} entries={leaderboards[league.id] ?? []} />
               </div>
             </div>
           );
@@ -290,6 +303,7 @@ export function LeaguesClient() {
   const { user, verificationRequired } = useAuth();
   const groups = getLeaguesByGroup();
   const [memberships, setMemberships] = useState<MembershipMap>({});
+  const [leaderboards, setLeaderboards] = useState<LeaderboardMap>({});
   const [loading, setLoading] = useState(false);
   const [joiningLeagueId, setJoiningLeagueId] = useState<string | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);
@@ -312,6 +326,24 @@ export function LeaguesClient() {
     window.addEventListener(LEAGUE_BANKROLL_EVENT, refresh);
     return () => window.removeEventListener(LEAGUE_BANKROLL_EVENT, refresh);
   }, [refresh]);
+
+  useEffect(() => {
+    if (!user || verificationRequired) {
+      setLeaderboards({});
+      return;
+    }
+    const leagueIds = Object.keys(memberships);
+    if (leagueIds.length === 0) {
+      setLeaderboards({});
+      return;
+    }
+    const unsubs = leagueIds.map((leagueId) => subscribeFreeLeagueLeaderboard(
+      leagueId,
+      (entries) => setLeaderboards((current) => ({ ...current, [leagueId]: entries })),
+      user.uid,
+    ));
+    return () => unsubs.forEach((unsub) => unsub());
+  }, [memberships, user, verificationRequired]);
 
   async function handleJoin(leagueId: string) {
     if (!user) {
@@ -363,7 +395,7 @@ export function LeaguesClient() {
         {error && <p className="mb-4 rounded-lg border border-[var(--color-danger)]/30 px-3 py-2 text-xs text-[var(--color-danger)]">{error}</p>}
         {loading && <p className="mb-4 text-xs text-[var(--color-text-muted)]">Loading your leagues...</p>}
 
-        <YourLeagues memberships={memberships} />
+        <YourLeagues memberships={memberships} leaderboards={leaderboards} />
 
         <h2 className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest mb-5">
           Browse All Leagues

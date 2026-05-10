@@ -1,10 +1,36 @@
 import type { LeagueMembership, Sport } from "@thecard/types";
-import { collection, doc, getDoc, getDocs, runTransaction, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  setDoc,
+  type Unsubscribe,
+} from "firebase/firestore";
 import { db } from "./firebase";
 import { SPORT_LEAGUES, getLeagueStatus } from "./sport-leagues";
 
 export const STARTING_BANKROLL = 1_000;
 export const LEAGUE_BANKROLL_EVENT = "thecard:league:bankroll";
+
+export interface FreeLeagueLeaderboardEntry {
+  uid: string;
+  username: string;
+  displayName: string;
+  photoURL: string | null;
+  bankroll: number;
+  shadowWinnings: number;
+  betCount: number;
+  joinedAtMs: number;
+  rank: number;
+  isYou?: boolean;
+}
 
 const PREFIX = "thecard:league:v1:";
 
@@ -116,12 +142,40 @@ function dispatchLeagueEvent(): void {
   window.dispatchEvent(new Event(LEAGUE_BANKROLL_EVENT));
 }
 
+async function syncFreeLeagueLeaderboardEntry(uid: string, membership: LeagueMembership): Promise<void> {
+  if (!db) return;
+  try {
+    const userSnap = await getDoc(doc(db, "users", uid));
+    const profile = userSnap.data();
+    const username = (profile?.username as string | undefined) ?? uid;
+    const displayName = (profile?.displayName as string | null | undefined) ?? username;
+    const photoURL = (profile?.photoURL as string | null | undefined) ?? null;
+    const shadowWinnings = membership.currentBankroll - membership.startingBankroll;
+
+    await setDoc(doc(db, "freeLeagueLeaderboards", membership.leagueId, "entries", uid), {
+      uid,
+      username,
+      displayName,
+      photoURL,
+      bankroll: membership.currentBankroll,
+      shadowWinnings,
+      betCount: membership.betCount,
+      isBust: membership.isBust,
+      joinedAtMs: membership.joinedAt,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch {
+    // Leaderboard mirrors should not block the league transaction path.
+  }
+}
+
 export async function getUserLeagueMembership(uid: string, leagueId: string): Promise<LeagueMembership | null> {
   if (!db) return read(leagueId);
   const snap = await getDoc(doc(db, "users", uid, "leagueMemberships", leagueId));
   if (!snap.exists()) return null;
   const membership = fromFirestore(leagueId, snap.data());
   writeCache(membership);
+  void syncFreeLeagueLeaderboardEntry(uid, membership);
   return membership;
 }
 
@@ -152,6 +206,7 @@ export async function joinUserLeague(uid: string, leagueId: string): Promise<Lea
       joinedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    await syncFreeLeagueLeaderboardEntry(uid, membership);
   }
   writeCache(membership);
   dispatchLeagueEvent();
@@ -182,6 +237,7 @@ export async function placeUserLeagueBet(uid: string, leagueId: string, amount: 
     return next;
   });
   if (!updated) return false;
+  await syncFreeLeagueLeaderboardEntry(uid, updated);
   writeCache(updated);
   dispatchLeagueEvent();
   return true;
@@ -210,6 +266,7 @@ export async function recordUserLeaguePayout(uid: string, leagueId: string, payo
     return next;
   });
   if (!updated) return false;
+  await syncFreeLeagueLeaderboardEntry(uid, updated);
   writeCache(updated);
   dispatchLeagueEvent();
   return true;
@@ -240,6 +297,7 @@ export async function refundUserLeagueBet(uid: string, leagueId: string, amount:
     return next;
   });
   if (!updated) return false;
+  await syncFreeLeagueLeaderboardEntry(uid, updated);
   writeCache(updated);
   dispatchLeagueEvent();
   return true;
@@ -251,4 +309,39 @@ export async function getActiveJoinedLeaguesForSportForUser(uid: string, sport: 
   return SPORT_LEAGUES.filter(
     (league) => league.sport === sport && joined.has(league.id) && getLeagueStatus(league) === "active",
   ).map((league) => league.id);
+}
+
+export function subscribeFreeLeagueLeaderboard(
+  leagueId: string,
+  cb: (entries: FreeLeagueLeaderboardEntry[]) => void,
+  currentUid?: string | null
+): Unsubscribe {
+  if (!db) {
+    cb([]);
+    return () => {};
+  }
+  const q = query(
+    collection(db, "freeLeagueLeaderboards", leagueId, "entries"),
+    orderBy("bankroll", "desc"),
+    limit(50)
+  );
+  return onSnapshot(q, (snap) => {
+    const entries = snap.docs.map((entryDoc) => {
+      const data = entryDoc.data();
+      return {
+        uid: (data.uid as string | undefined) ?? entryDoc.id,
+        username: (data.username as string | undefined) ?? entryDoc.id,
+        displayName: (data.displayName as string | undefined) ?? (data.username as string | undefined) ?? "Anonymous",
+        photoURL: (data.photoURL as string | null | undefined) ?? null,
+        bankroll: (data.bankroll as number | undefined) ?? STARTING_BANKROLL,
+        shadowWinnings: (data.shadowWinnings as number | undefined) ?? 0,
+        betCount: (data.betCount as number | undefined) ?? 0,
+        joinedAtMs: (data.joinedAtMs as number | undefined) ?? Date.now(),
+        rank: 0,
+        isYou: currentUid ? entryDoc.id === currentUid : false,
+      };
+    });
+    entries.sort((a, b) => b.bankroll - a.bankroll || b.betCount - a.betCount || a.displayName.localeCompare(b.displayName));
+    cb(entries.map((entry, index) => ({ ...entry, rank: index + 1 })));
+  }, () => cb([]));
 }
