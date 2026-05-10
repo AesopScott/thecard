@@ -40,6 +40,24 @@ export function OnboardingSheet() {
 
   const [step, setStep] = useState<Step>("username");
 
+  const [username, setUsernameValue] = useState("");
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [savingUsername, setSavingUsername] = useState(false);
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  const [teamMode, setTeamMode] = useState<TeamMode>("choose");
+  const [teamName, setTeamName] = useState("");
+  const [teamPhotoFile, setTeamPhotoFile] = useState<File | null>(null);
+  const [teamPhotoPreview, setTeamPhotoPreview] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState("");
+  const [teamError, setTeamError] = useState<string | null>(null);
+  const [teamBusy, setTeamBusy] = useState(false);
+  const [joinedTeam, setJoinedTeam] = useState<Team | null>(null);
+
   useEffect(() => {
     if (!needsOnboarding) return;
     setStep("username");
@@ -58,26 +76,7 @@ export function OnboardingSheet() {
     setTeamError(null);
     setTeamBusy(false);
     setJoinedTeam(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsOnboarding]);
-
-  const [username, setUsernameValue] = useState("");
-  const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [savingUsername, setSavingUsername] = useState(false);
-
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
-
-  const [teamMode, setTeamMode] = useState<TeamMode>("choose");
-  const [teamName, setTeamName] = useState("");
-  const [teamPhotoFile, setTeamPhotoFile] = useState<File | null>(null);
-  const [teamPhotoPreview, setTeamPhotoPreview] = useState<string | null>(null);
-  const [inviteCode, setInviteCode] = useState("");
-  const [teamError, setTeamError] = useState<string | null>(null);
-  const [teamBusy, setTeamBusy] = useState(false);
-  const [joinedTeam, setJoinedTeam] = useState<Team | null>(null);
 
   if (!user || !needsOnboarding) return null;
 
