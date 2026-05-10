@@ -1,4 +1,5 @@
 import Link from "next/link";
+import pkg from "../../../package.json";
 
 const LIVE_MARKETS = [
   { sport: "NFL",    question: "Chiefs cover the spread tonight",     yes: 58, no: 42, time: "8:20 PM ET", logo: "🏈" },
@@ -337,6 +338,7 @@ export default function LandingPage() {
             <Link href="/h2h"         className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Head-to-Head</Link>
             <Link href="/leaderboard" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Leaderboard</Link>
           </div>
+          <span className="text-[10px] text-[var(--color-text-muted)] opacity-40 mt-1 font-mono">v{pkg.version}</span>
         </div>
       </footer>
 
