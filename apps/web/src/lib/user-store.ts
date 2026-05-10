@@ -357,6 +357,19 @@ export async function closePosition(uid: string, positionId: string): Promise<vo
   await deleteDoc(doc(db, "users", uid, "positions", positionId));
 }
 
+export async function closeMatchingPositions(uid: string, marketId: string, side: "yes" | "no"): Promise<void> {
+  if (!db) return;
+  const snap = await getDocs(query(
+    collection(db, "users", uid, "positions"),
+    where("marketId", "==", marketId),
+    where("side", "==", side),
+  ));
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  snap.docs.forEach((positionDoc) => batch.delete(positionDoc.ref));
+  await batch.commit();
+}
+
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
 
 export function subscribeToLeaderboard(

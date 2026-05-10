@@ -7,7 +7,7 @@ import {
   refundUserLeagueBet,
 } from "./league-store";
 import { placeUserSeasonBet, recordUserSeasonPayout, refundUserSeasonBet } from "./season-store";
-import { closePosition, savePosition } from "./user-store";
+import { closeMatchingPositions, savePosition } from "./user-store";
 
 export interface AccountOrderResult {
   marketId: string;
@@ -70,13 +70,13 @@ export async function placeAccountOrder({
 
 export async function closeAccountPosition({
   uid,
-  positionId,
   market,
+  side,
   currentValue,
 }: {
   uid: string;
-  positionId: string;
-  market: Pick<Market, "sport">;
+  market: Pick<Market, "id" | "sport">;
+  side: "yes" | "no";
   currentValue: number;
 }): Promise<void> {
   await recordUserSeasonPayout(uid, currentValue);
@@ -85,5 +85,5 @@ export async function closeAccountPosition({
     await recordUserLeaguePayout(uid, leagueId, currentValue);
   }
 
-  await closePosition(uid, positionId);
+  await closeMatchingPositions(uid, market.id, side);
 }

@@ -121,7 +121,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
   }, []);
 
   useEffect(() => {
-    if (!odds || !user || !position.id) return;
+    if (!odds || !user) return;
     const cp = isYes ? odds.yes : odds.no;
     const o = orders;
     const fired = firedRef.current;
@@ -132,7 +132,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
       fireOrder(`Take-profit hit at ${Math.round(cp * 100)}¢ — selling`);
       if (!market) return;
       setTimeout(() => {
-        closeAccountPosition({ uid: user.uid, positionId: position.id!, market, currentValue })
+        closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue })
           .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
           .catch(() => fireOrder("Auto-sell failed. Try selling manually."));
       }, 400);
@@ -143,7 +143,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
       fireOrder(`Stop-loss hit at ${Math.round(cp * 100)}¢ — selling`);
       if (!market) return;
       setTimeout(() => {
-        closeAccountPosition({ uid: user.uid, positionId: position.id!, market, currentValue })
+        closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue })
           .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
           .catch(() => fireOrder("Auto-sell failed. Try selling manually."));
       }, 400);
@@ -157,13 +157,13 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
         .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
         .catch(() => fireOrder("Auto-buy skipped - insufficient bankroll"));
     }
-  }, [currentValue, fireOrder, isYes, market, odds, orders, position.id, position.side, user]);
+  }, [currentValue, fireOrder, isYes, market, odds, orders, position.side, user]);
 
   async function handleSell() {
-    if (!user || !position.id || !market || selling) return;
+    if (!user || !market || selling) return;
     setSelling(true);
     try {
-      await closeAccountPosition({ uid: user.uid, positionId: position.id, market, currentValue });
+      await closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue });
       window.dispatchEvent(new Event("thecard:order:placed"));
     } finally {
       setSelling(false);
