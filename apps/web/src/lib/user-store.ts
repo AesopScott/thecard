@@ -9,6 +9,8 @@ import {
   orderBy,
   where,
   limit,
+  startAfter,
+  documentId,
   serverTimestamp,
   getDocs,
   updateDoc,
@@ -60,6 +62,11 @@ export interface SettledPositionRecord {
   outcome: "yes" | "no" | "sold";
   openedAtMs: number;
   closedAtMs: number;
+}
+
+export interface SettledPositionsPage {
+  positions: SettledPositionRecord[];
+  nextCursor: { closedAtMs: number; id: string } | null;
 }
 
 // ─── User profile ────────────────────────────────────────────────────────────
@@ -452,30 +459,51 @@ export async function closeMatchingPositions(
 }
 
 export async function getPublicSettledPositions(uid: string, max = 50): Promise<SettledPositionRecord[]> {
-  if (!db) return [];
+  return (await getPublicSettledPositionsPage(uid, max)).positions;
+}
+
+export async function getPublicSettledPositionsPage(
+  uid: string,
+  pageSize = 50,
+  after?: { closedAtMs: number; id: string } | null
+): Promise<SettledPositionsPage> {
+  if (!db) return { positions: [], nextCursor: null };
+  const constraints = [
+    orderBy("closedAtMs", "desc"),
+    orderBy(documentId(), "desc"),
+    ...(after ? [startAfter(after.closedAtMs, after.id)] : []),
+    limit(pageSize),
+  ];
   const snap = await getDocs(query(
     collection(db, "users", uid, "settledPositions"),
-    orderBy("closedAtMs", "desc"),
-    limit(max),
+    ...constraints,
   ));
-  return snap.docs.map((positionDoc) => {
-    const data = positionDoc.data();
-    return {
-      id: positionDoc.id,
-      marketId: data.marketId as string,
-      marketTitle: (data.marketTitle as string | undefined) ?? (data.marketId as string),
-      sport: (data.sport as Sport | undefined) ?? "other",
-      side: data.side as "yes" | "no",
-      contracts: (data.contracts as number | undefined) ?? 0,
-      averagePrice: (data.averagePrice as number | undefined) ?? 0,
-      costBasis: (data.costBasis as number | undefined) ?? 0,
-      payout: (data.payout as number | undefined) ?? 0,
-      pnl: (data.pnl as number | undefined) ?? 0,
-      outcome: (data.outcome as "yes" | "no" | "sold" | undefined) ?? "sold",
-      openedAtMs: (data.openedAtMs as number | undefined) ?? (data.closedAtMs as number | undefined) ?? Date.now(),
-      closedAtMs: (data.closedAtMs as number | undefined) ?? Date.now(),
-    };
-  });
+  const positions = snap.docs.map((positionDoc) => toSettledPositionRecord(positionDoc.id, positionDoc.data()));
+  const lastPosition = positions.at(-1);
+  return {
+    positions,
+    nextCursor: positions.length === pageSize && lastPosition
+      ? { closedAtMs: lastPosition.closedAtMs, id: lastPosition.id }
+      : null,
+  };
+}
+
+function toSettledPositionRecord(id: string, data: Record<string, unknown>): SettledPositionRecord {
+  return {
+    id,
+    marketId: data.marketId as string,
+    marketTitle: (data.marketTitle as string | undefined) ?? (data.marketId as string),
+    sport: (data.sport as Sport | undefined) ?? "other",
+    side: data.side as "yes" | "no",
+    contracts: (data.contracts as number | undefined) ?? 0,
+    averagePrice: (data.averagePrice as number | undefined) ?? 0,
+    costBasis: (data.costBasis as number | undefined) ?? 0,
+    payout: (data.payout as number | undefined) ?? 0,
+    pnl: (data.pnl as number | undefined) ?? 0,
+    outcome: (data.outcome as "yes" | "no" | "sold" | undefined) ?? "sold",
+    openedAtMs: (data.openedAtMs as number | undefined) ?? (data.closedAtMs as number | undefined) ?? Date.now(),
+    closedAtMs: (data.closedAtMs as number | undefined) ?? Date.now(),
+  };
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────

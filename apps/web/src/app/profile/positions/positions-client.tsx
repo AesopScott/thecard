@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  getPublicSettledPositions,
+  getPublicSettledPositionsPage,
   getUserProfileByUsername,
   type SettledPositionRecord,
   type UserProfile,
@@ -20,6 +20,8 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "sold", label: "Sold" },
 ];
 
+const PAGE_SIZE = 100;
+
 export function ProfilePositionsClient() {
   const searchParams = useSearchParams();
   const username = (searchParams.get("u") ?? searchParams.get("username") ?? "").trim().toLowerCase();
@@ -27,6 +29,8 @@ export function ProfilePositionsClient() {
   const [positions, setPositions] = useState<SettledPositionRecord[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<{ closedAtMs: number; id: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,7 +39,15 @@ export function ProfilePositionsClient() {
       .then(async (data) => {
         if (cancelled) return;
         setProfile(data);
-        setPositions(data ? await getPublicSettledPositions(data.uid, 500) : []);
+        if (!data) {
+          setPositions([]);
+          setNextCursor(null);
+          return;
+        }
+        const page = await getPublicSettledPositionsPage(data.uid, PAGE_SIZE);
+        if (cancelled) return;
+        setPositions(page.positions);
+        setNextCursor(page.nextCursor);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -98,6 +110,18 @@ export function ProfilePositionsClient() {
 
   const roi = stats.costBasis > 0 ? (stats.pnl / stats.costBasis) * 100 : 0;
 
+  async function loadMore() {
+    if (!profile || !nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const page = await getPublicSettledPositionsPage(profile.uid, PAGE_SIZE, nextCursor);
+      setPositions((current) => [...current, ...page.positions]);
+      setNextCursor(page.nextCursor);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">
       <header className="flex flex-col gap-3">
@@ -106,7 +130,7 @@ export function ProfilePositionsClient() {
         </Link>
         <div>
           <h1 className="text-3xl font-black text-[var(--color-card-text)]">Position History</h1>
-          <p className="mt-1 text-sm text-[var(--color-card-muted)]">@{profile.username} / {positions.length} closed positions</p>
+          <p className="mt-1 text-sm text-[var(--color-card-muted)]">@{profile.username} / {positions.length}{nextCursor ? "+" : ""} closed positions</p>
         </div>
       </header>
 
@@ -152,6 +176,16 @@ export function ProfilePositionsClient() {
           </div>
         ) : (
           filtered.map((position) => <PositionRow key={position.id} position={position} />)
+        )}
+        {nextCursor && (
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="mt-2 h-11 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] text-sm font-bold text-[var(--color-card-text)] disabled:opacity-50"
+          >
+            {loadingMore ? "Loading..." : "Load more positions"}
+          </button>
         )}
       </section>
     </div>
