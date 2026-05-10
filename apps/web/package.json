@@ -1,6 +1,6 @@
 {
   "name": "@thecard/web",
-  "version": "1.0.3-phase-a",
+  "version": "1.0.4-phase-a",
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",

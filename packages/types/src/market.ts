@@ -49,6 +49,7 @@ export interface Fill {
 }
 
 export interface Position {
+  readonly id?: string;
   readonly userId: string;
   readonly marketId: string;
   readonly side: "yes" | "no";

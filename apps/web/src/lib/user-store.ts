@@ -181,18 +181,27 @@ export function subscribeToPositions(
     cb(
       snap.docs.map((d) => {
         const data = d.data();
+        const contracts = data.contracts as number;
+        const averagePrice = data.averagePrice as number;
         return {
+          id: d.id,
           userId: uid,
           marketId: data.marketId as string,
           side: data.side as "yes" | "no",
-          contracts: data.contracts as number,
-          averagePrice: data.averagePrice as number,
-          currentValue: (data.contracts as number) * (data.averagePrice as number),
+          contracts,
+          averagePrice,
+          currentValue: contracts * averagePrice,
           pnl: 0,
         };
       })
     );
   });
+}
+
+export async function closePosition(uid: string, positionId: string): Promise<void> {
+  if (!db) return;
+  const { deleteDoc } = await import("firebase/firestore");
+  await deleteDoc(doc(db, "users", uid, "positions", positionId));
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────────────────
