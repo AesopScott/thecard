@@ -21,6 +21,14 @@ import {
 
 type MembershipMap = Record<string, LeagueMembership>;
 
+interface FreeLeagueStanding {
+  rank: number;
+  displayName: string;
+  bankroll: number;
+  betCount: number;
+  isYou?: boolean;
+}
+
 function toMembershipMap(memberships: LeagueMembership[]): MembershipMap {
   return Object.fromEntries(memberships.map((membership) => [membership.leagueId, membership]));
 }
@@ -50,6 +58,85 @@ function BankrollSummary({ membership }: { membership: LeagueMembership }) {
   );
 }
 
+function seededDelta(seed: string, index: number): number {
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const spread = ((hash >>> (index % 16)) % 1300) - 450;
+  return spread;
+}
+
+function buildFreeLeagueStandings(league: SportLeague, membership: LeagueMembership): FreeLeagueStanding[] {
+  const handles = [
+    "SharpMike",
+    "LineReader",
+    "PropShop",
+    "LateSteam",
+    "ValueHunter",
+    "PocketEdge",
+    "SundayModel",
+    "MarketMover",
+  ];
+  const mocks = handles.map((displayName, index) => ({
+    displayName,
+    bankroll: STARTING_BANKROLL + seededDelta(`${league.id}:${displayName}`, index),
+    betCount: 8 + Math.abs(seededDelta(`${displayName}:bets`, index)) % 31,
+  }));
+  const you = {
+    displayName: "You",
+    bankroll: membership.currentBankroll,
+    betCount: membership.betCount,
+    isYou: true,
+  };
+  return [...mocks, you]
+    .sort((a, b) => b.bankroll - a.bankroll)
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+}
+
+function FreeLeagueLeaderboard({ league, membership }: { league: SportLeague; membership: LeagueMembership }) {
+  const standings = buildFreeLeagueStandings(league, membership);
+  const shadowPnl = membership.currentBankroll - membership.startingBankroll;
+  const shadowColor = shadowPnl >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]";
+
+  return (
+    <div className="mt-2 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
+            Free League Board
+          </p>
+          <p className="mt-0.5 text-[10px] text-[var(--color-card-muted)]">
+            Shadow result: <span className={shadowColor}>{shadowPnl >= 0 ? "+" : ""}${shadowPnl.toFixed(2)}</span>
+          </p>
+        </div>
+        <span className="rounded-full border border-[var(--color-card-border)] px-2 py-1 text-[10px] font-bold text-[var(--color-card-muted)]">
+          No entry fee
+        </span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {standings.slice(0, 5).map((entry) => {
+          const pnl = entry.bankroll - STARTING_BANKROLL;
+          return (
+            <div
+              key={entry.displayName}
+              className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs ${
+                entry.isYou ? "bg-[var(--color-brand-dim)] text-[var(--color-card-text)]" : "text-[var(--color-card-muted)]"
+              }`}
+            >
+              <span className="font-bold">#{entry.rank} {entry.displayName}</span>
+              <span className={pnl >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}>
+                {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function YourLeagues({ memberships }: { memberships: MembershipMap }) {
   const joined = useMemo(
     () => getLeaguesByGroup().flatMap((group) => group.leagues).filter((league) => memberships[league.id]),
@@ -69,15 +156,20 @@ function YourLeagues({ memberships }: { memberships: MembershipMap }) {
           const status = getLeagueStatus(league);
           return (
             <div key={league.id} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <p className="text-sm font-bold text-[var(--color-card-text)] truncate">{league.name}</p>
-                <p className="text-[10px] text-[var(--color-text-muted)]">
-                  {leagueTypeBadge(league.type, league.half)}
-                  {" - "}
-                  <StatusPill status={status} />
-                </p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <p className="truncate text-sm font-bold text-[var(--color-card-text)]">{league.name}</p>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">
+                      Free league - {leagueTypeBadge(league.type, league.half)}
+                      {" - "}
+                      <StatusPill status={status} />
+                    </p>
+                  </div>
+                  <BankrollSummary membership={membership} />
+                </div>
+                <FreeLeagueLeaderboard league={league} membership={membership} />
               </div>
-              <BankrollSummary membership={membership} />
             </div>
           );
         })}
@@ -145,7 +237,7 @@ function LeagueRow({
             border: "1px solid color-mix(in srgb, var(--color-brand-primary) 30%, transparent)",
           }}
         >
-          {joining ? "Joining..." : "Join - Free"}
+          {joining ? "Joining..." : "Join Free"}
         </button>
       )}
     </div>
@@ -248,14 +340,14 @@ export function LeaguesClient() {
           </Link>
           <h1 className="text-4xl font-display font-black mb-2">Leagues</h1>
           <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">
-            Each league is its own $1,000 bankroll. Join as many as you want. Bets on matching markets count toward every active league you&apos;re in.
+            Free leagues track a $1,000 shadow bankroll and rank what players would have won. Join as many as you want; matching markets count toward every active free league you&apos;re in.
           </p>
         </div>
 
         {!user && (
           <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-center">
             <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to join leagues</p>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">League bankrolls sync to your account.</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Free league leaderboards sync to your account.</p>
             <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
               Sign in
             </button>
@@ -289,7 +381,7 @@ export function LeaguesClient() {
 
         <div className="border-t border-[var(--color-card-border)] pt-6 pb-4 text-center">
           <p className="text-xs text-[var(--color-text-muted)]">
-            All leagues are free to join. Each starts you with $1,000 in practice money.
+            All leagues are free to join. Each starts you with a $1,000 shadow bankroll.
           </p>
         </div>
       </div>
