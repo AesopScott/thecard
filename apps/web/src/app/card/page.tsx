@@ -5,6 +5,7 @@ import { JackpotBanner } from "@/components/jackpot-banner";
 import { PositionsPanel } from "@/components/positions-panel";
 import { UpcomingSportsCard } from "@/components/upcoming-sports-card";
 import { SeasonBanner } from "@/components/season-banner";
+import { SettlementPanel } from "@/components/settlement-panel";
 import type { Odds } from "@thecard/types";
 
 export const metadata = {
@@ -99,6 +100,14 @@ export default async function CardPage() {
 
       {/* Open positions — only renders when user is signed in and has positions */}
       <PositionsPanel />
+
+      <SettlementPanel
+        markets={markets.map((market) => ({
+          id: market.id,
+          title: market.title,
+          sport: market.sport,
+        }))}
+      />
 
     </div>
   );

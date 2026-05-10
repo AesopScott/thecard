@@ -7,19 +7,16 @@ import {
   clearForecasts,
   FORECAST_UPDATED_EVENT,
   loadForecasts,
-  resolveForecast,
   type LocalForecast,
 } from "@/lib/forecast-store";
 import {
   saveForecast,
-  resolveFirestoreForecast,
   subscribeToForecasts,
   clearFirestoreForecasts,
 } from "@/lib/user-store";
 import { useAuth } from "@/contexts/auth-context";
 
 const MIN_PREDICTIONS_FOR_SCORE = 5;
-const MOCK_RESOLVE_DELAY_MS = 4500;
 
 interface UseForecastReturn {
   forecasts: Record<string, LocalForecast>;
@@ -70,15 +67,6 @@ export function useForecast(): UseForecastReturn {
           createdAt: Date.now(),
         }).catch(() => {});
       }
-
-      // Probabilistic mock resolution weighted by predicted probability
-      setTimeout(() => {
-        const outcome: "yes" | "no" = Math.random() < probability ? "yes" : "no";
-        resolveForecast(marketId, outcome);
-        if (user) {
-          resolveFirestoreForecast(user.uid, marketId, outcome).catch(() => {});
-        }
-      }, MOCK_RESOLVE_DELAY_MS);
     },
     [user]
   );

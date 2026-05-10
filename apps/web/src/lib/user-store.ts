@@ -165,6 +165,9 @@ export async function resolveFirestoreForecast(
   if (!db) return;
 
   const forecastRef = doc(db, "users", uid, "forecasts", marketId);
+  const forecastSnap = await getDoc(forecastRef);
+  if (!forecastSnap.exists()) return;
+
   const snap = await getDocs(collection(db, "users", uid, "forecasts"));
 
   let probability = 0.5;
