@@ -2,20 +2,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // User profile — any signed-in user can read (powers leaderboard),
-    // only the owner can write.
+    // User profile + stats — public read (powers leaderboard), owner-only write
     match /users/{uid} {
-      allow read: if request.auth != null;
+      allow read: if true;
       allow write: if request.auth != null && request.auth.uid == uid;
 
-      // Predictions — readable by any signed-in user (public calibration stats),
-      // writable only by the owner.
-      match /predictions/{predictionId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && request.auth.uid == uid;
+      // Forecasts (learn-page predictions) — private to owner
+      match /forecasts/{marketId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
       }
 
-      // Positions — private to the owner only.
+      // Positions (card-page orders) — private to owner
       match /positions/{positionId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }

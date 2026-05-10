@@ -1,3 +1,5 @@
+import { LeaderboardClient } from "./leaderboard-client";
+
 export default function LeaderboardPage() {
   return (
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5">
@@ -29,29 +31,8 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      {/* Empty state */}
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Forecaster</span>
-          <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Calibration</span>
-        </div>
-        <div className="px-4 py-8 flex flex-col items-center gap-2 text-center">
-          <p className="text-sm font-semibold text-[var(--color-card-text)]">
-            No forecasters yet
-          </p>
-          <p className="text-xs text-[var(--color-card-muted)] max-w-xs leading-relaxed">
-            Make predictions in Practice Mode to build your track record.
-            After 5 resolved predictions your calibration score unlocks
-            and you&apos;ll appear here.
-          </p>
-          <a
-            href="/learn"
-            className="mt-2 text-xs font-semibold text-[var(--color-card-accent)] border border-[var(--color-card-accent-dim)] rounded-lg px-4 py-1.5 hover:bg-[var(--color-card-accent-dim)] transition-colors"
-          >
-            Start in Practice Mode
-          </a>
-        </div>
-      </div>
+      {/* Live leaderboard */}
+      <LeaderboardClient />
 
       {/* What a ranked forecaster looks like */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
