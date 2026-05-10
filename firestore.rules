@@ -35,13 +35,13 @@ service cloud.firestore {
         && request.auth.uid == uid
         && (
           isVerified()
-          || request.resource.data.keys().hasOnly(['displayName', 'email', 'photoURL', 'updatedAt'])
+          || request.resource.data.keys().hasOnly(['displayName', 'email', 'emailVerified', 'photoURL', 'updatedAt'])
         );
       allow update: if isSignedIn()
         && request.auth.uid == uid
         && (
           isVerified()
-          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'email', 'photoURL', 'updatedAt'])
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'email', 'emailVerified', 'photoURL', 'updatedAt'])
         );
 
       match /forecasts/{marketId} {

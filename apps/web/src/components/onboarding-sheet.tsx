@@ -32,7 +32,7 @@ function validateUsername(value: string): string | null {
 }
 
 export function OnboardingSheet() {
-  const { user, needsOnboarding, verificationRequired, completeOnboarding } = useAuth();
+  const { user, needsOnboarding, verificationRequired, refreshUser, completeOnboarding } = useAuth();
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const teamPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -119,6 +119,7 @@ export function OnboardingSheet() {
       const available = await checkUsernameAvailable(trimmed);
       if (!available) { setUsernameError("That username is taken. Try another."); return; }
       await persistUsername(user.uid, trimmed);
+      await refreshUser();
       setStep("photo");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";

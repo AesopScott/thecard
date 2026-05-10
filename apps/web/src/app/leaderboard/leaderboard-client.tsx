@@ -115,7 +115,7 @@ function SeasonRow({ entry }: { entry: SeasonLeaderboardEntry }) {
   return (
     <div className={`px-4 py-3 grid grid-cols-[24px_1fr_80px_40px] gap-2 items-center ${highlight}`}>
       <span className="text-xs font-bold text-[var(--color-card-muted)] text-right">{entry.rank}</span>
-      <Link href={`/profile/${entry.displayName.toLowerCase()}`} className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
+      <div className="flex items-center gap-2 min-w-0">
         <div className="w-6 h-6 rounded-full bg-[var(--color-card-accent)] flex items-center justify-center text-white text-[9px] font-black shrink-0">
           {entry.avatarInitial}
         </div>
@@ -123,7 +123,7 @@ function SeasonRow({ entry }: { entry: SeasonLeaderboardEntry }) {
           {entry.displayName}
           {entry.isYou && <span className="ml-1 text-[9px] opacity-60">(you)</span>}
         </span>
-      </Link>
+      </div>
       <div className="flex flex-col items-end">
         <span className="text-xs font-black text-[var(--color-card-text)]">
           ${entry.bankroll.toLocaleString()}
@@ -212,7 +212,7 @@ function CalibrationRow({ rank, entry }: { rank: number; entry: LeaderboardEntry
     "var(--color-card-no)";
 
   return (
-    <Link href={`/profile/${entry.displayName.toLowerCase()}`} className="px-4 py-3 flex items-center gap-3 hover:bg-[var(--color-surface-2)] transition-colors">
+    <Link href={`/profile/${entry.username}`} className="px-4 py-3 flex items-center gap-3 hover:bg-[var(--color-surface-2)] transition-colors">
       <span className="text-xs font-bold text-[var(--color-card-muted)] w-5 shrink-0 text-right">{rank}</span>
       <div className="w-7 h-7 rounded-full bg-[var(--color-card-accent)] flex items-center justify-center text-white text-[10px] font-black shrink-0">
         {entry.photoURL

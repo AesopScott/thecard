@@ -19,6 +19,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   needsOnboarding: boolean;
+  username: string | null;
   emailVerified: boolean;
   verificationRequired: boolean;
   completeOnboarding: () => void;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [username, setUsername] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState(false);
 
   useEffect(() => {
@@ -52,8 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn("User profile sync failed:", error);
         });
         const username = await getUserUsername(u.uid).catch(() => null);
+        setUsername(username);
         setNeedsOnboarding(Boolean(u.emailVerified && !username));
       } else {
+        setUsername(null);
         setNeedsOnboarding(false);
       }
     });
@@ -94,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setEmailVerified(auth.currentUser.emailVerified);
     if (auth.currentUser.emailVerified) {
       const username = await getUserUsername(auth.currentUser.uid).catch(() => null);
+      setUsername(username);
       setNeedsOnboarding(!username);
     }
   }
@@ -106,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verificationRequired = Boolean(user && !emailVerified);
 
   return (
-    <AuthContext.Provider value={{ user, loading, needsOnboarding, emailVerified, verificationRequired, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, refreshUser, signOut }}>
+    <AuthContext.Provider value={{ user, loading, needsOnboarding, username, emailVerified, verificationRequired, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, refreshUser, signOut }}>
       {children}
     </AuthContext.Provider>
   );

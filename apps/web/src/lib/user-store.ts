@@ -23,10 +23,25 @@ import type { Position } from "@thecard/types";
 
 export interface LeaderboardEntry {
   uid: string;
+  username: string;
   displayName: string;
   photoURL: string | null;
   calibrationScore: number;
   resolvedCount: number;
+  teamName: string | null;
+  emailVerified: boolean;
+}
+
+export interface UserProfile {
+  uid: string;
+  username: string;
+  displayName: string;
+  photoURL: string | null;
+  calibrationScore: number;
+  resolvedCount: number;
+  avgBrierScore: number | null;
+  teamName: string | null;
+  emailVerified: boolean;
 }
 
 // ─── User profile ────────────────────────────────────────────────────────────
@@ -35,6 +50,31 @@ export async function getUserUsername(uid: string): Promise<string | null> {
   if (!db) return null;
   const snap = await getDoc(doc(db, "users", uid));
   return (snap.data()?.username as string | undefined) ?? null;
+}
+
+export async function getUserProfileByUsername(username: string): Promise<UserProfile | null> {
+  if (!db) return null;
+  const normalized = username.toLowerCase();
+  const usernameSnap = await getDoc(doc(db, "usernames", normalized));
+  const uid = usernameSnap.data()?.uid as string | undefined;
+  if (!uid) return null;
+
+  const userSnap = await getDoc(doc(db, "users", uid));
+  if (!userSnap.exists()) return null;
+  const data = userSnap.data();
+  const profileUsername = (data.username as string | undefined) ?? normalized;
+
+  return {
+    uid,
+    username: profileUsername,
+    displayName: (data.displayName as string | null) ?? profileUsername,
+    photoURL: (data.photoURL as string | null) ?? null,
+    calibrationScore: (data.calibrationScore as number | undefined) ?? 0,
+    resolvedCount: (data.resolvedCount as number | undefined) ?? 0,
+    avgBrierScore: (data.avgBrierScore as number | undefined) ?? null,
+    teamName: (data.teamName as string | null) ?? null,
+    emailVerified: (data.emailVerified as boolean | undefined) ?? false,
+  };
 }
 
 export async function checkUsernameAvailable(username: string): Promise<boolean> {
@@ -47,7 +87,7 @@ export async function setUsername(uid: string, username: string): Promise<void> 
   if (!db) return;
   const normalized = username.toLowerCase();
   await setDoc(doc(db, "usernames", normalized), { uid });
-  await setDoc(doc(db, "users", uid), { username: normalized }, { merge: true });
+  await setDoc(doc(db, "users", uid), { username: normalized, displayName: normalized }, { merge: true });
 }
 
 export async function upsertUserProfile(user: User): Promise<void> {
@@ -55,9 +95,10 @@ export async function upsertUserProfile(user: User): Promise<void> {
   await setDoc(
     doc(db, "users", user.uid),
     {
-      displayName: user.displayName ?? null,
       email: user.email ?? null,
-      photoURL: user.photoURL ?? null,
+      emailVerified: user.emailVerified,
+      ...(user.displayName && { displayName: user.displayName }),
+      ...(user.photoURL && { photoURL: user.photoURL }),
       updatedAt: serverTimestamp(),
     },
     { merge: true }
@@ -249,10 +290,13 @@ export function subscribeToLeaderboard(
       if ((data.resolvedCount as number | undefined ?? 0) >= 5) {
         entries.push({
           uid: d.id,
-          displayName: (data.displayName as string | null) ?? "Anonymous",
+          username: (data.username as string | undefined) ?? d.id,
+          displayName: (data.displayName as string | null) ?? (data.username as string | undefined) ?? "Anonymous",
           photoURL: (data.photoURL as string | null) ?? null,
           calibrationScore: (data.calibrationScore as number | undefined) ?? 0,
           resolvedCount: (data.resolvedCount as number | undefined) ?? 0,
+          teamName: (data.teamName as string | null) ?? null,
+          emailVerified: (data.emailVerified as boolean | undefined) ?? false,
         });
       }
     });

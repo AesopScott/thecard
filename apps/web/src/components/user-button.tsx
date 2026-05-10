@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { SignInSheet } from "./sign-in-sheet";
 
 export function UserButton() {
-  const { user, loading, signOut } = useAuth();
+  const { user, username, emailVerified, verificationRequired, loading, signOut } = useAuth();
   const [signInOpen, setSignInOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -26,7 +26,9 @@ export function UserButton() {
     );
   }
 
-  const initial = user.displayName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "?";
+  const displayName = username ? `@${username}` : user.displayName ?? user.email ?? "Forecaster";
+  const initial = username?.[0]?.toUpperCase() ?? user.displayName?.[0]?.toUpperCase() ?? user.email?.[0]?.toUpperCase() ?? "?";
+  const profileHref = username ? `/profile/${username}` : "/card";
 
   return (
     <>
@@ -44,19 +46,22 @@ export function UserButton() {
             className="fixed inset-0 z-30"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="fixed top-14 right-4 z-40 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] shadow-lg p-1 min-w-[160px]">
+          <div className="fixed top-14 right-4 z-40 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] shadow-lg p-1 min-w-[190px]">
             <div className="px-3 py-2 border-b border-[var(--color-card-border)] mb-1">
               <p className="text-xs font-semibold text-[var(--color-card-text)] truncate">
-                {user.displayName ?? user.email}
+                {displayName}
               </p>
-              <p className="text-[10px] text-[var(--color-card-muted)]">Forecaster</p>
+              <p className="text-[10px] text-[var(--color-card-muted)] truncate">{user.email}</p>
+              <p className={verificationRequired ? "mt-1 text-[10px] font-bold text-[var(--color-brand-primary)]" : "mt-1 text-[10px] text-[var(--color-card-muted)]"}>
+                {emailVerified ? "Verified forecaster" : "Email verification needed"}
+              </p>
             </div>
             <Link
-              href={`/profile/${(user.displayName ?? user.email ?? "me").toLowerCase()}`}
+              href={profileHref}
               onClick={() => setMenuOpen(false)}
               className="block w-full text-left px-3 py-2 text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] rounded-lg transition-colors"
             >
-              View Profile
+              {username ? "View profile" : "Finish setup"}
             </Link>
             <button
               onClick={async () => {
