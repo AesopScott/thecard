@@ -14,7 +14,6 @@ export default function OgImage() {
   return new ImageResponse(
     (
       <div style={{ width: 1200, height: 630, background: "#0a0a0f", display: "flex" }}>
-        {/* VS divider */}
         <div
           style={{
             position: "absolute",
@@ -41,7 +40,6 @@ export default function OgImage() {
           </span>
         </div>
 
-        {/* Left: YOU */}
         <div
           style={{
             width: 586,
@@ -56,7 +54,7 @@ export default function OgImage() {
           <span style={{ color: "#555", fontSize: 14, fontWeight: 700, letterSpacing: "0.2em" }}>
             YOU
           </span>
-          <span style={{ fontSize: 72, marginTop: 12 }}>🧠</span>
+          <span style={{ color: "#ff3c3c", fontSize: 72, fontWeight: 900, marginTop: 12 }}>H2H</span>
           <span style={{ color: "white", fontSize: 26, fontWeight: 700, marginTop: 8 }}>
             Anonymous
           </span>
@@ -73,8 +71,8 @@ export default function OgImage() {
                   gap: 12,
                 }}
               >
-                <span style={{ color: you ? "#4cff88" : "#ff6666", fontSize: 18, fontWeight: 700 }}>
-                  {you ? "✓" : "✗"}
+                <span style={{ color: you ? "#4cff88" : "#ff6666", fontSize: 16, fontWeight: 900, width: 38 }}>
+                  {you ? "YES" : "NO"}
                 </span>
                 <span style={{ color: "white", fontSize: 16 }}>{q}</span>
               </div>
@@ -85,7 +83,6 @@ export default function OgImage() {
           </span>
         </div>
 
-        {/* Right: THEM */}
         <div
           style={{
             width: 586,
@@ -101,7 +98,7 @@ export default function OgImage() {
           <span style={{ color: "#555", fontSize: 14, fontWeight: 700, letterSpacing: "0.2em" }}>
             THEM
           </span>
-          <span style={{ fontSize: 72, marginTop: 12 }}>🎯</span>
+          <span style={{ color: "#ff3c3c", fontSize: 72, fontWeight: 900, marginTop: 12 }}>VS</span>
           <span style={{ color: "white", fontSize: 26, fontWeight: 700, marginTop: 8 }}>
             SharpScott
           </span>
@@ -118,8 +115,8 @@ export default function OgImage() {
                   gap: 12,
                 }}
               >
-                <span style={{ color: them ? "#4cff88" : "#ff6666", fontSize: 18, fontWeight: 700 }}>
-                  {them ? "✓" : "✗"}
+                <span style={{ color: them ? "#4cff88" : "#ff6666", fontSize: 16, fontWeight: 900, width: 38 }}>
+                  {them ? "YES" : "NO"}
                 </span>
                 <span style={{ color: "white", fontSize: 16 }}>{q}</span>
               </div>
@@ -130,7 +127,6 @@ export default function OgImage() {
           </span>
         </div>
 
-        {/* Bottom URL */}
         <div
           style={{
             position: "absolute",
