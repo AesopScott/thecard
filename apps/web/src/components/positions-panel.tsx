@@ -4,7 +4,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { exchange } from "@/lib/exchange";
 import { closeAccountPosition, placeAccountOrder } from "@/lib/account-order";
-import { subscribeToPositions } from "@/lib/user-store";
+import { consolidatePositions, subscribeToPositions } from "@/lib/user-store";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import type { Market, Odds, Position } from "@thecard/types";
 
@@ -46,7 +46,19 @@ export function PositionsPanel() {
 
   useEffect(() => {
     if (!user) { setPositions([]); return; }
-    if (isFirebaseConfigured) return subscribeToPositions(user.uid, setPositions);
+    if (isFirebaseConfigured) {
+      let unsub: (() => void) | undefined;
+      let cancelled = false;
+      consolidatePositions(user.uid)
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) unsub = subscribeToPositions(user.uid, setPositions);
+        });
+      return () => {
+        cancelled = true;
+        unsub?.();
+      };
+    }
     const uid = user.uid;
     exchange.getPositions(uid).then(setPositions);
     const handler = () => exchange.getPositions(uid).then(setPositions);

@@ -299,6 +299,58 @@ export function subscribeToPositions(
   });
 }
 
+export async function consolidatePositions(uid: string): Promise<void> {
+  if (!db) return;
+  const snap = await getDocs(query(
+    collection(db, "users", uid, "positions"),
+    orderBy("placedAt", "desc")
+  ));
+  const groups = new Map<string, typeof snap.docs>();
+
+  for (const positionDoc of snap.docs) {
+    const data = positionDoc.data();
+    const marketId = data.marketId as string | undefined;
+    const side = data.side as "yes" | "no" | undefined;
+    if (!marketId || !side) continue;
+    const key = `${marketId}:${side}`;
+    groups.set(key, [...(groups.get(key) ?? []), positionDoc]);
+  }
+
+  const batch = writeBatch(db);
+  let changed = false;
+
+  for (const docs of groups.values()) {
+    if (docs.length < 2) continue;
+    const [primary, ...duplicates] = docs;
+    if (!primary) continue;
+    const aggregate = docs.reduce(
+      (acc, positionDoc) => {
+        const data = positionDoc.data();
+        const contracts = (data.contracts as number | undefined) ?? 0;
+        const averagePrice = (data.averagePrice as number | undefined) ?? 0;
+        const amountUsd = (data.amountUsd as number | undefined) ?? contracts * averagePrice;
+        return {
+          contracts: acc.contracts + contracts,
+          amountUsd: acc.amountUsd + amountUsd,
+          costBasis: acc.costBasis + contracts * averagePrice,
+        };
+      },
+      { contracts: 0, amountUsd: 0, costBasis: 0 }
+    );
+
+    batch.update(primary.ref, {
+      amountUsd: aggregate.amountUsd,
+      contracts: aggregate.contracts,
+      averagePrice: aggregate.contracts > 0 ? aggregate.costBasis / aggregate.contracts : 0,
+      updatedAt: serverTimestamp(),
+    });
+    duplicates.forEach((positionDoc) => batch.delete(positionDoc.ref));
+    changed = true;
+  }
+
+  if (changed) await batch.commit();
+}
+
 export async function closePosition(uid: string, positionId: string): Promise<void> {
   if (!db) return;
   const { deleteDoc } = await import("firebase/firestore");
