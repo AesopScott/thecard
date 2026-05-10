@@ -1,5 +1,5 @@
 import Link from "next/link";
-import pkg from "../../../package.json";
+import pkg from "../../package.json";
 
 const LIVE_MARKETS = [
   { sport: "NFL",    question: "Chiefs cover the spread tonight",     yes: 58, no: 42, time: "8:20 PM ET", logo: "🏈" },
