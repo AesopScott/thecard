@@ -58,16 +58,6 @@ const LEADERBOARD = [
 export default function LandingPage() {
   return (
     <div className="min-h-dvh flex flex-col bg-[var(--color-surface-0)] text-[var(--color-text-primary)] relative overflow-hidden">
-      {/* Breathing Gradient Background */}
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)",
-          animation: "breathe 8s ease-in-out infinite",
-          zIndex: 0,
-        }}
-      />
-
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface-0)]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <span className="font-display font-black text-xl tracking-tight">
@@ -347,69 +337,6 @@ export default function LandingPage() {
           <span className="text-[10px] text-[var(--color-text-muted)] opacity-40 mt-1 font-mono">v{VERSION}</span>
         </div>
       </footer>
-
-      {/* ── Global Animations ── */}
-      <style>{`
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInRight {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes slideRight {
-          from {
-            width: 0;
-          }
-          to {
-            width: 100%;
-          }
-        }
-
-        @keyframes bounce {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-4px);
-          }
-        }
-
-        @keyframes breathe {
-          0%, 100% {
-            opacity: 0.15;
-          }
-          50% {
-            opacity: 0.35;
-          }
-        }
-      `}</style>
 
     </div>
   );

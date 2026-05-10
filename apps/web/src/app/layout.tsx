@@ -41,6 +41,10 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body>
         <Providers>
+          <div
+            className="fixed inset-0 pointer-events-none"
+            style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite", zIndex: 0 }}
+          />
           <UserButton />
           <OnboardingSheet />
           <main className="pb-20 min-h-dvh">{children}</main>
