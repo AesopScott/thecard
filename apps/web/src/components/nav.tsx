@@ -7,7 +7,7 @@ import { clsx } from "clsx";
 const NAV_ITEMS = [
   { href: "/card", label: "Card", emoji: "🎴" },
   { href: "/live", label: "Live", emoji: "⚡" },
-  { href: "/learn", label: "Learn", emoji: "📚" },
+  { href: "/leagues", label: "Leagues", emoji: "🏅" },
   { href: "/picks", label: "Picks", emoji: "🎯" },
   { href: "/leaderboard", label: "Board", emoji: "🏆" },
 ] as const;

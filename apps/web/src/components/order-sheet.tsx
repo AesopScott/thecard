@@ -12,6 +12,7 @@ import {
   initGlobalLeague,
   placeBet,
 } from "@/lib/season-store";
+import { getActiveJoinedLeaguesForSport, placeLeagueBet } from "@/lib/league-store";
 import type { Market, Odds } from "@thecard/types";
 
 export const ORDER_PLACED_EVENT = "thecard:order:placed";
@@ -59,8 +60,12 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
         side,
         amountUsd: dollarAmount,
       });
-      // Deduct from season bankroll
+      // Deduct from global monthly bankroll
       placeBet(GLOBAL_LEAGUE.id, dollarAmount);
+      // Deduct from any active sport leagues the user has joined for this sport
+      for (const leagueId of getActiveJoinedLeaguesForSport(market.sport)) {
+        placeLeagueBet(leagueId, dollarAmount);
+      }
       // Persist position to Firestore
       savePosition(user.uid, {
         marketId: fill.marketId,
