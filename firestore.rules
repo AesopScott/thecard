@@ -112,6 +112,20 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+      match /liveRuns/{dateId} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isVerified()
+          && request.auth.uid == uid
+          && request.resource.data.date == dateId
+          && request.resource.data.gameId is string
+          && request.resource.data.picks is list
+          && request.resource.data.outcomes is map
+          && request.resource.data.score is number
+          && request.resource.data.correct is number
+          && request.resource.data.completedAtMs is number;
+        allow update, delete: if false;
+      }
+
       match /leagueMemberships/{leagueId} {
         allow read: if isSignedIn() && request.auth.uid == uid;
         allow create: if isVerified()
@@ -182,6 +196,18 @@ service cloud.firestore {
         && request.resource.data.yourCorrect is number
         && request.resource.data.opponentCorrect is number
         && request.resource.data.margin is number
+        && request.resource.data.completedAtMs is number;
+      allow delete: if false;
+    }
+
+    match /liveLeaderboards/{dateId}/entries/{uid} {
+      allow read: if true;
+      allow create, update: if isVerified()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.score is number
+        && request.resource.data.correct is number
+        && request.resource.data.pickCount is number
         && request.resource.data.completedAtMs is number;
       allow delete: if false;
     }
