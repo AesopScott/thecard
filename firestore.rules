@@ -80,6 +80,18 @@ service cloud.firestore {
           && request.resource.data.contestId == contestId
           && request.resource.data.isSubmitted in [true, false];
       }
+
+      match /blitzRuns/{dateId} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create: if isVerified()
+          && request.auth.uid == uid
+          && request.resource.data.date == dateId
+          && request.resource.data.picks is list
+          && request.resource.data.times is list
+          && request.resource.data.score is number
+          && request.resource.data.correct is number;
+        allow update, delete: if false;
+      }
     }
   }
 }

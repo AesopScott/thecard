@@ -3,17 +3,23 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { DAILY_MARKETS, getDailyOutcomes } from "@/lib/daily-markets";
+import { getStoredBlitzRun, saveBlitzRun, scoreBlitzRun, type BlitzPick } from "@/lib/blitz-store";
+import { useAuth } from "@/contexts/auth-context";
+import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { SignInSheet } from "@/components/sign-in-sheet";
 import type { DailyMarket } from "@/lib/daily-markets";
 
 const SECS = 15;
 const STORAGE_KEY = "blitz_v1";
 
-type Pick = "yes" | "no" | "skip";
+type Pick = BlitzPick;
 
 interface SavedGame {
   date: string;
   picks: Pick[];
   times: number[];
+  score?: number;
+  correct?: number;
 }
 
 function todayStr() {
@@ -33,7 +39,7 @@ function loadSaved(): SavedGame | null {
 }
 
 function persist(picks: Pick[], times: number[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: todayStr(), picks, times }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: todayStr(), picks, times, ...scoreBlitzRun(picks, times) }));
 }
 
 function pts(pick: Pick, outcome: "yes" | "no", timeSec: number): number {
@@ -360,6 +366,7 @@ function ResultsScreen({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function BlitzClient() {
+  const { user, verificationRequired } = useAuth();
   const outcomes = getDailyOutcomes();
 
   const [phase, setPhase] = useState<"intro" | "playing" | "done">("intro");
@@ -367,6 +374,8 @@ export function BlitzClient() {
   const [timeLeft, setTimeLeft] = useState<number>(SECS);
   const [flash, setFlash] = useState<"yes" | "no" | null>(null);
   const [saved, setSaved] = useState<SavedGame | null>(null);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Accumulate picks in a ref to avoid stale-closure issues in the timer
   const gameRef = useRef<{ picks: Pick[]; times: number[] }>({ picks: [], times: [] });
@@ -380,6 +389,24 @@ export function BlitzClient() {
   useEffect(() => {
     setSaved(loadSaved());
   }, []);
+
+  useEffect(() => {
+    if (!user || verificationRequired) return;
+    getStoredBlitzRun(user.uid)
+      .then((run) => {
+        if (!run) return;
+        const savedRun: SavedGame = {
+          date: todayStr(),
+          picks: run.picks,
+          times: run.times,
+          score: run.score,
+          correct: run.correct,
+        };
+        persist(run.picks, run.times);
+        setSaved(savedRun);
+      })
+      .catch(() => setSaveError("Could not load today's Blitz result."));
+  }, [user, verificationRequired]);
 
   const finishQuestion = useCallback((choice: Pick) => {
     if (lockedRef.current) return;
@@ -399,11 +426,16 @@ export function BlitzClient() {
       if (done) {
         const { picks, times } = gameRef.current;
         persist(picks, times);
-        const saved: SavedGame = { date: todayStr(), picks, times };
+        const saved: SavedGame = { date: todayStr(), picks, times, ...scoreBlitzRun(picks, times) };
         setSaved(saved);
         setFinalPicks([...picks]);
         setFinalTimes([...times]);
         setPhase("done");
+        if (user && !verificationRequired) {
+          saveBlitzRun(user.uid, picks, times).catch(() => {
+            setSaveError("Your result is saved locally, but could not sync to your account.");
+          });
+        }
       } else {
         lockedRef.current = false;
         setQIdx(nextIdx);
@@ -411,7 +443,7 @@ export function BlitzClient() {
         qStartRef.current = Date.now();
       }
     }, choice === "skip" ? 50 : 500);
-  }, []);
+  }, [user, verificationRequired]);
 
   // Smooth 100ms timer — restarts per question via qIdx dependency
   useEffect(() => {
@@ -433,6 +465,8 @@ export function BlitzClient() {
   }, [phase, qIdx, finishQuestion]);
 
   function startGame() {
+    if (!user) { setSignInOpen(true); return; }
+    if (verificationRequired || saved) return;
     gameRef.current = { picks: [], times: [] };
     lockedRef.current = false;
     setQIdx(0);
@@ -443,16 +477,32 @@ export function BlitzClient() {
 
   if (phase === "intro") {
     return (
-      <IntroScreen
-        saved={saved}
-        onStart={startGame}
-        onViewResults={() => {
-          if (!saved) return;
-          setFinalPicks(saved.picks);
-          setFinalTimes(saved.times);
-          setPhase("done");
-        }}
-      />
+      <>
+        <IntroScreen
+          saved={saved}
+          onStart={startGame}
+          onViewResults={() => {
+            if (!saved) return;
+            setFinalPicks(saved.picks);
+            setFinalTimes(saved.times);
+            setPhase("done");
+          }}
+        />
+        <div className="mx-auto max-w-lg px-4 pb-24">
+          {!user && (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 text-center">
+              <p className="text-sm font-bold text-[var(--color-text-primary)]">Sign in to play today&apos;s Blitz</p>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">One verified account run per day.</p>
+              <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
+                Sign in
+              </button>
+            </div>
+          )}
+          {user && verificationRequired && <EmailVerificationNotice compact />}
+          {saveError && <p className="mt-3 rounded-lg border border-[var(--color-danger)]/30 px-3 py-2 text-xs text-[var(--color-danger)]">{saveError}</p>}
+        </div>
+        <SignInSheet open={signInOpen} onClose={() => setSignInOpen(false)} />
+      </>
     );
   }
 
@@ -470,6 +520,9 @@ export function BlitzClient() {
   }
 
   return (
-    <ResultsScreen picks={finalPicks} times={finalTimes} outcomes={outcomes} />
+    <>
+      <ResultsScreen picks={finalPicks} times={finalTimes} outcomes={outcomes} />
+      {saveError && <p className="mx-auto max-w-lg px-4 pb-24 text-xs text-[var(--color-danger)]">{saveError}</p>}
+    </>
   );
 }
