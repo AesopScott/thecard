@@ -53,6 +53,7 @@ jobs:
           protocol: ftps
           local-dir: ./apps/web/out/
           server-dir: /
+          force: true
           exclude: |
             **/.git*
             **/.git*/**
