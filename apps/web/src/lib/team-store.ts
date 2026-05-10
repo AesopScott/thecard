@@ -28,8 +28,9 @@ export async function createTeam(uid: string, name: string, photo?: File): Promi
   const teamRef = doc(collection(db, "teams"));
   let photoURL = "";
   if (photo && storage) {
-    const storageRef = ref(storage, `teams/${teamRef.id}/photo`);
-    await uploadBytes(storageRef, photo);
+    const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
+    const storageRef = ref(storage, `team-photos/${teamRef.id}/photo-${Date.now()}.${extension}`);
+    await uploadBytes(storageRef, photo, { contentType: photo.type || "image/jpeg" });
     photoURL = await getDownloadURL(storageRef);
   }
   await setDoc(teamRef, {
@@ -37,6 +38,8 @@ export async function createTeam(uid: string, name: string, photo?: File): Promi
     photoURL,
     inviteCode,
     createdBy: uid,
+    ownerId: uid,
+    memberIds: [uid],
     memberCount: 1,
     createdAt: serverTimestamp(),
   });
@@ -46,8 +49,9 @@ export async function createTeam(uid: string, name: string, photo?: File): Promi
 
 export async function uploadTeamPhoto(teamId: string, photo: File): Promise<string> {
   if (!db || !storage) throw new Error("Firebase not configured");
-  const storageRef = ref(storage, `teams/${teamId}/photo`);
-  await uploadBytes(storageRef, photo);
+  const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
+  const storageRef = ref(storage, `team-photos/${teamId}/photo-${Date.now()}.${extension}`);
+  await uploadBytes(storageRef, photo, { contentType: photo.type || "image/jpeg" });
   const url = await getDownloadURL(storageRef);
   await setDoc(doc(db, "teams", teamId), { photoURL: url }, { merge: true });
   return url;
@@ -62,7 +66,8 @@ export async function joinTeamByCode(uid: string, code: string): Promise<Team> {
   const d = snap.docs[0]!;
   const data = d.data();
   const memberCount = (data.memberCount as number | undefined) ?? 0;
-  await setDoc(d.ref, { memberCount: memberCount + 1 }, { merge: true });
+  const memberIds = Array.isArray(data.memberIds) ? data.memberIds as string[] : [];
+  await setDoc(d.ref, { memberCount: memberCount + 1, memberIds: Array.from(new Set([...memberIds, uid])) }, { merge: true });
   await setDoc(doc(db, "users", uid), { teamId: d.id, teamName: data.name }, { merge: true });
   return {
     id: d.id,

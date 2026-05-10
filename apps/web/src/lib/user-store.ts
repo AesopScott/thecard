@@ -66,8 +66,9 @@ export async function upsertUserProfile(user: User): Promise<void> {
 
 export async function uploadAvatar(uid: string, file: File): Promise<string> {
   if (!storage || !db) throw new Error("Firebase not configured");
-  const r = ref(storage, `avatars/${uid}`);
-  await uploadBytes(r, file);
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const r = ref(storage, `avatars/${uid}/profile-${Date.now()}.${extension}`);
+  await uploadBytes(r, file, { contentType: file.type || "image/jpeg" });
   const url = await getDownloadURL(r);
   await setDoc(doc(db, "users", uid), { photoURL: url }, { merge: true });
   return url;

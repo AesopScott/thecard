@@ -12,6 +12,18 @@ type TeamMode = "choose" | "create" | "join";
 
 const USERNAME_RE = /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/;
 
+async function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), 20000);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 function validateUsername(value: string): string | null {
   if (value.length < 3) return "At least 3 characters.";
   if (!USERNAME_RE.test(value)) return "Letters, numbers, underscores only. Must start with a letter.";
@@ -35,6 +47,7 @@ export function OnboardingSheet() {
     setAvatarFile(null);
     setAvatarPreview(null);
     setUploadingAvatar(false);
+    setAvatarError(null);
     setTeamMode("choose");
     setTeamName("");
     setTeamPhotoFile(null);
@@ -52,6 +65,7 @@ export function OnboardingSheet() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const [teamMode, setTeamMode] = useState<TeamMode>("choose");
   const [teamName, setTeamName] = useState("");
@@ -91,6 +105,7 @@ export function OnboardingSheet() {
   function handleAvatarFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setAvatarError(null);
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   }
@@ -99,7 +114,13 @@ export function OnboardingSheet() {
     if (!user) return;
     if (!skip && avatarFile) {
       setUploadingAvatar(true);
-      try { await uploadAvatar(user.uid, avatarFile); } catch { /* non-fatal */ }
+      setAvatarError(null);
+      try {
+        await withTimeout(uploadAvatar(user.uid, avatarFile), "Upload timed out. Try a smaller image or skip for now.");
+      } catch (e) {
+        setAvatarError(e instanceof Error ? e.message : "Could not upload photo. Try a smaller image or skip for now.");
+        return;
+      }
       finally { setUploadingAvatar(false); }
     }
     setStep("team");
@@ -236,6 +257,7 @@ export function OnboardingSheet() {
                   </div>
                 </div>
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarFileChange} />
+                {avatarError && <p className="text-xs text-[var(--color-danger)]">{avatarError}</p>}
                 <button
                   onClick={() => handlePhotoStep(false)}
                   disabled={uploadingAvatar}
