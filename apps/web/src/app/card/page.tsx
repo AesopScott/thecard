@@ -7,9 +7,6 @@ import { UpcomingSportsCard } from "@/components/upcoming-sports-card";
 import { SeasonBanner } from "@/components/season-banner";
 import type { Odds } from "@thecard/types";
 
-// Mock jackpot — will come from Firestore when backend is wired
-const JACKPOT = { amount: 42000, rolloverWeeks: 2, resetsOn: "Sunday" };
-
 export default async function CardPage() {
   const markets = await exchange.getMarkets({ limit: 25 });
 
@@ -61,11 +58,7 @@ export default async function CardPage() {
       <UpcomingSportsCard />
 
       {/* Perfect 10 jackpot */}
-      <JackpotBanner
-        amount={JACKPOT.amount}
-        rolloverWeeks={JACKPOT.rolloverWeeks}
-        resetsOn={JACKPOT.resetsOn}
-      />
+      <JackpotBanner />
 
       {/* What is this — context banner */}
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5 flex flex-col gap-3">
