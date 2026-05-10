@@ -6,12 +6,12 @@ import { clsx } from "clsx";
 import pkg from "../../package.json";
 
 const NAV_ITEMS = [
-  { href: "/card",       label: "Card",    emoji: "🎴" },
-  { href: "/live",       label: "Live",    emoji: "⚡" },
-  { href: "/blitz",      label: "Blitz",   emoji: "🔥" },
-  { href: "/h2h",        label: "H2H",     emoji: "🥊" },
-  { href: "/leagues",    label: "Leagues", emoji: "🏅" },
-  { href: "/leaderboard",label: "Board",   emoji: "🏆" },
+  { href: "/card",       label: "Card",     emoji: "🎴" },
+  { href: "/live",       label: "Live",     emoji: "⚡" },
+  { href: "/blitz",      label: "Blitz",    emoji: "🔥" },
+  { href: "/h2h",        label: "H2H",      emoji: "🥊" },
+  { href: "/forecast",   label: "Forecast", emoji: "🎯" },
+  { href: "/leaderboard",label: "Board",    emoji: "🏆" },
 ] as const;
 
 export function Nav() {

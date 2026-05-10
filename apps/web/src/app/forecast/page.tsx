@@ -259,7 +259,8 @@ export default function LandingPage() {
             calibration — the same method used by professional analysts and superforecasters.
           </p>
           <div className="flex gap-5 pt-1">
-            <Link href="/learn" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Practice Mode</Link>
+            <Link href="/blitz" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Blitz</Link>
+            <Link href="/h2h" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Head-to-Head</Link>
             <Link href="/card" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Tonight&apos;s Card</Link>
             <Link href="/leaderboard" className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors">Leaderboard</Link>
           </div>
