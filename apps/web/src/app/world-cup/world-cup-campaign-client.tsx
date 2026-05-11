@@ -44,13 +44,58 @@ const SOCIAL_HOOKS: TranslationKey[] = [
   "worldCup.hookSpanish",
 ];
 
+const WORLD_CUP_PAYOUTS: Record<number, number> = {
+  1: 500,
+  2: 250,
+  3: 100,
+  4: 50,
+  5: 50,
+  6: 50,
+};
+
 const PREVIEW_ROWS: FreeLeagueLeaderboardEntry[] = [
-  { uid: "preview-1", username: "azteca11", displayName: "Azteca11", photoURL: null, bankroll: 1430, shadowWinnings: 430, betCount: 18, joinedAtMs: Date.now() - 5 * 86_400_000, rank: 1 },
-  { uid: "preview-2", username: "goalrush", displayName: "GoalRush", photoURL: null, bankroll: 1315, shadowWinnings: 315, betCount: 15, joinedAtMs: Date.now() - 4 * 86_400_000, rank: 2 },
-  { uid: "preview-3", username: "redcardread", displayName: "RedCardRead", photoURL: null, bankroll: 1190, shadowWinnings: 190, betCount: 12, joinedAtMs: Date.now() - 3 * 86_400_000, rank: 3 },
-  { uid: "preview-4", username: "cornerking", displayName: "CornerKing", photoURL: null, bankroll: 1085, shadowWinnings: 85, betCount: 10, joinedAtMs: Date.now() - 2 * 86_400_000, rank: 4 },
-  { uid: "preview-5", username: "lateequalizer", displayName: "LateEqualizer", photoURL: null, bankroll: 1010, shadowWinnings: 10, betCount: 8, joinedAtMs: Date.now() - 86_400_000, rank: 5 },
+  { uid: "preview-1", username: "azteca11", displayName: "Azteca11", photoURL: null, countryCode: "MX", countryName: "Mexico", bankroll: 1430, shadowWinnings: 430, betCount: 18, joinedAtMs: Date.now() - 5 * 86_400_000, rank: 1 },
+  { uid: "preview-2", username: "goalrush", displayName: "GoalRush", photoURL: null, countryCode: "US", countryName: "United States", bankroll: 1315, shadowWinnings: 315, betCount: 15, joinedAtMs: Date.now() - 4 * 86_400_000, rank: 2 },
+  { uid: "preview-3", username: "redcardread", displayName: "RedCardRead", photoURL: null, countryCode: "CA", countryName: "Canada", bankroll: 1190, shadowWinnings: 190, betCount: 12, joinedAtMs: Date.now() - 3 * 86_400_000, rank: 3 },
+  { uid: "preview-4", username: "cornerking", displayName: "CornerKing", photoURL: null, countryCode: "BR", countryName: "Brazil", bankroll: 1085, shadowWinnings: 85, betCount: 10, joinedAtMs: Date.now() - 2 * 86_400_000, rank: 4 },
+  { uid: "preview-5", username: "lateequalizer", displayName: "LateEqualizer", photoURL: null, countryCode: "AR", countryName: "Argentina", bankroll: 1010, shadowWinnings: 10, betCount: 8, joinedAtMs: Date.now() - 86_400_000, rank: 5 },
 ];
+
+function countryFlag(code?: string | null): string {
+  if (!code || code === "OTHER" || code.length !== 2) return String.fromCodePoint(0x1F310);
+  const upper = code.toUpperCase();
+  const points = [...upper].map((char) => 0x1F1E6 + char.charCodeAt(0) - 65);
+  return String.fromCodePoint(...points);
+}
+
+function WorldCupPayoutSummary() {
+  const { t } = useI18n();
+  return (
+    <div className="rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("worldCup.payoutEyebrow")}</p>
+          <h3 className="mt-1 text-lg font-black text-[var(--color-card-text)]">{t("worldCup.payoutTitle")}</h3>
+        </div>
+        <span className="rounded-full bg-[var(--color-brand-primary)] px-3 py-1 text-xs font-black text-white">$1,000</span>
+      </div>
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        {[
+          [t("worldCup.payoutFirst"), "$500"],
+          [t("worldCup.payoutSecond"), "$250"],
+          [t("worldCup.payoutThird"), "$100"],
+          [t("worldCup.payoutFourthSixth"), "$50"],
+        ].map(([label, amount]) => (
+          <div key={label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+            <p className="text-lg font-black text-[var(--color-card-text)]">{amount}</p>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">{label}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-[var(--color-card-muted)]">{t("worldCup.payoutBody")}</p>
+    </div>
+  );
+}
 
 function WorldCupLeaderboard({
   entries,
@@ -87,6 +132,7 @@ function WorldCupLeaderboard({
         {rows.slice(0, 10).map((entry, index) => {
           const rank = entry.rank || index + 1;
           const pnl = entry.bankroll - STARTING_BANKROLL;
+          const payout = WORLD_CUP_PAYOUTS[rank] ?? 0;
           return (
             <div
               key={`${entry.uid}-${rank}`}
@@ -96,8 +142,15 @@ function WorldCupLeaderboard({
             >
               <span className="font-black text-[var(--color-card-text)]">#{rank}</span>
               <div className="min-w-0">
-                <p className="truncate font-black text-[var(--color-card-text)]">{entry.displayName}</p>
-                <p className="truncate text-[10px]">@{entry.username}</p>
+                <p className="truncate font-black text-[var(--color-card-text)]">
+                  <span aria-hidden="true" className="mr-1.5">{countryFlag(entry.countryCode)}</span>
+                  {entry.displayName}
+                </p>
+                <p className="truncate text-[10px]">
+                  @{entry.username}
+                  {entry.countryName ? ` / ${entry.countryName}` : ""}
+                  {payout > 0 ? ` / ${t("worldCup.payoutLabel")} $${payout}` : ""}
+                </p>
               </div>
               <div className="text-right">
                 <p className="font-black text-[var(--color-card-text)]">${Math.round(entry.bankroll).toLocaleString()}</p>
@@ -263,6 +316,9 @@ export function WorldCupCampaignClient() {
                 </Link>
               )}
             </div>
+          </div>
+          <div className="mt-5">
+            <WorldCupPayoutSummary />
           </div>
           <div className="mt-5">
             <WorldCupLeaderboard entries={leaderboardEntries} loading={leaderboardLoading} />

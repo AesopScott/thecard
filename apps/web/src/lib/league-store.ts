@@ -24,6 +24,8 @@ export interface FreeLeagueLeaderboardEntry {
   username: string;
   displayName: string;
   photoURL: string | null;
+  countryCode?: string | null;
+  countryName?: string | null;
   bankroll: number;
   shadowWinnings: number;
   betCount: number;
@@ -391,6 +393,8 @@ export function subscribeFreeLeagueLeaderboard(
         username: (data.username as string | undefined) ?? entryDoc.id,
         displayName: (data.displayName as string | undefined) ?? (data.username as string | undefined) ?? "Anonymous",
         photoURL: (data.photoURL as string | null | undefined) ?? null,
+        countryCode: (data.countryCode as string | null | undefined) ?? null,
+        countryName: (data.countryName as string | null | undefined) ?? null,
         bankroll: (data.bankroll as number | undefined) ?? STARTING_BANKROLL,
         shadowWinnings: (data.shadowWinnings as number | undefined) ?? 0,
         betCount: (data.betCount as number | undefined) ?? 0,
