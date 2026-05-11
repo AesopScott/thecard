@@ -4,11 +4,16 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  getPublicLeagueSummaries,
   getPublicSettledPositions,
   getUserProfileByUsername,
+  type PublicLeagueSummary,
   type SettledPositionRecord,
   type UserProfile,
 } from "@/lib/user-store";
+import { friendLeagueNumberFromId } from "@/lib/league-store";
+import { getLeaguesByGroup, leagueTypeBadge } from "@/lib/sport-leagues";
+import { ACTIVE_SEASON, GLOBAL_LEAGUE } from "@/lib/season-store";
 
 interface ProfileClientProps {
   username: string;
@@ -17,6 +22,7 @@ interface ProfileClientProps {
 export function ProfileClient({ username }: ProfileClientProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [settledPositions, setSettledPositions] = useState<SettledPositionRecord[]>([]);
+  const [leagueSummaries, setLeagueSummaries] = useState<PublicLeagueSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,9 +33,15 @@ export function ProfileClient({ username }: ProfileClientProps) {
         if (cancelled) return;
         setProfile(data);
         if (data) {
-          setSettledPositions(await getPublicSettledPositions(data.uid));
+          const [positions, leagues] = await Promise.all([
+            getPublicSettledPositions(data.uid),
+            getPublicLeagueSummaries(data.uid),
+          ]);
+          setSettledPositions(positions);
+          setLeagueSummaries(leagues);
         } else {
           setSettledPositions([]);
+          setLeagueSummaries([]);
         }
       })
       .finally(() => {
@@ -107,8 +119,118 @@ export function ProfileClient({ username }: ProfileClientProps) {
         ))}
       </section>
 
+      <LeagueBankrolls leagues={leagueSummaries} />
       <PositionHistory positions={settledPositions} username={profile.username} />
     </div>
+  );
+}
+
+function leagueLabel(summary: PublicLeagueSummary): { name: string; meta: string } {
+  if (summary.kind === "season") {
+    return {
+      name: `${GLOBAL_LEAGUE.name} League`,
+      meta: `Paid season - ${ACTIVE_SEASON.name}`,
+    };
+  }
+  const friendNumber = friendLeagueNumberFromId(summary.leagueId);
+  if (friendNumber) {
+    return {
+      name: `Friends League #${friendNumber}`,
+      meta: "Free friends league - no payouts",
+    };
+  }
+  const sportLeague = getLeaguesByGroup()
+    .flatMap((group) => group.leagues)
+    .find((league) => league.id === summary.leagueId);
+  if (sportLeague) {
+    return {
+      name: sportLeague.name,
+      meta: `Free league - ${leagueTypeBadge(sportLeague.type, sportLeague.half)}`,
+    };
+  }
+  return {
+    name: summary.leagueId,
+    meta: summary.kind === "free" ? "Free league" : "League",
+  };
+}
+
+function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
+  const totals = leagues.reduce(
+    (acc, league) => ({
+      bankroll: acc.bankroll + league.currentBankroll,
+      bets: acc.bets + league.betCount,
+      pnl: acc.pnl + (league.currentBankroll - league.startingBankroll),
+    }),
+    { bankroll: 0, bets: 0, pnl: 0 }
+  );
+
+  return (
+    <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">League Bankrolls</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">
+            Bankroll is tracked separately inside each league.
+          </p>
+        </div>
+        {leagues.length > 0 && (
+          <div className="shrink-0 text-right">
+            <p className="text-sm font-black text-[var(--color-card-text)]">{leagues.length}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">leagues</p>
+          </div>
+        )}
+      </div>
+
+      {leagues.length === 0 ? (
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-card-muted)]">
+          This player has not joined a league yet.
+        </p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Total shown", value: `$${totals.bankroll.toLocaleString()}` },
+              { label: "Net P/L", value: `${totals.pnl >= 0 ? "+" : ""}$${totals.pnl.toLocaleString()}` },
+              { label: "Bets", value: totals.bets.toLocaleString() },
+            ].map((stat) => (
+              <div key={stat.label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-2 text-center">
+                <p className="text-sm font-black text-[var(--color-card-text)]">{stat.value}</p>
+                <p className="mt-1 text-[9px] uppercase tracking-wider text-[var(--color-card-muted)]">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {leagues.map((league) => {
+            const pnl = league.currentBankroll - league.startingBankroll;
+            const label = leagueLabel(league);
+            return (
+              <div key={`${league.kind}-${league.leagueId}`} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-[var(--color-card-text)]">{label.name}</p>
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
+                      {label.meta}{league.isBust ? " / Bust" : ""}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-black text-[var(--color-card-text)]">
+                      ${league.currentBankroll.toLocaleString()}
+                    </p>
+                    <p className={pnl >= 0 ? "text-[10px] font-bold text-[var(--color-card-yes)]" : "text-[10px] font-bold text-[var(--color-card-no)]"}>
+                      {pnl >= 0 ? "+" : ""}${pnl.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-card-muted)]">
+                  <span>{league.betCount.toLocaleString()} bets</span>
+                  <span>${league.startingBankroll.toLocaleString()} starting bankroll</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
 

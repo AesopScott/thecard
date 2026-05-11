@@ -168,7 +168,7 @@ service cloud.firestore {
       }
 
       match /leagueMemberships/{leagueId} {
-        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow read: if true;
         allow create: if isVerified()
           && request.auth.uid == uid
           && request.resource.data.leagueId == leagueId
@@ -192,7 +192,7 @@ service cloud.firestore {
       }
 
       match /seasonMemberships/{leagueId} {
-        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow read: if true;
         allow create: if isVerified()
           && request.auth.uid == uid
           && request.resource.data.leagueId == leagueId

@@ -69,6 +69,17 @@ export interface SettledPositionsPage {
   nextCursor: { closedAtMs: number; id: string } | null;
 }
 
+export interface PublicLeagueSummary {
+  leagueId: string;
+  seasonId: string;
+  startingBankroll: number;
+  currentBankroll: number;
+  betCount: number;
+  isBust: boolean;
+  joinedAt: number;
+  kind: "season" | "free";
+}
+
 // ─── User profile ────────────────────────────────────────────────────────────
 
 export async function getUserUsername(uid: string): Promise<string | null> {
@@ -100,6 +111,35 @@ export async function getUserProfileByUsername(username: string): Promise<UserPr
     teamName: (data.teamName as string | null) ?? null,
     emailVerified: (data.emailVerified as boolean | undefined) ?? false,
   };
+}
+
+function toPublicLeagueSummary(
+  leagueId: string,
+  kind: PublicLeagueSummary["kind"],
+  data: Record<string, unknown>
+): PublicLeagueSummary {
+  return {
+    leagueId,
+    kind,
+    seasonId: (data.seasonId as string | undefined) ?? leagueId,
+    startingBankroll: (data.startingBankroll as number | undefined) ?? 1_000,
+    currentBankroll: (data.currentBankroll as number | undefined) ?? 1_000,
+    betCount: (data.betCount as number | undefined) ?? 0,
+    isBust: (data.isBust as boolean | undefined) ?? false,
+    joinedAt: (data.joinedAtMs as number | undefined) ?? (data.joinedAt as number | undefined) ?? Date.now(),
+  };
+}
+
+export async function getPublicLeagueSummaries(uid: string): Promise<PublicLeagueSummary[]> {
+  if (!db) return [];
+  const [freeSnap, seasonSnap] = await Promise.all([
+    getDocs(collection(db, "users", uid, "leagueMemberships")),
+    getDocs(collection(db, "users", uid, "seasonMemberships")),
+  ]);
+  return [
+    ...seasonSnap.docs.map((membershipDoc) => toPublicLeagueSummary(membershipDoc.id, "season", membershipDoc.data())),
+    ...freeSnap.docs.map((membershipDoc) => toPublicLeagueSummary(membershipDoc.id, "free", membershipDoc.data())),
+  ].sort((a, b) => b.joinedAt - a.joinedAt);
 }
 
 export async function checkUsernameAvailable(username: string): Promise<boolean> {
