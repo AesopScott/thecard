@@ -4,6 +4,7 @@ import { THEME_LABELS, THEMES, type AppTheme } from "@/lib/theme-store";
 import { useTheme } from "@/contexts/theme-context";
 
 const SWATCHES: Record<AppTheme, string> = {
+  default: "linear-gradient(135deg, #ff3c3c 0 38%, #111118 38% 100%)",
   ticket: "linear-gradient(135deg, #ff3c3c 0 38%, #f5ead3 38% 100%)",
   ice: "linear-gradient(135deg, #ff3c3c 0 38%, #eef6ff 38% 100%)",
   mint: "linear-gradient(135deg, #ff3c3c 0 38%, #e8f7ee 38% 100%)",

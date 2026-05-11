@@ -2,10 +2,12 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
 export const THEME_KEY = "thecard:theme:v1";
-export const THEMES = ["ticket", "ice", "mint", "ink"] as const;
+export const DEFAULT_THEME = "default";
+export const THEMES = [DEFAULT_THEME, "ticket", "ice", "mint", "ink"] as const;
 export type AppTheme = (typeof THEMES)[number];
 
 export const THEME_LABELS: Record<AppTheme, string> = {
+  default: "Default",
   ticket: "Paper Ticket",
   ice: "Ice Cards",
   mint: "Mint Board",
@@ -17,9 +19,9 @@ export function isAppTheme(value: unknown): value is AppTheme {
 }
 
 export function readLocalTheme(): AppTheme {
-  if (typeof window === "undefined") return "ticket";
+  if (typeof window === "undefined") return DEFAULT_THEME;
   const value = localStorage.getItem(THEME_KEY);
-  return isAppTheme(value) ? value : "ticket";
+  return isAppTheme(value) ? value : DEFAULT_THEME;
 }
 
 export function writeLocalTheme(theme: AppTheme) {
