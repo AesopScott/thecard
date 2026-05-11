@@ -560,6 +560,11 @@ function ResultsScreen({
 }) {
   const markets = practice ? PRACTICE_MARKETS : DAILY_MARKETS;
   const metrics = getMetrics(markets, picks, times, outcomes, leaderboard, powerMarketId);
+  const favoriteBias = metrics.favoriteBias === "Favorite-heavy"
+    ? t("blitz.favoriteHeavy")
+    : metrics.favoriteBias === "Underdog hunter"
+      ? t("blitz.underdogHunter")
+      : t("blitz.balancedReader");
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 pb-24">
@@ -568,7 +573,7 @@ function ResultsScreen({
           <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{practice ? t("blitz.warmupResults") : t("blitz.results")}</p>
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <span className="text-7xl font-display font-black text-[var(--color-text-primary)]">{metrics.score}</span>
-            <span className="pb-2 text-xl text-[var(--color-text-muted)]">pts</span>
+            <span className="pb-2 text-xl text-[var(--color-text-muted)]">{t("blitz.pointsAbbrev")}</span>
             <span className="mb-3 rounded-full bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs font-black uppercase text-[var(--color-brand-primary)]">{metrics.badge}</span>
           </div>
           <p className="text-sm text-[var(--color-text-secondary)]">
@@ -576,13 +581,13 @@ function ResultsScreen({
             {metrics.rank && !practice ? ` - projected rank #${metrics.rank}` : ""}
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatPill label="Streak" value={metrics.bestStreak} />
+            <StatPill label={t("live.streak")} value={metrics.bestStreak} />
             <StatPill label={t("blitz.ghost")} value={metrics.score >= 12 ? t("blitz.beat") : t("blitz.back", { count: String(12 - metrics.score) })} />
-            <StatPill label="No Skip" value={metrics.noSkip ? "yes" : "no"} />
-            <StatPill label="Rare Hits" value={metrics.rareHits} />
+            <StatPill label={t("blitz.noSkip")} value={metrics.noSkip ? t("home.yes") : t("home.no")} />
+            <StatPill label={t("blitz.rareHits")} value={metrics.rareHits} />
           </div>
           <p className="mt-3 text-xs text-[var(--color-text-muted)]">
-            Calibration read: {metrics.favoriteBias}. Next card in {timeUntilMidnight()}.
+            {t("blitz.calibrationReadLine", { bias: favoriteBias, time: timeUntilMidnight() })}
           </p>
         </div>
 
@@ -590,7 +595,7 @@ function ResultsScreen({
           <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.recapCard")}</p>
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
             <p className="text-sm font-black text-[var(--color-text-primary)]">{dailyTheme()} Blitz</p>
-            <p className="mt-3 text-4xl font-display font-black text-[var(--color-brand-primary)]">{metrics.score} pts</p>
+            <p className="mt-3 text-4xl font-display font-black text-[var(--color-brand-primary)]">{metrics.score} {t("blitz.pointsAbbrev")}</p>
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">{metrics.correct}/5 correct - {metrics.badge}</p>
             <div className="mt-4 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-text-secondary)]">
               <p><span className="font-black">{t("blitz.best")}:</span> {metrics.bestPick}</p>

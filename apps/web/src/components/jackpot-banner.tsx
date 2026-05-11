@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useI18n } from "@/contexts/i18n-context";
 import {
   CURRENT_CONTEST,
   getPick,
@@ -13,6 +14,7 @@ import {
 } from "@/lib/perfect-ten-store";
 
 export function JackpotBanner() {
+  const { t } = useI18n();
   const [pickedCount, setPickedCount] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [countdown, setCountdown] = useState(countdownToLock);
@@ -51,18 +53,17 @@ export function JackpotBanner() {
         />
 
         <div className="relative p-5 flex flex-col gap-3 bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)]">
-          {/* Label row */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-[var(--color-brand-primary)] tracking-widest uppercase">
-                Perfect 10
+                {t("home.perfectTen")}
               </span>
               <motion.span
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
                 className="text-lg"
               >
-                🔥
+                !
               </motion.span>
             </div>
             <span className="text-xs text-[var(--color-text-muted)] font-medium">
@@ -70,7 +71,6 @@ export function JackpotBanner() {
             </span>
           </div>
 
-          {/* Amount + pick status */}
           <div className="flex items-end justify-between gap-4">
             <motion.span
               animate={{ textShadow: ["0 0 20px rgba(255,60,60,0)", "0 0 30px rgba(255,60,60,0.3)", "0 0 20px rgba(255,60,60,0)"] }}
@@ -82,16 +82,16 @@ export function JackpotBanner() {
 
             <div className="flex flex-col items-end shrink-0 pb-1">
               {submitted ? (
-                <span className="text-xs font-bold text-[var(--color-card-yes)]">Locked in ✓</span>
+                <span className="text-xs font-bold text-[var(--color-card-yes)]">{t("jackpot.lockedIn")}</span>
               ) : locked ? (
-                <span className="text-xs font-semibold text-[var(--color-card-no)]">Picks locked</span>
+                <span className="text-xs font-semibold text-[var(--color-card-no)]">{t("jackpot.picksLocked")}</span>
               ) : (
                 <>
                   <span className="text-xs font-bold text-[var(--color-card-text)]">
-                    {pickedCount}/{total} picked
+                    {t("jackpot.pickedCount", { picked: String(pickedCount), total: String(total) })}
                   </span>
                   <span className="text-[10px] text-[var(--color-text-muted)]">
-                    locks in {countdown}
+                    {t("jackpot.locksIn", { countdown })}
                   </span>
                 </>
               )}
@@ -104,21 +104,20 @@ export function JackpotBanner() {
               transition={{ duration: 1.2, repeat: Infinity }}
               className="text-xs text-[var(--color-brand-secondary)] font-bold"
             >
-              {rolloverWeeks}-week rollover — nobody has hit all 10
+              {t("jackpot.rollover", { weeks: String(rolloverWeeks) })}
             </motion.span>
           )}
 
-          {/* CTA row */}
           <div className="flex items-center justify-between pt-2 border-t border-[var(--color-card-border)]">
             <p className="text-xs text-[var(--color-text-muted)]">
               {submitted
-                ? "Results after all 10 markets resolve"
+                ? t("jackpot.resultsAfterResolve")
                 : locked
-                ? "New picks drop next Monday"
-                : "Pick YES or NO on all 10 markets to enter"}
+                  ? t("jackpot.newPicksMonday")
+                  : t("jackpot.enterBody")}
             </p>
             <span className="text-xs font-bold text-[var(--color-brand-primary)] group-hover:underline shrink-0 ml-2">
-              {submitted ? "View →" : "Enter →"}
+              {submitted ? t("jackpot.view") : t("jackpot.enter")}
             </span>
           </div>
         </div>

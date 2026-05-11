@@ -186,13 +186,14 @@ function statusForPick(pick: LivePick, boostMarketId: string | null): "Pending" 
 }
 
 function LivePulse() {
+  const { t } = useI18n();
   return (
     <span className="flex items-center gap-1.5">
       <span className="relative flex h-2 w-2">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-card-yes)] opacity-75" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-card-yes)]" />
       </span>
-      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-card-yes)]">Live</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-card-yes)]">{t("live.live")}</span>
     </span>
   );
 }
@@ -223,11 +224,12 @@ function GameChip({ game, selected, onClick }: { game: Game; selected: boolean; 
 }
 
 function Scoreboard({ game, momentum }: { game: Game; momentum: string }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
         <LivePulse />
-        <span className="text-xs text-[var(--color-card-muted)]">{game.period} - {game.clock} remaining</span>
+        <span className="text-xs text-[var(--color-card-muted)]">{t("live.remaining", { period: game.period, clock: game.clock })}</span>
       </div>
       <div className="mt-4 flex items-center justify-between">
         <div className="text-center">
@@ -236,7 +238,7 @@ function Scoreboard({ game, momentum }: { game: Game; momentum: string }) {
           <p className="text-[10px] text-[var(--color-card-muted)]">{game.awayRecord}</p>
         </div>
         <div className="text-center">
-          <p className="text-xs text-[var(--color-card-muted)]">Momentum</p>
+          <p className="text-xs text-[var(--color-card-muted)]">{t("live.momentum")}</p>
           <p className="mt-1 rounded-lg bg-[var(--color-card-accent-dim)] px-3 py-2 text-sm font-black text-[var(--color-card-accent)]">{momentum}</p>
         </div>
         <div className="text-center">
@@ -250,21 +252,22 @@ function Scoreboard({ game, momentum }: { game: Game; momentum: string }) {
 }
 
 function RiskSelector({ value, onChange, disabled }: { value: LiveRiskMode; onChange: (value: LiveRiskMode) => void; disabled: boolean }) {
+  const { t } = useI18n();
   const riskDetails: Record<LiveRiskMode, { multiplier: string; title: string; body: string }> = {
     conservative: {
       multiplier: "0.8x",
-      title: "Lower ceiling, more protection",
-      body: "Best when you want safer favorites and fewer busted tickets. Your final score is trimmed, but the ticket is less punishing.",
+      title: t("live.riskConservativeTitle"),
+      body: t("live.riskConservativeBody"),
     },
     balanced: {
       multiplier: "1.0x",
-      title: "Standard scoring",
-      body: "The default Live Ticket mode. Picks score normally with no extra reward or penalty layered on top.",
+      title: t("live.riskBalancedTitle"),
+      body: t("live.riskBalancedBody"),
     },
     aggressive: {
       multiplier: "1.25x",
-      title: "Higher ceiling, higher bust risk",
-      body: "Use when you want to chase bigger leaderboard points. Correct tickets pay more, but misses make the ticket riskier.",
+      title: t("live.riskAggressiveTitle"),
+      body: t("live.riskAggressiveBody"),
     },
   };
   const selected = riskDetails[value];
@@ -281,10 +284,10 @@ function RiskSelector({ value, onChange, disabled }: { value: LiveRiskMode; onCh
       <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-black text-[var(--color-card-text)]">{selected.title}</p>
-          <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{selected.multiplier} score</span>
+          <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{t("live.scoreMultiplier", { multiplier: selected.multiplier })}</span>
         </div>
         <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">{selected.body}</p>
-        {disabled && <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--color-card-muted)]">Locked after your first pick</p>}
+        {disabled && <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--color-card-muted)]">{t("live.lockedAfterFirstPick")}</p>}
       </div>
     </div>
   );
@@ -315,6 +318,7 @@ function MarketCard({
   onPick: (pick: LivePick) => void;
   onWatch: () => void;
 }) {
+  const { t } = useI18n();
   const yesPct = Math.round(yes * 100);
   const move = driftLabel(market.openYes, yes);
   const closingSoon = market.closesIn !== "game";
@@ -325,11 +329,11 @@ function MarketCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{market.tag}</span>
             <span className={`rounded-md px-2 py-1 text-[10px] font-black uppercase ${Math.abs(Math.round((yes - market.openYes) * 100)) >= 10 ? "bg-[var(--color-brand-primary)] text-white" : "bg-[var(--color-card-bg)] text-[var(--color-card-muted)]"}`}>{move}</span>
-            {closingSoon && <span className="rounded-md bg-[var(--color-card-no-dim)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-no)]">closing {market.closesIn}</span>}
+            {closingSoon && <span className="rounded-md bg-[var(--color-card-no-dim)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-no)]">{t("live.closingIn", { time: market.closesIn })}</span>}
           </div>
           <p className="mt-2 text-sm font-semibold leading-snug text-[var(--color-card-text)]">{market.title}</p>
         </div>
-        <button onClick={onWatch} className={`h-9 w-9 rounded-lg border text-sm font-black ${watched ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] text-[var(--color-card-muted)]"}`} title="Watch market">
+        <button onClick={onWatch} className={`h-9 w-9 rounded-lg border text-sm font-black ${watched ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] text-[var(--color-card-muted)]"}`} title={t("live.watchMarket")}>
           *
         </button>
       </div>
@@ -348,17 +352,18 @@ function MarketCard({
 }
 
 function LiveTimeline({ items, picks }: { items: TimelineItem[]; picks: LivePick[] }) {
+  const { t } = useI18n();
   const ticketItems: TimelineItem[] = picks.slice(-2).map((pick, index) => ({
     id: `pick-${pick.marketId}-${index}`,
     time: "now",
     type: "ticket",
-    text: `${pick.side.toUpperCase()} added to ticket: ${pick.title}.`,
+    text: t("live.addedToTicket", { side: pick.side.toUpperCase(), title: pick.title }),
     oddsRef: `${pick.price}c`,
   }));
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live sweat timeline</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.sweatTimeline")}</p>
         <LivePulse />
       </div>
       <div className="mt-3 flex flex-col gap-3">
@@ -426,8 +431,8 @@ function ActiveTicket({
         <p className="text-xs font-bold text-[var(--color-card-muted)]">{picks.length}/{MAX_PICKS}</p>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <StatPill label="Preview" value={preview.score} />
-        <StatPill label="Streak" value={preview.streak} />
+        <StatPill label={t("card.preview")} value={preview.score} />
+        <StatPill label={t("live.streak")} value={preview.streak} />
         <StatPill label={t("live.bustRisk")} value={bustRisk} />
       </div>
       <div className="mt-3 flex flex-col gap-2">
@@ -440,7 +445,7 @@ function ActiveTicket({
               <span className={`text-xs font-black ${pick.side === "yes" ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>{pick.side.toUpperCase()} {pick.price}c</span>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{statusForPick(pick, boostMarketId)}</span>
+              <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{t(`live.status.${statusForPick(pick, boostMarketId).toLowerCase()}` as Parameters<typeof t>[0])}</span>
               <button onClick={() => onBoost(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{boostMarketId === pick.marketId ? t("live.boosted") : t("live.boost")}</button>
               <button onClick={() => onSwap(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-card-muted)]">{t("live.lateSwap")}</button>
             </div>
@@ -508,8 +513,8 @@ function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLea
             <span className="text-right text-xs font-black text-[var(--color-card-muted)]">{index + 1}</span>
             <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-card-accent-dim)] text-xs font-black text-[var(--color-card-accent)]">{entry.displayName.slice(0, 1).toUpperCase()}</span>
             <div className="min-w-0">
-              <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>{name}{isYou ? " (you)" : ""}</p>
-              <p className="text-[10px] text-[var(--color-card-muted)]">{entry.correct}/{entry.pickCount} correct - streak {entry.streak}{entry.perfectTicket ? " - perfect" : ""}</p>
+              <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>{name}{isYou ? t("live.youSuffix") : ""}</p>
+              <p className="text-[10px] text-[var(--color-card-muted)]">{t("live.rowDetail", { correct: String(entry.correct), total: String(entry.pickCount), streak: String(entry.streak) })}{entry.perfectTicket ? t("live.perfectSuffix") : ""}</p>
             </div>
             <span className="text-right text-sm font-black text-[var(--color-card-text)]">{entry.score}</span>
           </div>
@@ -520,15 +525,16 @@ function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLea
 }
 
 function LiveResults({ run, leaderboard, userId, leaderboardLoading, leaderboardError, shareStatus, onShare, onH2H }: { run: LiveRun; leaderboard: LiveLeaderboardEntry[]; userId: string | null; leaderboardLoading: boolean; leaderboardError: string | null; shareStatus: string | null; onShare: () => void; onH2H: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Ticket share card</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.ticketShareCard")}</p>
         <div className="mt-3 rounded-xl bg-[var(--color-card-bg)] p-5">
-          <p className="text-sm font-black text-[var(--color-card-text)]">Live Ticket</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{t("live.liveTicket")}</p>
           <p className="mt-2 text-6xl font-black text-[var(--color-brand-primary)]">{run.score}</p>
-          <p className="text-sm text-[var(--color-card-muted)]">{run.correct}/{run.picks.length} correct - streak {run.streak}</p>
-          <p className="mt-3 text-xs text-[var(--color-card-muted)]">{run.perfectTicket ? "Perfect ticket." : run.insuranceBadge ? "Bust insurance badge: one miss from perfect." : run.isBust ? "Ticket busted. The next slate is clean." : run.boostedCorrect ? "Boost landed." : "Solid sweat."}</p>
+          <p className="text-sm text-[var(--color-card-muted)]">{t("live.resultLine", { correct: String(run.correct), total: String(run.picks.length), streak: String(run.streak) })}</p>
+          <p className="mt-3 text-xs text-[var(--color-card-muted)]">{run.perfectTicket ? t("live.perfectTicket") : run.insuranceBadge ? t("live.insuranceBadge") : run.isBust ? t("live.ticketBusted") : run.boostedCorrect ? t("live.boostLanded") : t("live.solidSweat")}</p>
         </div>
       </div>
       <div className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
@@ -541,20 +547,20 @@ function LiveResults({ run, leaderboard, userId, leaderboardLoading, leaderboard
                 <span className={`w-5 text-lg font-black ${correct ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>{correct ? "Y" : "N"}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-[var(--color-card-text)]">{pick.title}</p>
-                  <p className="text-xs text-[var(--color-card-muted)]">You: {pick.side.toUpperCase()} / Result: {outcome.toUpperCase()} / {pick.price}c</p>
+                  <p className="text-xs text-[var(--color-card-muted)]">{t("live.pickResultLine", { side: pick.side.toUpperCase(), outcome: outcome.toUpperCase(), price: String(pick.price) })}</p>
                 </div>
-                <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{statusForPick(pick, run.boostMarketId ?? null)}</span>
+                <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{t(`live.status.${statusForPick(pick, run.boostMarketId ?? null).toLowerCase()}` as Parameters<typeof t>[0])}</span>
               </div>
-              <p className="mt-2 text-xs text-[var(--color-card-muted)]">Replay: the market settled {outcome.toUpperCase()} after the live price moved through the drive.</p>
+              <p className="mt-2 text-xs text-[var(--color-card-muted)]">{t("live.replayLine", { outcome: outcome.toUpperCase() })}</p>
             </div>
           );
         })}
       </div>
       <LiveLeaderboard entries={leaderboard} userId={userId} loading={leaderboardLoading} error={leaderboardError} />
       <div className="grid gap-3 sm:grid-cols-3">
-        <button onClick={onShare} className="rounded-xl bg-[var(--color-surface-2)] py-4 text-base font-black text-[var(--color-text-primary)]">Share Result</button>
-        <button onClick={onH2H} className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-base font-black text-white">Challenge H2H</button>
-        <Link href="/card" className="rounded-xl border border-[var(--color-card-border)] py-4 text-center text-sm font-bold text-[var(--color-card-muted)]">Full Card</Link>
+        <button onClick={onShare} className="rounded-xl bg-[var(--color-surface-2)] py-4 text-base font-black text-[var(--color-text-primary)]">{t("h2h.shareResult")}</button>
+        <button onClick={onH2H} className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-base font-black text-white">{t("blitz.challengeH2H")}</button>
+        <Link href="/card" className="rounded-xl border border-[var(--color-card-border)] py-4 text-center text-sm font-bold text-[var(--color-card-muted)]">{t("h2h.fullCard")}</Link>
       </div>
       {shareStatus && <p className="text-center text-xs font-semibold text-[var(--color-card-yes)]">{shareStatus}</p>}
     </div>

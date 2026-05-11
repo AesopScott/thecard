@@ -4,33 +4,34 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { getHasSeenHomeTour, setHasSeenHomeTour } from "@/lib/user-store";
 
 const TOUR_KEY = "thecard:home-tour:v1";
 
 const STEPS = [
   {
-    kicker: "Welcome to The Card",
-    title: "The nightly sports board, built like a game.",
-    body: "The Card turns tonight's slate into simple YES or NO markets. Prices read like probabilities, so every tap is a pick and a forecast at the same time.",
+    kickerKey: "tour.step1.kicker",
+    titleKey: "tour.step1.title",
+    bodyKey: "tour.step1.body",
     audio: "/tour/home-tour-1.mp3",
-    cta: "Show me the games",
+    ctaKey: "tour.step1.cta",
   },
   {
-    kicker: "Five ways to play",
-    title: "Choose your mode, then prove your read.",
-    body: "Play the main Card, race the 15-second Blitz clock, call markets live, challenge a rival in H2H, or build a long-term Forecast record.",
+    kickerKey: "tour.step2.kicker",
+    titleKey: "tour.step2.title",
+    bodyKey: "tour.step2.body",
     audio: "/tour/home-tour-2.mp3",
-    cta: "Keep going",
+    ctaKey: "tour.step2.cta",
   },
   {
-    kicker: "The chase",
-    title: "Climb boards, build streaks, chase Perfect 10.",
-    body: "Save a watchlist, lock a card, compare against the crowd, climb the leaderboard, and take your shot when you think you can sweep the whole board.",
+    kickerKey: "tour.step3.kicker",
+    titleKey: "tour.step3.title",
+    bodyKey: "tour.step3.body",
     audio: "/tour/home-tour-3.mp3",
-    cta: "Enter The Card",
+    ctaKey: "tour.step3.cta",
   },
-];
+] as const;
 
 function readLocalSeen() {
   if (typeof window === "undefined") return false;
@@ -43,6 +44,7 @@ function writeLocalSeen() {
 
 export function HomeTour() {
   const { user, loading, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -140,7 +142,7 @@ export function HomeTour() {
           onClick={replay}
           className="fixed bottom-24 left-4 z-40 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-4 py-2 text-xs font-black text-[var(--color-card-text)] shadow-xl transition-colors hover:border-[var(--color-brand-primary)]"
         >
-          Tour
+          {t("tour.replay")}
         </button>
       )}
 
@@ -173,7 +175,7 @@ export function HomeTour() {
                       <span className="h-3 w-3 rounded-full bg-[var(--color-brand-primary)]" />
                     </div>
                     <div className="h-2 w-12 rounded-full bg-[var(--color-card-border)]" />
-                    <p className="mt-5 text-center text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Scout</p>
+                    <p className="mt-5 text-center text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("tour.scout")}</p>
                   </div>
                   <div className="relative mt-5 flex flex-wrap justify-center gap-1.5">
                     {gameChips.map((chip) => (
@@ -187,15 +189,15 @@ export function HomeTour() {
                 <div>
                   <div className="border-b border-[var(--color-card-border)] px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{current.kicker}</p>
+                      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t(current.kickerKey)}</p>
                       <button type="button" onClick={dismiss} className="text-xs font-bold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]">
-                        Skip
+                        {t("tour.skip")}
                       </button>
                     </div>
                     <div className="mt-4 grid grid-cols-3 gap-2">
                       {STEPS.map((item, index) => (
                         <span
-                          key={item.title}
+                          key={item.titleKey}
                           className={`h-1.5 rounded-full ${index <= step ? "bg-[var(--color-brand-primary)]" : "bg-[var(--color-card-border)]"}`}
                         />
                       ))}
@@ -204,19 +206,19 @@ export function HomeTour() {
 
                   <div className="px-5 py-6">
                     <h2 id="home-tour-title" className="text-3xl font-display font-black tracking-tight text-[var(--color-card-text)]">
-                      {current.title}
+                      {t(current.titleKey)}
                     </h2>
-                    <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">{current.body}</p>
+                    <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">{t(current.bodyKey)}</p>
 
                     <button
                       type="button"
                       onClick={() => void playVoice()}
                       className="mt-5 rounded-xl border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-card-text)] transition-colors hover:border-[var(--color-brand-primary)]"
                     >
-                      {voiceStatus === "playing" ? "Pause voice" : "Play voice"}
+                      {voiceStatus === "playing" ? t("tour.pauseVoice") : t("tour.playVoice")}
                     </button>
                     {voiceStatus === "missing" && (
-                      <p className="mt-2 text-xs text-[var(--color-card-muted)]">Voice assets are not generated yet.</p>
+                      <p className="mt-2 text-xs text-[var(--color-card-muted)]">{t("tour.voiceMissing")}</p>
                     )}
 
                     <div className="mt-6 flex flex-col gap-2 sm:flex-row">
@@ -226,7 +228,7 @@ export function HomeTour() {
                           onClick={() => void dismiss()}
                           className="flex-1 rounded-xl bg-[var(--color-brand-primary)] px-4 py-3 text-center text-sm font-black text-white transition-colors hover:bg-red-500"
                         >
-                          {current.cta}
+                          {t(current.ctaKey)}
                         </Link>
                       ) : (
                         <button
@@ -234,7 +236,7 @@ export function HomeTour() {
                           onClick={nextStep}
                           className="flex-1 rounded-xl bg-[var(--color-brand-primary)] px-4 py-3 text-sm font-black text-white transition-colors hover:bg-red-500"
                         >
-                          {current.cta}
+                          {t(current.ctaKey)}
                         </button>
                       )}
                       <button
@@ -242,7 +244,7 @@ export function HomeTour() {
                         onClick={() => void dismiss()}
                         className="rounded-xl border border-[var(--color-card-border)] px-4 py-3 text-sm font-bold text-[var(--color-card-muted)] transition-colors hover:border-[var(--color-brand-primary)] hover:text-[var(--color-card-text)]"
                       >
-                        Don&apos;t show again
+                        {t("tour.dontShowAgain")}
                       </button>
                     </div>
                   </div>

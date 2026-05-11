@@ -315,9 +315,9 @@ function IntroScreen({
             {t("h2h.openRooms")}
           </Link>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rivalry history</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.rivalryHistory")}</p>
             {history.length === 0 ? (
-              <p className="mt-2 text-sm text-[var(--color-text-muted)]">Your past matchups will appear here.</p>
+              <p className="mt-2 text-sm text-[var(--color-text-muted)]">{t("h2h.historyEmpty")}</p>
             ) : (
               <div className="mt-3 grid gap-2">
                 {history.slice(0, 4).map((run) => (

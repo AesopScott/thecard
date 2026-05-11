@@ -224,7 +224,7 @@ function SeasonTab() {
             <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("leaderboard.seasonClock")}</span>
               <span className="text-xs text-[var(--color-card-muted)]">
-                Closes {ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                {t("leaderboard.closesDate", { date: ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) })}
               </span>
             </div>
             <span className="text-sm font-black text-[var(--color-card-text)]">{Math.round(progress)}%</span>
@@ -254,7 +254,7 @@ function SeasonTab() {
         </div>
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-0.5">
           <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.league")}</span>
-          <span className="text-base font-black text-[var(--color-card-text)]">Global</span>
+          <span className="text-base font-black text-[var(--color-card-text)]">{t("leaderboard.global")}</span>
         </div>
       </div>
 
@@ -335,7 +335,7 @@ function SeasonTab() {
         <div className="rounded-xl border border-[var(--color-card-no)]/30 bg-[var(--color-card-no-dim)] p-4">
           <p className="text-sm font-black text-[var(--color-card-text)]">{t("leaderboard.prizePending")}</p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">
-            Place {MIN_PRIZE_BETS - youEntry.betCount} more bets this season to qualify for the top 10 payout table.
+            {t("leaderboard.moreBetsNeeded", { count: String(MIN_PRIZE_BETS - youEntry.betCount) })}
           </p>
         </div>
       )}
@@ -419,8 +419,8 @@ function SeasonTab() {
 
       {membership.isBust && (
         <div className="rounded-xl border border-[var(--color-card-no)]/30 bg-[var(--color-card-no-dim)] p-4 text-center">
-          <p className="text-sm font-bold text-[var(--color-card-no)]">Bust — bankroll reached $0</p>
-          <p className="text-xs text-[var(--color-card-muted)] mt-1">Season {getSeasonNumber(ACTIVE_SEASON)} resets {ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
+          <p className="text-sm font-bold text-[var(--color-card-no)]">{t("leaderboard.bustBankroll")}</p>
+          <p className="text-xs text-[var(--color-card-muted)] mt-1">{t("leaderboard.seasonResets", { season: String(getSeasonNumber(ACTIVE_SEASON)), date: ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "long", day: "numeric" }) })}</p>
         </div>
       )}
     </div>
@@ -428,12 +428,13 @@ function SeasonTab() {
 }
 
 function SeasonMechanicsCard() {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Season mechanics</p>
-          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">Monthly reset, archived standings, fixed payout table</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.seasonMechanics")}</p>
+          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{t("leaderboard.mechanicsBody")}</p>
         </div>
         <span className="shrink-0 rounded-lg border border-[var(--color-card-border)] px-2 py-1 text-[10px] font-black text-[var(--color-card-muted)]">
           {ACTIVE_SEASON.id}
@@ -441,9 +442,9 @@ function SeasonMechanicsCard() {
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[
-          ["Reset", `$${STARTING_BANKROLL.toLocaleString()}`, "Every new monthly season starts from the same bankroll."],
-          ["Eligible", `${MIN_PRIZE_BETS}+ bets`, "Top 10 prize rows require enough real season activity."],
-          ["Rollover", "Archived", getSeasonRolloverCopy(ACTIVE_SEASON)],
+          [t("leaderboard.reset"), `$${STARTING_BANKROLL.toLocaleString()}`, t("leaderboard.resetBody")],
+          [t("leaderboard.eligibleShort"), `${MIN_PRIZE_BETS}+ ${t("leaderboard.bets").toLowerCase()}`, t("leaderboard.eligibleBody")],
+          [t("leaderboard.rollover"), t("leaderboard.archived"), getSeasonRolloverCopy(ACTIVE_SEASON)],
         ].map(([label, value, detail]) => (
           <div key={label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
             <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-card-muted)]">{label}</p>
@@ -457,14 +458,15 @@ function SeasonMechanicsCard() {
 }
 
 function SeasonArchiveCard() {
+  const { t } = useI18n();
   const seasons = getSeasonTimeline();
 
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Season archive</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Current season and nearby monthly resets</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.seasonArchive")}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("leaderboard.archiveBody")}</p>
         </div>
       </div>
       <div className="mt-3 grid grid-cols-5 gap-1.5">
@@ -485,7 +487,7 @@ function SeasonArchiveCard() {
               <p className={`mt-1 text-[8px] font-black uppercase ${
                 status === "active" ? "text-[var(--color-card-yes)]" : status === "closed" ? "text-[var(--color-card-muted)]" : "text-[var(--color-brand-primary)]"
               }`}>
-                {active ? "current" : status}
+                {active ? t("leaderboard.current") : status === "active" ? t("leagues.active") : status === "closed" ? t("leagues.closed") : t("leagues.upcoming")}
               </p>
             </div>
           );
@@ -496,6 +498,7 @@ function SeasonArchiveCard() {
 }
 
 function PodiumCard({ entry }: { entry: SeasonLeaderboardEntry }) {
+  const { t } = useI18n();
   const payout = projectedPayout(entry.rank);
   const delta = pseudoRankDelta(entry);
   const isFirst = entry.rank === 1;
@@ -520,7 +523,7 @@ function PodiumCard({ entry }: { entry: SeasonLeaderboardEntry }) {
       <p className="text-[10px] font-semibold text-[var(--color-card-muted)]">{formatMoney(entry.bankroll)}</p>
       <div className="mt-2 flex items-center justify-center gap-1 text-[9px] font-bold">
         <span className={delta >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}>
-          {delta === 0 ? "new" : `${delta > 0 ? "+" : ""}${delta}`}
+          {delta === 0 ? t("leaderboard.new") : `${delta > 0 ? "+" : ""}${delta}`}
         </span>
         {payout > 0 && <span className="text-[var(--color-card-muted)]">/ {formatMoney(payout)}</span>}
       </div>
@@ -543,30 +546,31 @@ function LeaderboardScopeControls({
   onModeScope: (scope: ModeScope) => void;
   onSportScope: (scope: SportScope) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Board controls</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Switch the leaderboard lens by time, game mode, and sport.</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.boardControls")}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("leaderboard.boardControlsBody")}</p>
         </div>
         <ScoutMascot sheet="actions" action="trophy" motion="hype" className="h-16 w-16 shrink-0 opacity-90" />
       </div>
       <div className="mt-4 flex flex-col gap-3">
         <ScopeButtonRow
-          label="Time"
+          label={t("leaderboard.time")}
           items={[
-            ["daily", "Daily"],
-            ["weekly", "Weekly"],
-            ["season", "Season"],
+            ["daily", t("leaderboard.daily")],
+            ["weekly", t("leaderboard.weekly")],
+            ["season", t("leaderboard.seasonTab")],
           ] as const}
           value={timeScope}
           onChange={onTimeScope}
         />
         <ScopeButtonRow
-          label="Mode"
+          label={t("leaderboard.mode")}
           items={[
-            ["overall", "Overall"],
+            ["overall", t("leaderboard.overall")],
             ["card", "Card"],
             ["blitz", "Blitz"],
             ["live", "Live"],
@@ -577,9 +581,9 @@ function LeaderboardScopeControls({
           onChange={onModeScope}
         />
         <ScopeButtonRow
-          label="Sport"
+          label={t("leaderboard.sport")}
           items={[
-            ["all", "All"],
+            ["all", t("leaderboard.all")],
             ["nfl", "NFL"],
             ["nba", "NBA"],
             ["mlb", "MLB"],
@@ -642,6 +646,7 @@ function LeaderboardStoryMode({
   rivalEntry: SeasonLeaderboardEntry | null;
   prizeCutEntry: SeasonLeaderboardEntry | null;
 }) {
+  const { t } = useI18n();
   const leader = board[0] ?? null;
   const mover = biggestMovers[0] ?? null;
   const gapToRival = youEntry && rivalEntry ? rivalEntry.bankroll - youEntry.bankroll : null;
@@ -651,27 +656,27 @@ function LeaderboardStoryMode({
     <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-card-surface)] p-4">
       <div className="grid gap-4 sm:grid-cols-[1fr_86px] sm:items-center">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Leaderboard story</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.story")}</p>
           <h2 className="mt-1 text-xl font-black text-[var(--color-card-text)]">
-            {leader ? `${leader.displayName} owns the top spot, but the chase is live.` : "The board is waiting for its first run."}
+            {leader ? t("leaderboard.storyLeader", { name: leader.displayName }) : t("leaderboard.storyWaiting")}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
             {mover
-              ? `${mover.entry.displayName} is today's biggest mover (${mover.delta > 0 ? "+" : ""}${mover.delta}).`
-              : "No major rank movement yet."}{" "}
+              ? t("leaderboard.storyMover", { name: mover.entry.displayName, delta: `${mover.delta > 0 ? "+" : ""}${mover.delta}` })
+              : t("leaderboard.noMajorMovement")}{" "}
             {gapToRival !== null && gapToRival > 0
-              ? `You are ${formatMoney(gapToRival)} behind ${rivalEntry?.displayName}.`
+              ? t("leaderboard.behindRival", { amount: formatMoney(gapToRival), name: rivalEntry?.displayName ?? "" })
               : youEntry
-                ? "You are defending your current spot."
-                : "Sign in to get a personal chase line."}
+                ? t("leaderboard.defendingSpot")
+                : t("leaderboard.signInChase")}
           </p>
         </div>
         <ScoutMascot sheet="actions" action={mover && mover.delta > 0 ? "celebrate" : "trophy"} motion={mover ? "hype" : "idle"} className="mx-auto h-24 w-24" />
       </div>
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <StoryStat label="Leader" value={leader ? leader.displayName : "-"} detail={leader ? formatMoney(leader.bankroll) : "No rows"} />
-        <StoryStat label="Prize cut" value={prizeCutEntry ? `#${prizeCutEntry.rank}` : "-"} detail={prizeCutEntry ? `${prizeCutEntry.displayName} / ${formatMoney(prizeCutEntry.bankroll)}` : "Top 10 pending"} />
-        <StoryStat label="Your chase" value={youEntry ? `#${youEntry.rank}` : "Sign in"} detail={gapToCut !== null ? `${gapToCut <= 0 ? "Inside" : formatMoney(gapToCut)} prize cut` : "Personalized rank"} />
+        <StoryStat label={t("leaderboard.leader")} value={leader ? leader.displayName : "-"} detail={leader ? formatMoney(leader.bankroll) : t("leaderboard.noRows")} />
+        <StoryStat label={t("leaderboard.prizeCut")} value={prizeCutEntry ? `#${prizeCutEntry.rank}` : "-"} detail={prizeCutEntry ? `${prizeCutEntry.displayName} / ${formatMoney(prizeCutEntry.bankroll)}` : t("leaderboard.top10Pending")} />
+        <StoryStat label={t("leaderboard.yourChase")} value={youEntry ? `#${youEntry.rank}` : t("account.signIn")} detail={gapToCut !== null ? `${gapToCut <= 0 ? t("leaderboard.inside") : formatMoney(gapToCut)} ${t("leaderboard.prizeCut").toLowerCase()}` : t("leaderboard.personalizedRank")} />
       </div>
     </div>
   );
@@ -688,12 +693,13 @@ function StoryStat({ label, value, detail }: { label: string; value: string; det
 }
 
 function RivalCalloutCard({ youEntry, rivalEntry }: { youEntry: SeasonLeaderboardEntry; rivalEntry: SeasonLeaderboardEntry | null }) {
+  const { t } = useI18n();
   if (!rivalEntry) {
     return (
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rival callout</p>
-        <p className="mt-2 text-sm font-black text-[var(--color-card-text)]">You are setting the pace.</p>
-        <p className="mt-1 text-xs text-[var(--color-card-muted)]">No one is directly above you in this view.</p>
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.rivalCallout")}</p>
+        <p className="mt-2 text-sm font-black text-[var(--color-card-text)]">{t("leaderboard.settingPace")}</p>
+        <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("leaderboard.noOneAbove")}</p>
       </div>
     );
   }
@@ -704,9 +710,9 @@ function RivalCalloutCard({ youEntry, rivalEntry }: { youEntry: SeasonLeaderboar
       <div className="flex items-center gap-3">
         <ScoutMascot sheet="actions" action="fight" motion="sweat" className="h-16 w-16 shrink-0" />
         <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rival callout</p>
-          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">Catch {rivalEntry.displayName}</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{gap === 0 ? "You are tied on bankroll." : `${formatMoney(gap)} separates you from #${rivalEntry.rank}.`}</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.rivalCallout")}</p>
+          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{t("leaderboard.catchRival", { name: rivalEntry.displayName })}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{gap === 0 ? t("leaderboard.tiedBankroll") : t("leaderboard.gapToRival", { amount: formatMoney(gap), rank: String(rivalEntry.rank) })}</p>
         </div>
       </div>
     </div>
@@ -714,22 +720,23 @@ function RivalCalloutCard({ youEntry, rivalEntry }: { youEntry: SeasonLeaderboar
 }
 
 function PrizeCutLineCard({ prizeCutEntry, youEntry }: { prizeCutEntry: SeasonLeaderboardEntry | null; youEntry: SeasonLeaderboardEntry | null }) {
+  const { t } = useI18n();
   const insideCut = Boolean(youEntry && youEntry.rank <= 10);
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center gap-3">
         <ScoutMascot sheet="actions" action={insideCut ? "celebrate" : "trophy"} motion={insideCut ? "hype" : "idle"} className="h-16 w-16 shrink-0" />
         <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Prize cut line</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.prizeCutLine")}</p>
           <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">
-            {prizeCutEntry ? `#10 is ${prizeCutEntry.displayName}` : "Top 10 still forming"}
+            {prizeCutEntry ? t("leaderboard.numberTenIs", { name: prizeCutEntry.displayName }) : t("leaderboard.top10Forming")}
           </p>
           <p className="mt-1 text-xs text-[var(--color-card-muted)]">
             {insideCut
-              ? "You are currently inside the projected prize zone."
+              ? t("leaderboard.insidePrizeZone")
               : prizeCutEntry
-                ? `${formatMoney(prizeCutEntry.bankroll)} is the current cut.`
-                : "Eligible users will define the payout line."}
+                ? t("leaderboard.currentCut", { amount: formatMoney(prizeCutEntry.bankroll) })
+                : t("leaderboard.eligibleDefineLine")}
           </p>
         </div>
       </div>
@@ -776,14 +783,15 @@ function ShareRankCard({ entry }: { entry: SeasonLeaderboardEntry }) {
 }
 
 function TieBreakerCard() {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Tie-breakers</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leaderboard.tieBreakers")}</p>
       <div className="mt-3 grid grid-cols-3 gap-2">
         {[
-          ["1", "Bankroll", "Highest balance wins"],
-          ["2", "Bets", "More action breaks ties"],
-          ["3", "Joined", "Earlier account wins"],
+          ["1", t("leaderboard.bankroll"), t("leaderboard.highestBalanceWins")],
+          ["2", t("leaderboard.bets"), t("leaderboard.moreActionBreaks")],
+          ["3", t("leaderboard.joined"), t("leaderboard.earlierAccountWins")],
         ].map(([step, label, detail]) => (
           <div key={step} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
             <p className="text-[10px] font-black text-[var(--color-brand-primary)]">#{step}</p>
@@ -797,12 +805,13 @@ function TieBreakerCard() {
 }
 
 function EligibilityBadges({ entry }: { entry: SeasonLeaderboardEntry }) {
+  const { t } = useI18n();
   const eligible = entry.betCount >= MIN_PRIZE_BETS;
   const badges = [
-    entry.isPreview ? "Preview" : null,
-    entry.rank <= 10 ? "Prize zone" : "Chasing",
-    eligible ? "Eligible" : `${MIN_PRIZE_BETS - entry.betCount} bets left`,
-    entry.isYou ? "You" : entry.rank <= 3 ? "Podium" : null,
+    entry.isPreview ? t("card.preview") : null,
+    entry.rank <= 10 ? t("leaderboard.prizeZone") : t("leaderboard.chasing"),
+    eligible ? t("leaderboard.eligible") : t("leaderboard.betsLeft", { count: String(MIN_PRIZE_BETS - entry.betCount) }),
+    entry.isYou ? t("h2h.you") : entry.rank <= 3 ? t("leaderboard.podium") : null,
   ].filter(Boolean);
 
   return (
@@ -811,9 +820,9 @@ function EligibilityBadges({ entry }: { entry: SeasonLeaderboardEntry }) {
         <span
           key={badge}
           className={`rounded-full px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide ${
-            badge === "Eligible" || badge === "Prize zone" || badge === "Podium"
+            badge === t("leaderboard.eligible") || badge === t("leaderboard.prizeZone") || badge === t("leaderboard.podium")
               ? "bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)]"
-              : badge === "You" || badge === "Preview"
+              : badge === t("h2h.you") || badge === t("card.preview")
                 ? "bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-primary)]"
                 : "bg-[var(--color-card-no-dim)] text-[var(--color-card-no)]"
           }`}
@@ -832,6 +841,7 @@ function SeasonRow({
   entry: SeasonLeaderboardEntry;
   onPreview: (entry: SeasonLeaderboardEntry) => void;
 }) {
+  const { t } = useI18n();
   const pnl = entry.bankroll - STARTING_BANKROLL;
   const pnlColor = pnl >= 0 ? "var(--color-card-yes)" : "var(--color-card-no)";
   const pnlSign = pnl >= 0 ? "+" : "-";
@@ -854,10 +864,10 @@ function SeasonRow({
         <div className="flex min-w-0 flex-col">
           <span className={`text-xs font-semibold truncate ${entry.isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>
             {entry.displayName}
-            {entry.isYou && <span className="ml-1 text-[9px] opacity-60">(you)</span>}
+            {entry.isYou && <span className="ml-1 text-[9px] opacity-60">{t("h2h.youSuffix")}</span>}
           </span>
           <span className="truncate text-[9px] text-[var(--color-card-muted)]">
-            {entry.isPreview ? "Preview row" : entry.username ? `@${entry.username}` : "unclaimed"} / {eligible ? "eligible" : `${MIN_PRIZE_BETS - entry.betCount} bets to qualify`}
+            {entry.isPreview ? t("h2h.previewRow") : entry.username ? `@${entry.username}` : t("leaderboard.unclaimed")} / {eligible ? t("leaderboard.eligible") : t("leaderboard.betsToQualify", { count: String(MIN_PRIZE_BETS - entry.betCount) })}
           </span>
           {entry.countryName && (
             <span className="truncate text-[9px] font-bold text-[var(--color-brand-primary)]">
@@ -877,13 +887,13 @@ function SeasonRow({
           </span>
         )}
         {payout > 0 && eligible && (
-          <span className="text-[9px] text-[var(--color-card-muted)]">{formatMoney(payout)} est.</span>
+          <span className="text-[9px] text-[var(--color-card-muted)]">{t("leaderboard.estimatedPayout", { amount: formatMoney(payout) })}</span>
         )}
       </div>
       <div className="flex flex-col items-end">
         <span className="text-xs text-[var(--color-card-muted)] text-right">{entry.betCount}</span>
         <span className={`text-[9px] font-bold ${delta >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>
-          {delta === 0 ? "new" : `${delta > 0 ? "+" : ""}${delta}`}
+          {delta === 0 ? t("leaderboard.new") : `${delta > 0 ? "+" : ""}${delta}`}
         </span>
       </div>
     </>
@@ -905,6 +915,7 @@ function ProfilePreviewDrawer({
   entry: SeasonLeaderboardEntry;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const pnl = entry.bankroll - STARTING_BANKROLL;
   const eligible = entry.betCount >= MIN_PRIZE_BETS;
   const payout = projectedPayout(entry.rank);
@@ -912,7 +923,7 @@ function ProfilePreviewDrawer({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end bg-black/60 px-4 pb-4" role="dialog" aria-modal="true">
-      <button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Close profile preview" />
+      <button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label={t("leaderboard.closeProfilePreview")} />
       <div className="relative mx-auto w-full max-w-lg rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -923,18 +934,18 @@ function ProfilePreviewDrawer({
             </div>
             <div className="min-w-0">
               <p className="truncate text-lg font-black text-[var(--color-card-text)]">{entry.displayName}</p>
-              <p className="text-xs text-[var(--color-card-muted)]">{isPreview ? "Preview row" : entry.username ? `@${entry.username}` : "Profile unclaimed"}</p>
+              <p className="text-xs text-[var(--color-card-muted)]">{isPreview ? t("h2h.previewRow") : entry.username ? `@${entry.username}` : t("leaderboard.profileUnclaimed")}</p>
               {entry.countryName && <p className="mt-0.5 text-xs font-bold text-[var(--color-brand-primary)]">{entry.countryName}</p>}
             </div>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-[10px] font-black text-[var(--color-card-text)]">
-            Close
+            {t("shared.close")}
           </button>
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2">
           {[
-            ["Rank", `#${entry.rank}`],
-            ["Bankroll", formatMoney(entry.bankroll)],
+            [t("leaderboard.rank"), `#${entry.rank}`],
+            [t("leaderboard.bankroll"), formatMoney(entry.bankroll)],
             ["P/L", `${pnl >= 0 ? "+" : "-"}${formatMoney(Math.abs(pnl))}`],
           ].map(([label, value]) => (
             <div key={label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 text-center">
@@ -945,20 +956,20 @@ function ProfilePreviewDrawer({
         </div>
         <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
           <p className="text-xs font-black text-[var(--color-card-text)]">
-            {eligible ? "Prize eligible" : `${MIN_PRIZE_BETS - entry.betCount} more bets to become prize eligible`}
+            {eligible ? t("leaderboard.prizeEligible") : t("leaderboard.moreBetsPrizeEligible", { count: String(MIN_PRIZE_BETS - entry.betCount) })}
           </p>
           <p className="mt-1 text-xs text-[var(--color-card-muted)]">
-            {payout > 0 && eligible ? `${formatMoney(payout)} projected payout at current rank.` : "Top 10 eligible players split the season pool."}
+            {payout > 0 && eligible ? t("leaderboard.projectedPayoutRank", { amount: formatMoney(payout) }) : t("leaderboard.top10SplitSeason")}
           </p>
         </div>
         <div className="mt-4 flex gap-2">
           {!isPreview && entry.username && (
             <Link href={`/profile?u=${encodeURIComponent(entry.username)}`} className="flex-1 rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-center text-xs font-black text-white">
-              Open profile
+              {t("profile.openProfile")}
             </Link>
           )}
           <button type="button" onClick={() => navigator.clipboard?.writeText(`${shareText(entry)} https://thecard.bet/leaderboard`)} className="flex-1 rounded-lg border border-[var(--color-card-border)] px-4 py-3 text-xs font-black text-[var(--color-card-text)]">
-            Copy rank
+            {t("leaderboard.copyRank")}
           </button>
         </div>
       </div>
@@ -977,6 +988,7 @@ function scoreLabel(score: number): string {
 }
 
 function CalibrationTab() {
+  const { t } = useI18n();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -992,7 +1004,7 @@ function CalibrationTab() {
   if (loading) {
     return (
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-4 py-8 flex justify-center">
-        <span className="text-xs text-[var(--color-card-muted)]">Loading…</span>
+        <span className="text-xs text-[var(--color-card-muted)]">{t("auth.loading")}</span>
       </div>
     );
   }
@@ -1001,16 +1013,16 @@ function CalibrationTab() {
     return (
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
         <div className="px-4 py-3 flex items-center justify-between">
-          <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Forecaster</span>
-          <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Calibration</span>
+          <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">{t("home.forecaster")}</span>
+          <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.calibrationTab")}</span>
         </div>
         <div className="px-4 py-8 flex flex-col items-center gap-2 text-center">
-          <p className="text-sm font-semibold text-[var(--color-card-text)]">No forecasters yet</p>
+          <p className="text-sm font-semibold text-[var(--color-card-text)]">{t("leaderboard.noForecasters")}</p>
           <p className="text-xs text-[var(--color-card-muted)] max-w-xs leading-relaxed">
-            Make predictions in Forecast. After 5 resolved predictions your calibration score unlocks.
+            {t("leaderboard.noForecastersBody")}
           </p>
           <Link href="/forecast" className="mt-2 text-xs font-semibold text-[var(--color-card-accent)] border border-[var(--color-card-accent-dim)] rounded-lg px-4 py-1.5 hover:bg-[var(--color-card-accent-dim)] transition-colors">
-            Start Predicting Free
+            {t("leaderboard.startPredictingFree")}
           </Link>
         </div>
       </div>
@@ -1020,8 +1032,8 @@ function CalibrationTab() {
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
       <div className="px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Forecaster</span>
-        <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Calibration</span>
+        <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">{t("home.forecaster")}</span>
+        <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.calibrationTab")}</span>
       </div>
       {entries.map((entry, i) => (
         <CalibrationRow key={entry.uid} rank={i + 1} entry={entry} />

@@ -289,14 +289,15 @@ export function ForecastClient() {
                 onDraft={(value) => setDrafts((current) => ({ ...current, [question.id]: value }))}
                 onSave={() => savePick(question)}
                 onResolve={() => resolveOne(question)}
+                t={t}
               />
             ))}
           </div>
         </div>
 
         <aside className="flex flex-col gap-4">
-          <CalibrationBuckets forecasts={resolved} />
-          <ForecastHistory forecasts={Object.values(forecasts).filter(Boolean) as LocalForecast[]} />
+          <CalibrationBuckets forecasts={resolved} t={t} />
+          <ForecastHistory forecasts={Object.values(forecasts).filter(Boolean) as LocalForecast[]} t={t} />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
             <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.nextReps")}</p>
             <div className="mt-4 flex flex-col gap-2">
@@ -321,6 +322,7 @@ function ForecastCard({
   onDraft,
   onSave,
   onResolve,
+  t,
 }: {
   question: ForecastQuestion;
   forecast: LocalForecast | undefined;
@@ -328,6 +330,7 @@ function ForecastCard({
   onDraft: (value: number) => void;
   onSave: () => void;
   onResolve: () => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const resolved = forecast?.outcome !== null && forecast?.outcome !== undefined;
   const forecastPct = forecast ? Math.round(forecast.probability * 100) : draft;
@@ -340,13 +343,13 @@ function ForecastCard({
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-md bg-[var(--color-surface-3)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-text-muted)]">{question.sport}</span>
             <span className="rounded-md border border-[var(--color-border)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{question.difficulty}</span>
-            <span className="text-xs text-[var(--color-text-muted)]">Closes {question.closesAt}</span>
+            <span className="text-xs text-[var(--color-text-muted)]">{t("forecast.closes", { time: question.closesAt })}</span>
           </div>
           <h2 className="mt-2 text-lg font-black leading-snug text-[var(--color-text-primary)]">{question.title}</h2>
           <p className="mt-1 text-sm text-[var(--color-text-muted)]">{question.detail}</p>
         </div>
         <div className="shrink-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)] px-3 py-2 text-right">
-          <p className="text-[10px] font-black uppercase text-[var(--color-text-muted)]">Market</p>
+          <p className="text-[10px] font-black uppercase text-[var(--color-text-muted)]">{t("forecast.market")}</p>
           <p className="text-lg font-black text-[var(--color-text-primary)]">{question.crowd}%</p>
         </div>
       </div>
@@ -369,24 +372,24 @@ function ForecastCard({
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-4">
-        <Stat label="Your Edge" value={edgeLabel(forecastPct / 100, question.crowd)} />
-        <Stat label="If Resolved" value={previewBrier.toFixed(2)} />
-        <Stat label="Status" value={resolved ? `Hit ${question.outcome.toUpperCase()}` : forecast ? "Locked" : "Draft"} />
+        <Stat label={t("forecast.yourEdge")} value={edgeLabel(forecastPct / 100, question.crowd)} />
+        <Stat label={t("forecast.ifResolved")} value={previewBrier.toFixed(2)} />
+        <Stat label={t("forecast.status")} value={resolved ? t("forecast.hitOutcome", { outcome: question.outcome.toUpperCase() }) : forecast ? t("forecast.locked") : t("forecast.draft")} />
         <Stat label="Brier" value={forecast?.brierScore === null || forecast?.brierScore === undefined ? "--" : forecast.brierScore.toFixed(2)} />
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {!forecast ? (
           <button onClick={onSave} className="rounded-xl bg-[var(--color-brand-primary)] px-4 py-2.5 text-sm font-black text-white transition-all hover:bg-red-500">
-            Lock Forecast
+            {t("forecast.lockForecast")}
           </button>
         ) : forecast.outcome === null ? (
           <button onClick={onResolve} className="rounded-xl border border-[var(--color-border)] px-4 py-2.5 text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-            Resolve Mock
+            {t("forecast.resolveMock")}
           </button>
         ) : (
           <span className="rounded-xl border border-[var(--color-border)] px-4 py-2.5 text-sm font-bold text-[var(--color-text-muted)]">
-            Resolved {forecast.outcome.toUpperCase()}
+            {t("forecast.resolvedOutcome", { outcome: forecast.outcome.toUpperCase() })}
           </span>
         )}
       </div>
@@ -403,10 +406,10 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function CalibrationBuckets({ forecasts }: { forecasts: LocalForecast[] }) {
+function CalibrationBuckets({ forecasts, t }: { forecasts: LocalForecast[]; t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Calibration Map</p>
+      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.calibrationMap")}</p>
       <div className="mt-4 flex flex-col gap-2">
         {CALIBRATION_BUCKETS.map((bucket) => {
           const rows = forecasts.filter((forecast) => forecast.probability >= bucket.min && forecast.probability <= bucket.max);
@@ -428,21 +431,21 @@ function CalibrationBuckets({ forecasts }: { forecasts: LocalForecast[] }) {
   );
 }
 
-function ForecastHistory({ forecasts }: { forecasts: LocalForecast[] }) {
+function ForecastHistory({ forecasts, t }: { forecasts: LocalForecast[]; t: ReturnType<typeof useI18n>["t"] }) {
   const sorted = [...forecasts].sort((a, b) => b.createdAt - a.createdAt);
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Forecast Log</p>
+      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.log")}</p>
       {sorted.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--color-text-muted)]">Locked forecasts will appear here.</p>
+        <p className="mt-4 text-sm text-[var(--color-text-muted)]">{t("forecast.logEmpty")}</p>
       ) : (
         <div className="mt-4 flex flex-col gap-2">
           {sorted.map((forecast) => (
             <div key={forecast.marketId} className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2">
               <p className="truncate text-sm font-bold text-[var(--color-text-primary)]">{forecast.marketTitle}</p>
               <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                You {formatPercent(forecast.probability)}
-                {forecast.outcome ? ` - ${forecast.outcome.toUpperCase()} - Brier ${forecast.brierScore?.toFixed(2)}` : " - pending"}
+                {t("forecast.youProbability", { probability: formatPercent(forecast.probability) })}
+                {forecast.outcome ? ` - ${forecast.outcome.toUpperCase()} - Brier ${forecast.brierScore?.toFixed(2)}` : ` - ${t("forecast.pendingLower")}`}
               </p>
             </div>
           ))}

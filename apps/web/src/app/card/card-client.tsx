@@ -422,9 +422,9 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
             <Segment values={["conservative", "balanced", "aggressive"] as const} value={risk} onChange={setRisk} />
             <Segment values={["hot", "closing", "longshot"] as const} value={sort} onChange={setSort} />
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
-              <button onClick={() => setFadeMode((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${fadeMode ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>Fade</button>
-              <button onClick={() => setWatchOnly((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${watchOnly ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>Watch</button>
-              <button onClick={() => setGroupByTime((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${groupByTime ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>Time</button>
+              <button onClick={() => setFadeMode((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${fadeMode ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{t("card.fade")}</button>
+              <button onClick={() => setWatchOnly((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${watchOnly ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{t("shared.watch")}</button>
+              <button onClick={() => setGroupByTime((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${groupByTime ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{t("card.time")}</button>
             </div>
           </div>
         </div>
@@ -447,9 +447,10 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
             (groupByTime ? ["Early", "Main", "Late"] : ["All"]).map((group) => {
               const groupMarkets = group === "All" ? filteredMarkets : filteredMarkets.filter((market) => timeGroup(market) === group);
               if (groupMarkets.length === 0) return null;
+              const groupLabel = group === "Early" ? t("card.groupEarly") : group === "Main" ? t("card.groupMain") : group === "Late" ? t("card.groupLate") : t("leaderboard.all");
               return (
                 <div key={group} className="flex flex-col gap-3">
-                  {group !== "All" && <p className="px-1 text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{group}</p>}
+                  {group !== "All" && <p className="px-1 text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{groupLabel}</p>}
                   {groupMarkets.map((market) => {
                     const odds = initialOdds[market.id];
                     const side = fadeMode ? (defaultSide(market, odds, risk) === "yes" ? "no" : "yes") : defaultSide(market, odds, risk);
@@ -481,7 +482,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
         <aside className="flex flex-col gap-4">
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5">
             <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.compareCommunity")}</p>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">Your selected card leans {ticketPicks.length === 0 ? "empty" : ticketPicks.filter((pick) => pick.side === "yes").length >= ticketPicks.length / 2 ? "YES-heavy" : "NO-heavy"} versus an average market YES price of {avgYes}c.</p>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">{t("card.communityLean", { lean: ticketPicks.length === 0 ? t("card.leanEmpty") : ticketPicks.filter((pick) => pick.side === "yes").length >= ticketPicks.length / 2 ? t("card.leanYesHeavy") : t("card.leanNoHeavy"), avg: String(avgYes) })}</p>
           </div>
           <PositionsPanel />
         </aside>
@@ -502,9 +503,10 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
 }
 
 function DevelopmentMockDataRibbon() {
+  const { t } = useI18n();
   return (
     <div
-      aria-label="In development. All data is currently mock data."
+      aria-label={t("card.mockRibbonAria")}
       className="pointer-events-none fixed left-[max(0.75rem,calc(50%-46rem))] top-20 z-20 flex h-36 w-36 origin-top-left scale-[0.72] items-center justify-center rounded-full p-2 text-center shadow-[0_24px_56px_rgba(0,0,0,0.46)] sm:scale-100"
       style={{
         background:
@@ -518,10 +520,10 @@ function DevelopmentMockDataRibbon() {
       </div>
       <div className="absolute inset-[1.05rem] rounded-full border border-white/12 shadow-[inset_0_0_0_1px_rgba(250,204,21,0.28),inset_0_-18px_32px_rgba(0,0,0,0.42)]" />
       <div className="relative flex h-[6.35rem] w-[6.35rem] flex-col items-center justify-center rounded-full px-3 text-white">
-        <span className="rounded-full border border-amber-200/40 bg-amber-300/12 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.24em] text-amber-100">Preview</span>
-        <span className="mt-1.5 text-[1.38rem] font-display font-black uppercase leading-none tracking-normal">Mock</span>
-        <span className="text-[1.38rem] font-display font-black uppercase leading-none tracking-normal text-amber-100">Data</span>
-        <span className="mt-1 text-[8px] font-black uppercase leading-tight tracking-[0.18em] text-white/70">In Development</span>
+        <span className="rounded-full border border-amber-200/40 bg-amber-300/12 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.24em] text-amber-100">{t("card.mockPreview")}</span>
+        <span className="mt-1.5 text-[1.38rem] font-display font-black uppercase leading-none tracking-normal">{t("card.mock")}</span>
+        <span className="text-[1.38rem] font-display font-black uppercase leading-none tracking-normal text-amber-100">{t("card.data")}</span>
+        <span className="mt-1 text-[8px] font-black uppercase leading-tight tracking-[0.18em] text-white/70">{t("card.inDevelopment")}</span>
       </div>
     </div>
   );
@@ -550,7 +552,7 @@ function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLo
           </div>
         ))}
       </div>
-      {lockedCard && <p className="mt-3 rounded-lg bg-[var(--color-brand-primary)]/10 px-3 py-2 text-xs font-bold text-[var(--color-card-text)]">Locked today for {lockedCard.projectedScore} projected points. Saved to profile artifact locally.</p>}
+      {lockedCard && <p className="mt-3 rounded-lg bg-[var(--color-brand-primary)]/10 px-3 py-2 text-xs font-bold text-[var(--color-card-text)]">{t("card.lockedToday", { score: String(lockedCard.projectedScore) })}</p>}
       <div className="mt-3 grid grid-cols-3 gap-2">
         <button onClick={onLock} className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white">{t("card.lock")}</button>
         <button onClick={onShare} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">{t("card.share")}</button>
@@ -571,24 +573,25 @@ function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLo
 }
 
 function ExplanationDrawer({ market, odds, risk, fadeMode, onClose }: { market: Market; odds?: Odds; risk: RiskProfile; fadeMode: boolean; onClose: () => void }) {
+  const { t } = useI18n();
   const side = defaultSide(market, odds, risk);
   const shownSide = fadeMode ? (side === "yes" ? "NO" : "YES") : side.toUpperCase();
   return (
     <div className="fixed inset-x-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[80] mx-auto max-h-[calc(100dvh-8rem)] max-w-lg overflow-y-auto rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Pick explanation</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.pickExplanation")}</p>
           <h3 className="mt-2 text-xl font-display font-black text-[var(--color-card-text)]">{market.title}</h3>
         </div>
-        <button onClick={onClose} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">Close</button>
+        <button onClick={onClose} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">{t("shared.close")}</button>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Stat label="Pick" value={shownSide} />
-        <Stat label="Conviction" value={convictionFor(market, odds, risk)} />
+        <Stat label={t("card.pick")} value={shownSide} />
+        <Stat label={t("card.conviction")} value={convictionFor(market, odds, risk)} />
         <Stat label="Model" value={`${Math.round(modelProbability(market, odds, risk) * 100)}%`} />
-        <Stat label="Market" value={`${Math.round((odds?.yes ?? 0.5) * 100)}c`} />
+        <Stat label={t("forecast.market")} value={`${Math.round((odds?.yes ?? 0.5) * 100)}c`} />
       </div>
-      <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">The model view weighs price edge, movement, close time, and sport context. {fadeMode ? "Fade mode is showing the opposite side, including the risk that the original signal may still be right." : "The selected side is the cleaner recommendation for this risk profile."}</p>
+      <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">{t("card.modelExplanation")} {fadeMode ? t("card.fadeModeExplanation") : t("card.selectedSideExplanation")}</p>
       <div className="mt-4 grid grid-cols-4 gap-2">
         {(["/blitz", "/h2h", "/live", "/forecast"] as const).map((href) => <Link key={href} href={href} className="rounded-lg border border-[var(--color-card-border)] px-2 py-2 text-center text-[10px] font-black text-[var(--color-text-muted)]">{href.slice(1)}</Link>)}
       </div>
@@ -597,20 +600,31 @@ function ExplanationDrawer({ market, odds, risk, fadeMode, onClose }: { market: 
 }
 
 function PostSettleReview({ lockedCard }: { lockedCard: LockedCard }) {
+  const { t } = useI18n();
   const hits = lockedCard.settled.filter((item) => item.hit).length;
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Post-settle review</p>
-      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Preview settlement has {hits}/{lockedCard.picks.length} hits. Strongest signal: {lockedCard.settled[0]?.signal ?? "none"}.</p>
+      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.postSettleReview")}</p>
+      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{t("card.previewSettlement", { hits: String(hits), total: String(lockedCard.picks.length), signal: lockedCard.settled[0]?.signal ?? t("h2h.none") })}</p>
     </section>
   );
 }
 
 function Segment<T extends string>({ values, value, onChange }: { values: readonly T[]; value: T; onChange: (value: T) => void }) {
+  const { t } = useI18n();
+  const labelFor = (item: string) => {
+    if (item === "conservative") return t("card.conservative");
+    if (item === "balanced") return t("card.balanced");
+    if (item === "aggressive") return t("card.aggressive");
+    if (item === "hot") return t("card.hot");
+    if (item === "closing") return t("card.closing");
+    if (item === "longshot") return t("card.longshot");
+    return item;
+  };
   return (
     <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
       {values.map((item) => (
-        <button key={item} onClick={() => onChange(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${value === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{item}</button>
+        <button key={item} onClick={() => onChange(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${value === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{labelFor(item)}</button>
       ))}
     </div>
   );
