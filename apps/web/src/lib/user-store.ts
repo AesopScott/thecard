@@ -130,6 +130,25 @@ export async function upsertUserProfile(user: User): Promise<void> {
   );
 }
 
+export async function getHasSeenHomeTour(uid: string): Promise<boolean> {
+  if (!db) return false;
+  const snap = await getDoc(doc(db, "users", uid));
+  return Boolean(snap.data()?.hasSeenHomeTour);
+}
+
+export async function setHasSeenHomeTour(uid: string): Promise<void> {
+  if (!db) return;
+  await setDoc(
+    doc(db, "users", uid),
+    {
+      hasSeenHomeTour: true,
+      homeTourSeenAtMs: Date.now(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
 export async function uploadAvatar(uid: string, file: File): Promise<string> {
   if (!storage || !db) throw new Error("Firebase not configured");
   const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";

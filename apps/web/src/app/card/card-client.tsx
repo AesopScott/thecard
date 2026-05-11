@@ -11,6 +11,12 @@ import { SettlementPanel } from "@/components/settlement-panel";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { useAuth } from "@/contexts/auth-context";
+import {
+  getStoredCardWatchlist,
+  readLocalCardWatchlist,
+  saveCardWatchlist,
+  writeLocalCardWatchlist,
+} from "@/lib/card-watchlist-store";
 import type { HostTake } from "@/lib/editorial";
 import type { Market, Odds, Sport } from "@thecard/types";
 
@@ -43,7 +49,6 @@ interface LockedCard {
   settled: Array<{ marketId: string; hit: boolean; signal: string }>;
 }
 
-const WATCHLIST_KEY = "thecard:watchlist:v1";
 const TICKET_KEY = "thecard:my-card-ticket:v1";
 const LOCKED_KEY = "thecard:locked-card:v1";
 const HISTORY_KEY = "thecard:card-history:v1";
@@ -63,11 +68,6 @@ function readJson<T>(key: string, fallback: T): T {
 
 function writeJson(key: string, value: unknown) {
   if (typeof window !== "undefined") localStorage.setItem(key, JSON.stringify(value));
-}
-
-function readWatchlist() {
-  const parsed = readJson<unknown[]>(WATCHLIST_KEY, []);
-  return parsed.filter((item): item is string => typeof item === "string");
 }
 
 function hoursUntilClose(market: Market) {
@@ -188,14 +188,35 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
   const [explainId, setExplainId] = useState<string | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [watchlistStatus, setWatchlistStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    setWatchlist(readWatchlist());
+    setWatchlist(readLocalCardWatchlist());
     setTicket(readJson<Record<string, TicketPick>>(TICKET_KEY, {}));
     const locked = readJson<LockedCard | null>(LOCKED_KEY, null);
     if (locked?.date === todayId()) setLockedCard(locked);
     setHistory(readJson<LockedCard[]>(HISTORY_KEY, []));
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    getStoredCardWatchlist(user.uid)
+      .then((marketIds) => {
+        if (cancelled) return;
+        setWatchlist(marketIds);
+        setWatchlistStatus("Watchlist synced.");
+        if (!verificationRequired) void saveCardWatchlist(user.uid, marketIds);
+      })
+      .catch(() => {
+        if (!cancelled) setWatchlistStatus("Watchlist sync unavailable.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, verificationRequired]);
 
   const sports = useMemo(() => ["all", ...Array.from(new Set(markets.map((market) => market.sport)))] as SportFilter[], [markets]);
   const bestBet = useMemo(() => [...markets].sort((a, b) => Math.abs(edgePoints(b, initialOdds[b.id], risk)) - Math.abs(edgePoints(a, initialOdds[a.id], risk)))[0] ?? null, [markets, initialOdds, risk]);
@@ -222,7 +243,16 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
   function toggleWatch(marketId: string) {
     setWatchlist((current) => {
       const next = current.includes(marketId) ? current.filter((id) => id !== marketId) : [...current, marketId];
-      writeJson(WATCHLIST_KEY, next);
+      writeLocalCardWatchlist(next);
+      if (user && !verificationRequired) {
+        void saveCardWatchlist(user.uid, next)
+          .then(() => setWatchlistStatus("Watchlist saved."))
+          .catch(() => setWatchlistStatus("Saved locally. Sync will retry later."));
+      } else if (user && verificationRequired) {
+        setWatchlistStatus("Saved locally. Verify email to sync.");
+      } else {
+        setWatchlistStatus("Saved locally. Sign in to sync.");
+      }
       return next;
     });
   }
@@ -360,7 +390,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between px-1">
             <h2 className="text-sm font-black uppercase tracking-widest text-[var(--color-card-text)]">Market Feed</h2>
-            <span className="text-xs font-bold text-[var(--color-text-muted)]">{filteredMarkets.length} shown</span>
+            <span className="text-right text-xs font-bold text-[var(--color-text-muted)]">{watchlistStatus ?? `${filteredMarkets.length} shown`}</span>
           </div>
           {filteredMarkets.length === 0 ? (
             <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-8 text-center">

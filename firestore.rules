@@ -63,6 +63,16 @@ service cloud.firestore {
         allow write: if isVerified() && request.auth.uid == uid;
       }
 
+      match /cardWatchlist/{watchlistId} {
+        allow read: if isSignedIn() && request.auth.uid == uid;
+        allow create, update: if isVerified()
+          && request.auth.uid == uid
+          && watchlistId == 'default'
+          && request.resource.data.marketIds is list
+          && request.resource.data.updatedAtMs is number;
+        allow delete: if false;
+      }
+
       match /positions/{positionId} {
         allow read: if isSignedIn() && request.auth.uid == uid;
         allow write: if isVerified() && request.auth.uid == uid;

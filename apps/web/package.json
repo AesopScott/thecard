@@ -1,14 +1,16 @@
 {
   "name": "@thecard/web",
-  "version": "1.0.41",
+  "version": "1.0.42",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "generate:tour-voice": "node scripts/generate-tour-voice.mjs",
     "build": "node scripts/build.mjs && node scripts/copy-og-images.mjs",
     "start": "next start",
     "lint": "next lint",
+    "test:ui": "playwright test",
     "type-check": "tsc --noEmit",
-    "clean": "rimraf .next .next-dev .next-build"
+    "clean": "rimraf .next .next-dev .next-build tsconfig.tsbuildinfo"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
@@ -25,6 +27,7 @@
     "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.1.6",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^24.10.1",

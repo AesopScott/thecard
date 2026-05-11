@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AuthCta } from "@/components/auth-cta";
+import { HomeTour } from "@/components/home-tour";
 import { VERSION } from "@/lib/version";
 
 const LIVE_MARKETS = [
@@ -72,6 +73,7 @@ const FOOTER_LINKS = [
 export default function LandingPage() {
   return (
     <div className="min-h-dvh flex flex-col bg-[var(--color-surface-0)] text-[var(--color-text-primary)] relative overflow-hidden">
+      <HomeTour />
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface-0)]/90 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <span className="font-display font-black text-xl tracking-tight">
