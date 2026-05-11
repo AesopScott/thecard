@@ -81,6 +81,19 @@ export interface PublicLeagueSummary {
   kind: "season" | "free";
 }
 
+export interface PublicBetRecord {
+  id: string;
+  leagueId: string;
+  marketId: string;
+  marketTitle: string;
+  sport: Sport;
+  side: "yes" | "no";
+  amountUsd: number;
+  contracts: number;
+  averagePrice: number;
+  placedAtMs: number;
+}
+
 // ─── User profile ────────────────────────────────────────────────────────────
 
 export async function getUserUsername(uid: string): Promise<string | null> {
@@ -141,6 +154,30 @@ export async function getPublicLeagueSummaries(uid: string): Promise<PublicLeagu
     ...seasonSnap.docs.map((membershipDoc) => toPublicLeagueSummary(membershipDoc.id, "season", membershipDoc.data())),
     ...freeSnap.docs.map((membershipDoc) => toPublicLeagueSummary(membershipDoc.id, "free", membershipDoc.data())),
   ].sort((a, b) => b.joinedAt - a.joinedAt);
+}
+
+function toPublicBetRecord(id: string, data: Record<string, unknown>): PublicBetRecord {
+  return {
+    id,
+    leagueId: (data.leagueId as string | undefined) ?? "legacy",
+    marketId: data.marketId as string,
+    marketTitle: (data.marketTitle as string | undefined) ?? (data.marketId as string),
+    sport: (data.sport as Sport | undefined) ?? "other",
+    side: data.side as "yes" | "no",
+    amountUsd: (data.amountUsd as number | undefined) ?? 0,
+    contracts: (data.contracts as number | undefined) ?? 0,
+    averagePrice: (data.averagePrice as number | undefined) ?? 0,
+    placedAtMs: (data.placedAtMs as number | undefined) ?? Date.now(),
+  };
+}
+
+export async function getPublicBetHistory(uid: string): Promise<PublicBetRecord[]> {
+  if (!db) return [];
+  const snap = await getDocs(query(
+    collection(db, "users", uid, "betHistory"),
+    orderBy("placedAtMs", "desc"),
+  ));
+  return snap.docs.map((betDoc) => toPublicBetRecord(betDoc.id, betDoc.data()));
 }
 
 export async function checkUsernameAvailable(username: string): Promise<boolean> {
@@ -369,6 +406,18 @@ export async function savePosition(
     ...data,
     openedAtMs: now,
     lastTradeAtMs: now,
+    placedAt: serverTimestamp(),
+  });
+}
+
+export async function saveBetRecord(
+  uid: string,
+  data: Omit<PublicBetRecord, "id" | "placedAtMs">
+): Promise<void> {
+  if (!db) return;
+  await addDoc(collection(db, "users", uid, "betHistory"), {
+    ...data,
+    placedAtMs: Date.now(),
     placedAt: serverTimestamp(),
   });
 }

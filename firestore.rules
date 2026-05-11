@@ -103,6 +103,21 @@ service cloud.firestore {
         allow write: if isVerified() && request.auth.uid == uid;
       }
 
+      match /betHistory/{betId} {
+        allow read: if true;
+        allow create: if isVerified()
+          && request.auth.uid == uid
+          && request.resource.data.leagueId is string
+          && request.resource.data.marketId is string
+          && request.resource.data.marketTitle is string
+          && request.resource.data.side in ['yes', 'no']
+          && request.resource.data.amountUsd is number
+          && request.resource.data.contracts is number
+          && request.resource.data.averagePrice is number
+          && request.resource.data.placedAtMs is number;
+        allow update, delete: if false;
+      }
+
       match /perfectTenEntries/{contestId} {
         allow read: if isSignedIn() && request.auth.uid == uid;
         allow create: if isVerified()

@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  getPublicBetHistory,
   getPublicLeagueSummaries,
   getPublicSettledPositions,
   getUserProfileByUsername,
+  type PublicBetRecord,
   type PublicLeagueSummary,
   type SettledPositionRecord,
   type UserProfile,
@@ -23,6 +25,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [settledPositions, setSettledPositions] = useState<SettledPositionRecord[]>([]);
   const [leagueSummaries, setLeagueSummaries] = useState<PublicLeagueSummary[]>([]);
+  const [betHistory, setBetHistory] = useState<PublicBetRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,15 +36,18 @@ export function ProfileClient({ username }: ProfileClientProps) {
         if (cancelled) return;
         setProfile(data);
         if (data) {
-          const [positions, leagues] = await Promise.all([
+          const [positions, leagues, bets] = await Promise.all([
             getPublicSettledPositions(data.uid),
             getPublicLeagueSummaries(data.uid),
+            getPublicBetHistory(data.uid),
           ]);
           setSettledPositions(positions);
           setLeagueSummaries(leagues);
+          setBetHistory(bets);
         } else {
           setSettledPositions([]);
           setLeagueSummaries([]);
+          setBetHistory([]);
         }
       })
       .finally(() => {
@@ -120,6 +126,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
       </section>
 
       <LeagueBankrolls leagues={leagueSummaries} />
+      <LeagueBetHistory bets={betHistory} />
       <PositionHistory positions={settledPositions} username={profile.username} />
     </div>
   );
@@ -231,6 +238,72 @@ function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
                 <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-card-muted)]">
                   <span>{league.betCount.toLocaleString()} bets</span>
                   <span>${league.startingBankroll.toLocaleString()} starting bankroll</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function LeagueBetHistory({ bets }: { bets: PublicBetRecord[] }) {
+  const betsByLeague = bets.reduce<Record<string, PublicBetRecord[]>>((acc, bet) => {
+    acc[bet.leagueId] = [...(acc[bet.leagueId] ?? []), bet];
+    return acc;
+  }, {});
+  const leagueIds = Object.keys(betsByLeague);
+
+  return (
+    <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Every Bet By League</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">
+            Each bet is logged to one league ledger.
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <p className="text-sm font-black text-[var(--color-card-text)]">{bets.length}</p>
+          <p className="text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">bets</p>
+        </div>
+      </div>
+
+      {bets.length === 0 ? (
+        <p className="mt-3 text-sm leading-relaxed text-[var(--color-card-muted)]">
+          Bet ledger entries will appear here after this player places league-specific bets.
+        </p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-3">
+          {leagueIds.map((leagueId) => {
+            const leagueBets = betsByLeague[leagueId] ?? [];
+            const totalAmount = leagueBets.reduce((sum, bet) => sum + bet.amountUsd, 0);
+            return (
+              <div key={leagueId} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueDisplayName(leagueId)}</p>
+                    <p className="text-[10px] text-[var(--color-card-muted)]">{leagueBets.length} bets / ${totalAmount.toFixed(2)} staked</p>
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-col gap-2">
+                  {leagueBets.map((bet) => (
+                    <div key={bet.id} className="rounded-md border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-[var(--color-card-text)]">{bet.marketTitle}</p>
+                          <p className="mt-1 text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">
+                            {bet.sport} / {bet.side.toUpperCase()} / {Math.round(bet.averagePrice * 100)}c
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs font-black text-[var(--color-card-text)]">${bet.amountUsd.toFixed(2)}</p>
+                          <p className="text-[10px] text-[var(--color-card-muted)]">{new Date(bet.placedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             );

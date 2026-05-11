@@ -14,7 +14,7 @@ import {
   recordUserSeasonPayout,
   refundUserSeasonBet,
 } from "./season-store";
-import { closeMatchingPositions, savePosition } from "./user-store";
+import { closeMatchingPositions, saveBetRecord, savePosition } from "./user-store";
 
 export class LeagueMembershipRequiredError extends Error {
   constructor() {
@@ -82,6 +82,16 @@ export async function placeAccountOrder({
       leagueId,
       leagueIds: [leagueId],
     };
+    await saveBetRecord(uid, {
+      leagueId,
+      marketId: position.marketId,
+      marketTitle: position.marketTitle,
+      sport: position.sport,
+      side: position.side,
+      amountUsd: position.amountUsd,
+      contracts: position.contracts,
+      averagePrice: position.averagePrice,
+    });
     await savePosition(uid, position);
 
     return {
