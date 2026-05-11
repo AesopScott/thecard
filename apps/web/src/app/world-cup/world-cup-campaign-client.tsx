@@ -240,14 +240,6 @@ export function WorldCupCampaignClient() {
                   {t("worldCup.intro")}
                 </p>
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href="/card" className="rounded-xl bg-[var(--color-brand-primary)] px-5 py-4 text-center text-sm font-black text-white hover:bg-red-500">
-                  {t("worldCup.primaryCta")}
-                </Link>
-                <Link href="#world-cup-league" className="rounded-xl border border-[var(--color-card-border)] px-5 py-4 text-center text-sm font-black text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)]">
-                  {t("worldCup.secondaryCta")}
-                </Link>
-              </div>
             </div>
 
             <div className="relative min-h-72 overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-5">
