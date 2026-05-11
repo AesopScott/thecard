@@ -13,7 +13,7 @@
     "build": "node scripts/build.mjs && node scripts/copy-og-images.mjs",
     "start": "next start",
     "lint": "next lint",
-    "test:ui": "playwright test",
+    "test:ui": "playwright test --workers=1",
     "type-check": "tsc --noEmit",
     "clean": "rimraf .next .next-dev .next-build tsconfig.tsbuildinfo"
   },

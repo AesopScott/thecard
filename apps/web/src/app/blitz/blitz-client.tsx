@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { AskTheCardAi } from "@/components/ask-the-card-ai";
+import { ExplainBetting } from "@/components/explain-betting";
 import { DAILY_MARKETS, getDailyOutcomes } from "@/lib/daily-markets";
 import {
   blitzDateId,
@@ -31,6 +33,31 @@ const PRACTICE_MARKETS = DAILY_MARKETS.map((market, index) => ({
     "Power play produces a goal",
   ][index] ?? market.question,
 }));
+
+const BLITZ_EXPLANATION = [
+  {
+    title: "What Blitz is",
+    body: "Blitz is the speed round. You get five daily markets and fifteen seconds on each one. The format rewards fast, accurate reads instead of long ticket building.",
+  },
+  {
+    title: "Before the clock",
+    body: "You can scout the slate and choose one power pick. If that market is correct, it doubles that market's points, so the best power pick is usually the spot where you have the clearest edge.",
+  },
+  {
+    title: "Scoring",
+    body: "Correct picks earn points, streaks add bonuses, and faster answers create better timing tiers. A perfect 5-for-5 run gets a badge even if someone else finished faster.",
+  },
+  {
+    title: "Ranked vs warm-up",
+    body: "Ranked runs count once per day on the leaderboard. Warm-up mode lets you practice with mock rounds and does not affect your official score.",
+  },
+];
+
+const BLITZ_AI_SUGGESTIONS = [
+  "How should I choose my power pick?",
+  "What is today's par?",
+  "Do speed tiers change my score?",
+];
 
 type Pick = BlitzPick;
 type BoardFilter = "today" | "perfect" | "friends" | "week";
@@ -349,6 +376,19 @@ function IntroScreen({
           )}
         </div>
       </section>
+
+      <ExplainBetting
+        buttonLabel="Explain Blitz betting"
+        title="Blitz turns five markets into a timed daily score attack."
+        summary="You still answer YES or NO, but the twist is pressure: speed, streaks, the power pick, and perfect-run badges all shape the final leaderboard score."
+        sections={BLITZ_EXPLANATION}
+      />
+
+      <AskTheCardAi
+        mode="blitz"
+        context="On this page, scout the five markets before the timer, choose a power pick, then play one ranked run where speed, accuracy, and streaks determine your score."
+        suggestions={BLITZ_AI_SUGGESTIONS}
+      />
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">

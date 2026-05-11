@@ -27,7 +27,7 @@ const PAGE_SIZE = 100;
 
 export function ProfilePositionsClient() {
   const searchParams = useSearchParams();
-  const username = (searchParams.get("u") ?? searchParams.get("username") ?? "").trim().toLowerCase();
+  const username = (searchParams?.get("u") ?? searchParams?.get("username") ?? "").trim().toLowerCase();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [positions, setPositions] = useState<SettledPositionRecord[]>([]);
   const [filter, setFilter] = useState<Filter>("all");

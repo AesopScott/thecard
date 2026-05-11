@@ -7,7 +7,7 @@ import { ThemePicker } from "@/components/theme-picker";
 
 export function ProfileQueryClient() {
   const searchParams = useSearchParams();
-  const username = (searchParams.get("u") ?? searchParams.get("username") ?? "").trim().toLowerCase();
+  const username = (searchParams?.get("u") ?? searchParams?.get("username") ?? "").trim().toLowerCase();
 
   if (!username) {
     return (

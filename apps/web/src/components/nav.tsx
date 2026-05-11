@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ] as const;
 
 export function Nav() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
 
   if (pathname === "/") return null;
 

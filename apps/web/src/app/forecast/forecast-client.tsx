@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AskTheCardAi } from "@/components/ask-the-card-ai";
+import { ExplainBetting } from "@/components/explain-betting";
 import {
   addForecast,
   clearForecasts,
@@ -81,6 +83,31 @@ const CALIBRATION_BUCKETS = [
   { label: "31-50", min: 0.31, max: 0.5 },
   { label: "51-70", min: 0.51, max: 0.7 },
   { label: "71-100", min: 0.71, max: 1 },
+];
+
+const FORECAST_EXPLANATION = [
+  {
+    title: "What you are setting",
+    body: "Forecast is not a normal yes/no pick. You choose the exact probability that YES happens, from 1% to 99%. A 70% forecast means you think YES should happen about seven times out of ten in similar spots.",
+  },
+  {
+    title: "Market comparison",
+    body: "The crowd number is the current market read. If the market says 58% and you set 70%, you are saying the YES side is underpriced. If you set 42%, you are saying the NO side is the better read.",
+  },
+  {
+    title: "How scoring works",
+    body: "Resolved forecasts use Brier score. A perfect confident forecast scores near 0. Being confidently wrong scores near 1. Lower Brier is better because it rewards both accuracy and honest uncertainty.",
+  },
+  {
+    title: "How to use it well",
+    body: "Use 50% when you truly think it is a coin flip. Push toward 70%, 80%, or higher only when you have a strong reason. Your calibration buckets show whether your 70% calls actually hit like 70% calls over time.",
+  },
+];
+
+const FORECAST_AI_SUGGESTIONS = [
+  "How do I choose between 60% and 70%?",
+  "What is a good Brier score?",
+  "When should I disagree with the market?",
 ];
 
 function clampProbability(value: number) {
@@ -217,6 +244,19 @@ export function ForecastClient() {
           {status && <p className="mt-3 text-xs font-semibold text-[var(--color-success)]">{status}</p>}
         </div>
       </section>
+
+      <ExplainBetting
+        buttonLabel="Explain forecast betting"
+        title="Forecast is about probability skill, not just picking winners."
+        summary="Every question is a YES/NO market, but the important part is how confident you are. Forecast teaches you whether your confidence matches reality, then compares that read against the market."
+        sections={FORECAST_EXPLANATION}
+      />
+
+      <AskTheCardAi
+        mode="forecast"
+        context="On this page, lock your exact YES probability, resolve the mock slate, then use Brier score and calibration buckets to learn whether your confidence is too high, too low, or well tuned."
+        suggestions={FORECAST_AI_SUGGESTIONS}
+      />
 
       <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">

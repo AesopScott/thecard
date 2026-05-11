@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AskTheCardAi } from "@/components/ask-the-card-ai";
+import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { useAuth } from "@/contexts/auth-context";
@@ -34,6 +36,31 @@ const OPPONENT = {
 
 const STORAGE_KEY = "h2h_v1";
 const HISTORY_KEY = "h2h_history_v1";
+
+const H2H_EXPLANATION = [
+  {
+    title: "What H2H is",
+    body: "Head-to-Head gives you and a rival the same five daily markets. You each pick YES or NO, then the match settles after the outcomes are known.",
+  },
+  {
+    title: "Winning the match",
+    body: "Most correct reads usually wins, but the score also reflects confidence, upset hits, and swing moments. Ties go to the challenger so a shared score still produces a result.",
+  },
+  {
+    title: "Confidence pick",
+    body: "Before locking, you can mark one market as your confidence pick. If it hits, that read is worth more. If it misses, you lose the chance to separate there.",
+  },
+  {
+    title: "Ghost and challenges",
+    body: "Ranked mode is for verified daily matches. Ghost mode lets you practice against a mock rival, and challenge links let another player try to beat your posted score.",
+  },
+];
+
+const H2H_AI_SUGGESTIONS = [
+  "How do confidence picks work?",
+  "What counts as an upset hit?",
+  "How do I beat the rival?",
+];
 
 function loadSavedRun(): H2HRun | null {
   if (typeof window === "undefined") return null;
@@ -237,6 +264,19 @@ function IntroScreen({
           </div>
         </div>
       </section>
+
+      <ExplainBetting
+        buttonLabel="Explain H2H betting"
+        title="H2H is the same board for both players, settled as a match."
+        summary="The mode is less about building the biggest ticket and more about beating one rival on the same five questions. Confidence, upset reads, and tie rules decide close matches."
+        sections={H2H_EXPLANATION}
+      />
+
+      <AskTheCardAi
+        mode="h2h"
+        context="On this page, answer the same five markets as the rival, mark one confidence pick, and use upset reads or cleaner accuracy to win the match."
+        suggestions={H2H_AI_SUGGESTIONS}
+      />
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">

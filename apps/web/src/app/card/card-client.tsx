@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { AskTheCardAi } from "@/components/ask-the-card-ai";
+import { ExplainBetting } from "@/components/explain-betting";
 import { MarketCard } from "@/components/market-card";
 import { JackpotBanner } from "@/components/jackpot-banner";
 import { PositionsPanel } from "@/components/positions-panel";
@@ -52,6 +54,31 @@ interface LockedCard {
 const TICKET_KEY = "thecard:my-card-ticket:v1";
 const LOCKED_KEY = "thecard:locked-card:v1";
 const HISTORY_KEY = "thecard:card-history:v1";
+
+const CARD_EXPLANATION = [
+  {
+    title: "What The Card is",
+    body: "The Card is the main daily board of mock sports markets. Each market has a YES price and a NO price, shown like cents. A 63c YES price means the board is treating YES roughly like a 63% outcome.",
+  },
+  {
+    title: "Building your card",
+    body: "Add YES or NO picks from the market feed. Your card becomes a ticket preview with projected points, conviction labels, and risk profile. Locking the card saves that daily read so you can compare it later.",
+  },
+  {
+    title: "Model edge",
+    body: "The app compares the market price to its own simple model read. A positive YES edge means the model thinks YES is more likely than the price implies. Fade mode flips that recommendation when you want to play against the signal.",
+  },
+  {
+    title: "Risk settings",
+    body: "Conservative trims the projection and favors safer reads. Balanced keeps the default model. Aggressive raises the ceiling and leans harder into edge. None of this is real-money wagering; it is a free-to-play prediction score.",
+  },
+];
+
+const CARD_AI_SUGGESTIONS = [
+  "What does 62c YES mean?",
+  "How should I use model edge?",
+  "Should I use aggressive risk?",
+];
 
 function todayId() {
   return new Date().toISOString().slice(0, 10);
@@ -339,6 +366,19 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
           </div>
         </div>
       </header>
+
+      <ExplainBetting
+        buttonLabel="Explain The Card betting"
+        title="The Card turns tonight's slate into a free-to-play prediction ticket."
+        summary="Prices are probability signals, not real-money odds. You use them to decide whether YES or NO is mispriced, then build a daily card around the reads you like most."
+        sections={CARD_EXPLANATION}
+      />
+
+      <AskTheCardAi
+        mode="card"
+        context="On this page, add YES or NO picks from the market feed, compare price to model edge, choose a risk profile, and lock a daily card when the ticket reflects your best reads."
+        suggestions={CARD_AI_SUGGESTIONS}
+      />
 
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">

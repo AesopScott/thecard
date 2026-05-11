@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
+import { AskTheCardAi } from "@/components/ask-the-card-ai";
+import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import {
@@ -70,6 +72,31 @@ const BASE_TIMELINE: TimelineItem[] = [
   { id: "t2", time: "8:20 Q3", type: "score", text: "Red-zone pressure is up. Next touchdown markets are moving fastest.", oddsRef: "TD +12c" },
   { id: "t3", time: "11:05 Q3", type: "sweat", text: "The total needs pace. Over backers need one more explosive drive.", oddsRef: "over 61c" },
   { id: "t4", time: "Halftime", type: "odds", text: "Chiefs opened the half at 64c before the first two drives split the market.", oddsRef: "64c YES" },
+];
+
+const LIVE_EXPLANATION = [
+  {
+    title: "What Live is",
+    body: "Live is a fast ticket built while a game is in progress. Market prices can move as the game changes, so the goal is to spot a good read before the moment closes.",
+  },
+  {
+    title: "Making picks",
+    body: "Add up to five live calls to your ticket. Each pick records the side, the price, and the game moment. You can watch markets first, then decide which calls belong on the locked ticket.",
+  },
+  {
+    title: "Risk and boost",
+    body: "Your risk mode changes the final score multiplier: conservative is 0.8x, balanced is 1.0x, aggressive is 1.25x. You can also boost one pick so landing that read matters more.",
+  },
+  {
+    title: "Locking and results",
+    body: "You get one verified Live ticket per day. After lock, the ticket settles against the recorded outcomes, updates your score, and can feed into the Live board or an H2H challenge.",
+  },
+];
+
+const LIVE_AI_SUGGESTIONS = [
+  "When should I boost a pick?",
+  "What does aggressive risk do?",
+  "How should I use the watchlist?",
 ];
 
 const STORAGE_KEY = "live_v1";
@@ -221,13 +248,42 @@ function Scoreboard({ game, momentum }: { game: Game; momentum: string }) {
 }
 
 function RiskSelector({ value, onChange, disabled }: { value: LiveRiskMode; onChange: (value: LiveRiskMode) => void; disabled: boolean }) {
+  const riskDetails: Record<LiveRiskMode, { multiplier: string; title: string; body: string }> = {
+    conservative: {
+      multiplier: "0.8x",
+      title: "Lower ceiling, more protection",
+      body: "Best when you want safer favorites and fewer busted tickets. Your final score is trimmed, but the ticket is less punishing.",
+    },
+    balanced: {
+      multiplier: "1.0x",
+      title: "Standard scoring",
+      body: "The default Live Ticket mode. Picks score normally with no extra reward or penalty layered on top.",
+    },
+    aggressive: {
+      multiplier: "1.25x",
+      title: "Higher ceiling, higher bust risk",
+      body: "Use when you want to chase bigger leaderboard points. Correct tickets pay more, but misses make the ticket riskier.",
+    },
+  };
+  const selected = riskDetails[value];
+
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {(["conservative", "balanced", "aggressive"] as LiveRiskMode[]).map((mode) => (
-        <button key={mode} disabled={disabled} onClick={() => onChange(mode)} className={`rounded-lg border px-2 py-2 text-[11px] font-black uppercase transition-all disabled:opacity-50 ${value === mode ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-bg)] text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]"}`}>
-          {mode}
-        </button>
-      ))}
+    <div>
+      <div className="grid grid-cols-3 gap-2">
+        {(["conservative", "balanced", "aggressive"] as LiveRiskMode[]).map((mode) => (
+          <button key={mode} disabled={disabled} onClick={() => onChange(mode)} aria-pressed={value === mode} className={`rounded-lg border px-2 py-2 text-[11px] font-black uppercase transition-all disabled:opacity-50 ${value === mode ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-bg)] text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]"}`}>
+            {mode}
+          </button>
+        ))}
+      </div>
+      <div className="mt-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-black text-[var(--color-card-text)]">{selected.title}</p>
+          <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{selected.multiplier} score</span>
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">{selected.body}</p>
+        {disabled && <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--color-card-muted)]">Locked after your first pick</p>}
+      </div>
     </div>
   );
 }
@@ -656,6 +712,19 @@ export function LiveClient() {
           <StatPill label="Watchlist" value={watchlist.length} />
         </div>
       </header>
+
+      <ExplainBetting
+        buttonLabel="Explain Live betting"
+        title="Live is about reading moving markets during the game."
+        summary="You are not picking a whole slate before kickoff. You are reacting to live game state, changing prices, and short windows where a market may be mispriced."
+        sections={LIVE_EXPLANATION}
+      />
+
+      <AskTheCardAi
+        mode="live"
+        context="On this page, watch prices move during the live game, add up to five calls, choose risk before committing, optionally boost one pick, then lock one verified ticket."
+        suggestions={LIVE_AI_SUGGESTIONS}
+      />
 
       {!user && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-center">
