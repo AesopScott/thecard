@@ -68,6 +68,7 @@ const FOOTER_LINKS = [
   { href: "/sports-calendar", label: "Sports Calendar" },
   { href: "/league-pass", label: "League Pass" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/support", label: "Support" },
 ];
 
 export default function LandingPage() {

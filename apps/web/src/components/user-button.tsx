@@ -64,6 +64,13 @@ export function UserButton() {
             >
               {username ? "View profile" : "Finish setup"}
             </Link>
+            <Link
+              href="/support"
+              onClick={() => setMenuOpen(false)}
+              className="block w-full text-left px-3 py-2 text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] rounded-lg transition-colors"
+            >
+              Support
+            </Link>
             <ThemePicker compact />
             <button
               onClick={async () => {

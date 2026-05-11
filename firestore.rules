@@ -57,6 +57,34 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /supportRequests/{requestId} {
+      allow read, update, delete: if false;
+      allow create: if request.resource.data.keys().hasOnly([
+          'name',
+          'email',
+          'category',
+          'subject',
+          'message',
+          'uid',
+          'username',
+          'status',
+          'createdAtMs',
+          'createdAt'
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.name is string
+        && request.resource.data.category in ['account', 'league', 'billing', 'bug', 'feature', 'other']
+        && request.resource.data.subject is string
+        && request.resource.data.message is string
+        && request.resource.data.status == 'new'
+        && request.resource.data.createdAtMs is number
+        && (request.resource.data.username == null || request.resource.data.username is string)
+        && (
+          request.resource.data.uid == null
+          || (isSignedIn() && request.resource.data.uid == request.auth.uid)
+        );
+    }
+
     match /users/{uid} {
       allow read: if true;
       allow create: if isSignedIn()

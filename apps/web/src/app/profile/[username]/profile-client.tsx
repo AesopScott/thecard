@@ -135,7 +135,20 @@ export function ProfileClient({ username }: ProfileClientProps) {
       </section>
 
       <LeagueBankrolls leagues={leagueSummaries} />
-      {isOwnProfile && <ThemePicker />}
+      {isOwnProfile && (
+        <>
+          <ThemePicker />
+          <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Support</p>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--color-card-muted)]">
+              Account, billing, league, and bug reports go here.
+            </p>
+            <Link href="/support" className="mt-3 inline-flex rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)]">
+              Open support form
+            </Link>
+          </section>
+        </>
+      )}
       <LeagueBetHistory bets={betHistory} />
       <PositionHistory positions={settledPositions} username={profile.username} />
     </div>
