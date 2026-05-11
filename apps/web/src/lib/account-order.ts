@@ -2,12 +2,26 @@ import type { Market } from "@thecard/types";
 import { exchange } from "./exchange";
 import {
   getActiveJoinedLeaguesForSportForUser,
+  getUserLeagueMemberships,
   placeUserLeagueBet,
   recordUserLeaguePayout,
   refundUserLeagueBet,
 } from "./league-store";
-import { placeUserSeasonBet, recordUserSeasonPayout, refundUserSeasonBet } from "./season-store";
+import {
+  getExistingUserSeasonMembership,
+  joinUserSeasonLeague,
+  placeUserSeasonBet,
+  recordUserSeasonPayout,
+  refundUserSeasonBet,
+} from "./season-store";
 import { closeMatchingPositions, savePosition } from "./user-store";
+
+export class LeagueMembershipRequiredError extends Error {
+  constructor() {
+    super("Join a league before taking a position");
+    this.name = "LeagueMembershipRequiredError";
+  }
+}
 
 export interface AccountOrderResult {
   marketId: string;
@@ -29,6 +43,13 @@ export async function placeAccountOrder({
   side: "yes" | "no";
   amountUsd: number;
 }): Promise<AccountOrderResult> {
+  const existingSeasonMembership = await getExistingUserSeasonMembership(uid);
+  if (!existingSeasonMembership) {
+    const joinedLeagues = await getUserLeagueMemberships(uid);
+    if (joinedLeagues.length === 0) throw new LeagueMembershipRequiredError();
+    await joinUserSeasonLeague(uid);
+  }
+
   const seasonMembership = await placeUserSeasonBet(uid, amountUsd);
   if (!seasonMembership) throw new Error("Insufficient bankroll");
 

@@ -43,6 +43,20 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'teamName', 'teamPhotoURL']);
     }
 
+    match /friendLeagues/{leagueId} {
+      allow read: if true;
+      allow create: if isVerified()
+        && leagueId.matches('friends-[0-9]{4,6}')
+        && request.resource.data.keys().hasOnly(['leagueId', 'number', 'createdBy', 'isFree', 'hasPayouts', 'createdAt', 'updatedAt'])
+        && request.resource.data.leagueId == leagueId
+        && request.resource.data.number is string
+        && leagueId == 'friends-' + request.resource.data.number
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.isFree == true
+        && request.resource.data.hasPayouts == false;
+      allow update, delete: if false;
+    }
+
     match /users/{uid} {
       allow read: if true;
       allow create: if isSignedIn()

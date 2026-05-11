@@ -302,6 +302,10 @@ async function syncSeasonLeaderboardEntry(uid: string, membership: LeagueMembers
 }
 
 export async function getUserSeasonMembership(uid: string, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
+  return joinUserSeasonLeague(uid, leagueId);
+}
+
+export async function getExistingUserSeasonMembership(uid: string, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership | null> {
   if (!db) return getMembership(leagueId);
   const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
   const snap = await getDoc(ref);
@@ -311,6 +315,17 @@ export async function getUserSeasonMembership(uid: string, leagueId = GLOBAL_LEA
     void syncSeasonLeaderboardEntry(uid, membership);
     return membership;
   }
+  return null;
+}
+
+export async function joinUserSeasonLeague(uid: string, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
+  if (!db) {
+    initGlobalLeague();
+    return getMembership(leagueId);
+  }
+  const existing = await getExistingUserSeasonMembership(uid, leagueId);
+  if (existing) return existing;
+  const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
   const membership: LeagueMembership = {
     leagueId,
     seasonId: ACTIVE_SEASON.id,
@@ -345,15 +360,7 @@ export async function placeUserSeasonBet(uid: string, amount: number, leagueId =
     if (exists) {
       membership = fromFirestore(leagueId, snap.data());
     } else {
-      membership = {
-        leagueId,
-        seasonId: ACTIVE_SEASON.id,
-        startingBankroll: STARTING_BANKROLL,
-        currentBankroll: STARTING_BANKROLL,
-        betCount: 0,
-        isBust: false,
-        joinedAt: Date.now(),
-      };
+      return null;
     }
     if (membership.isBust || membership.currentBankroll < amount) return null;
     const newBankroll = Math.max(0, membership.currentBankroll - amount);

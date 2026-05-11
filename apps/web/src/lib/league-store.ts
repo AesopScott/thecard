@@ -33,6 +33,28 @@ export interface FreeLeagueLeaderboardEntry {
 }
 
 const PREFIX = "thecard:league:v1:";
+const FRIEND_LEAGUE_PREFIX = "friends-";
+
+export function normalizeFriendLeagueNumber(value: string): string | null {
+  const digits = value.replace(/\D/g, "").slice(0, 6);
+  return digits.length >= 4 ? digits : null;
+}
+
+export function friendLeagueId(number: string): string {
+  return `${FRIEND_LEAGUE_PREFIX}${number}`;
+}
+
+export function friendLeagueNumberFromId(leagueId: string): string | null {
+  return leagueId.startsWith(FRIEND_LEAGUE_PREFIX) ? leagueId.slice(FRIEND_LEAGUE_PREFIX.length) : null;
+}
+
+export function isFriendLeagueId(leagueId: string): boolean {
+  return friendLeagueNumberFromId(leagueId) !== null;
+}
+
+export function createFriendLeagueNumber(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 function key(leagueId: string): string {
   return `${PREFIX}${leagueId}`;
@@ -117,7 +139,12 @@ export function getActiveJoinedLeaguesForSport(sport: Sport): string[] {
 // All league IDs the user has joined (any status), for display purposes.
 export function getAllJoinedLeagueIds(): string[] {
   if (typeof window === "undefined") return [];
-  return SPORT_LEAGUES.filter((l) => isJoined(l.id)).map((l) => l.id);
+  const sportLeagueIds = SPORT_LEAGUES.filter((l) => isJoined(l.id)).map((l) => l.id);
+  const friendLeagueIds = Object.keys(localStorage)
+    .filter((storageKey) => storageKey.startsWith(PREFIX))
+    .map((storageKey) => storageKey.slice(PREFIX.length))
+    .filter(isFriendLeagueId);
+  return Array.from(new Set([...sportLeagueIds, ...friendLeagueIds]));
 }
 
 function fromFirestore(leagueId: string, data: Record<string, unknown>): LeagueMembership {
@@ -210,6 +237,29 @@ export async function joinUserLeague(uid: string, leagueId: string): Promise<Lea
   }
   writeCache(membership);
   dispatchLeagueEvent();
+  return membership;
+}
+
+export async function joinUserFriendLeague(uid: string, number: string): Promise<LeagueMembership> {
+  const normalized = normalizeFriendLeagueNumber(number);
+  if (!normalized) throw new Error("Friend league numbers need at least four digits.");
+  const leagueId = friendLeagueId(normalized);
+  const membership = await joinUserLeague(uid, leagueId);
+  if (db) {
+    try {
+      await setDoc(doc(db, "friendLeagues", leagueId), {
+        leagueId,
+        number: normalized,
+        createdBy: uid,
+        isFree: true,
+        hasPayouts: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch {
+      // The user membership is the source of truth; league metadata can be backfilled by rules/admin later.
+    }
+  }
   return membership;
 }
 
@@ -306,9 +356,13 @@ export async function refundUserLeagueBet(uid: string, leagueId: string, amount:
 export async function getActiveJoinedLeaguesForSportForUser(uid: string, sport: Sport): Promise<string[]> {
   const memberships = await getUserLeagueMemberships(uid);
   const joined = new Set(memberships.map((membership) => membership.leagueId));
-  return SPORT_LEAGUES.filter(
+  const activeSportLeagueIds = SPORT_LEAGUES.filter(
     (league) => league.sport === sport && joined.has(league.id) && getLeagueStatus(league) === "active",
   ).map((league) => league.id);
+  const friendLeagueIds = memberships
+    .map((membership) => membership.leagueId)
+    .filter(isFriendLeagueId);
+  return [...activeSportLeagueIds, ...friendLeagueIds];
 }
 
 export function subscribeFreeLeagueLeaderboard(

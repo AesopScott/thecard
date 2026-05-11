@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { EmailVerificationNotice } from "./email-verification-notice";
-import { placeAccountOrder } from "@/lib/account-order";
+import { LeagueMembershipRequiredError, placeAccountOrder } from "@/lib/account-order";
 import {
   GLOBAL_LEAGUE,
   SEASON_BANKROLL_EVENT,
   getBankroll,
-  getUserSeasonMembership,
+  getExistingUserSeasonMembership,
   initGlobalLeague,
+  joinUserSeasonLeague,
 } from "@/lib/season-store";
 import type { Market, Odds } from "@thecard/types";
 
@@ -30,6 +31,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
   const { user, verificationRequired } = useAuth();
   const [amount, setAmount] = useState("10");
   const [sheetState, setSheetState] = useState<SheetState>("input");
+  const [orderError, setOrderError] = useState<string | null>(null);
   const [bankroll, setBankroll] = useState(() => {
     initGlobalLeague();
     return getBankroll(GLOBAL_LEAGUE.id);
@@ -38,8 +40,8 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
   useEffect(() => {
     function refresh() {
       if (user) {
-        getUserSeasonMembership(user.uid)
-          .then((membership) => setBankroll(membership.currentBankroll))
+        getExistingUserSeasonMembership(user.uid)
+          .then((membership) => setBankroll(membership?.currentBankroll ?? getBankroll(GLOBAL_LEAGUE.id)))
           .catch(() => setBankroll(getBankroll(GLOBAL_LEAGUE.id)));
       } else {
         setBankroll(getBankroll(GLOBAL_LEAGUE.id));
@@ -87,6 +89,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
 
   async function handleConfirm() {
     if (!user || verificationRequired || dollarAmount <= 0 || dollarAmount > bankroll) return;
+    setOrderError(null);
     setSheetState("confirming");
     try {
       const order = await placeAccountOrder({
@@ -102,13 +105,31 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
         setSheetState("input");
         onClose();
       }, 1800);
-    } catch {
+    } catch (error) {
+      if (error instanceof LeagueMembershipRequiredError) {
+        setOrderError("Join a league before taking a position. Free league, sports league, calendar league, whatever league. A league.");
+      } else {
+        setOrderError("Could not place that order. Check your bankroll and try again.");
+      }
       setSheetState("input");
+    }
+  }
+
+  async function handleJoinLeague() {
+    if (!user || verificationRequired) return;
+    setOrderError(null);
+    try {
+      const membership = await joinUserSeasonLeague(user.uid);
+      setBankroll(membership.currentBankroll);
+      window.dispatchEvent(new Event(SEASON_BANKROLL_EVENT));
+    } catch {
+      setOrderError("Could not join the league yet. Try again in a moment.");
     }
   }
 
   function handleClose() {
     setSheetState("input");
+    setOrderError(null);
     onClose();
   }
 
@@ -157,6 +178,22 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                   </motion.div>
                 ) : (
                   <motion.div key="form" className="flex flex-col gap-4">
+                    {orderError && (
+                      <div className="rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 px-4 py-3">
+                        <p className="text-sm font-black text-[var(--color-card-text)]">Join a league first</p>
+                        <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">{orderError}</p>
+                        {user && !verificationRequired && (
+                          <button
+                            type="button"
+                            onClick={handleJoinLeague}
+                            className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white"
+                          >
+                            Join global league
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     {/* Bankroll row */}
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-[var(--color-card-muted)]">Season bankroll</span>
