@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { href: "/perfect-ten",     label: "P10",      emoji: "💰" },
   { href: "/leagues",         label: "Leagues",  emoji: "🏟️" },
   { href: "/sports-calendar", label: "Calendar", emoji: "📅" },
-  { href: "/picks",           label: "Picks",    emoji: "🤖" },
+  { href: "/league-pass",     label: "League Pass", emoji: "💳" },
   { href: "/leaderboard",     label: "Board",    emoji: "🏆" },
 ] as const;
 

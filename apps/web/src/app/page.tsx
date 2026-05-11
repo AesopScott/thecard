@@ -66,7 +66,7 @@ const FOOTER_LINKS = [
   { href: "/perfect-ten", label: "Perfect 10" },
   { href: "/leagues", label: "Leagues" },
   { href: "/sports-calendar", label: "Sports Calendar" },
-  { href: "/picks", label: "Picks" },
+  { href: "/league-pass", label: "League Pass" },
   { href: "/leaderboard", label: "Leaderboard" },
 ];
 
