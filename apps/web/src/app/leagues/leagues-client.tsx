@@ -7,6 +7,13 @@ import { EmailVerificationNotice } from "@/components/email-verification-notice"
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { useAuth } from "@/contexts/auth-context";
 import {
+  buildAccountAccess,
+  buildLeagueAccessSnapshot,
+  calculateLeagueAccessUsage,
+  getUserAccountAccess,
+  type LeagueAccessSnapshot,
+} from "@/lib/account-access";
+import {
   formatLeagueDateRange,
   getLeagueStatus,
   getLeaguesByGroup,
@@ -36,6 +43,11 @@ import {
 
 type MembershipMap = Record<string, LeagueMembership>;
 type LeaderboardMap = Record<string, FreeLeagueLeaderboardEntry[]>;
+
+const GUEST_ACCESS_SNAPSHOT = buildLeagueAccessSnapshot(
+  buildAccountAccess("free"),
+  { freeLeagues: 0, friendLeagues: 0, paidLeagues: 0 },
+);
 
 function toMembershipMap(memberships: LeagueMembership[]): MembershipMap {
   return Object.fromEntries(memberships.map((membership) => [membership.leagueId, membership]));
@@ -282,6 +294,39 @@ function FriendsLeagueBox({
   );
 }
 
+function AccessSummary({ snapshot }: { snapshot: LeagueAccessSnapshot }) {
+  const { access, usage } = snapshot;
+  return (
+    <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Account Access</p>
+          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">
+            {access.plan === "paid" ? "$10/month member" : "Free account"}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
+            Global does not use a slot. Extra paid slots add one paid league and two free league slots.
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <AccessStat label="Free" used={usage.freeLeagues} limit={access.freeLeagueSlots} />
+          <AccessStat label="Friends" used={usage.friendLeagues} limit={access.friendLeagueSlots} />
+          <AccessStat label="Paid" used={usage.paidLeagues} limit={access.paidLeagueSlots} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccessStat({ label, used, limit }: { label: string; used: number; limit: number }) {
+  return (
+    <div className="min-w-20 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2 text-center">
+      <p className="text-sm font-black text-[var(--color-card-text)]">{used}/{limit}</p>
+      <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-[var(--color-text-muted)]">{label}</p>
+    </div>
+  );
+}
+
 function PaidLeagueColumn({
   memberships,
   joiningLeagueId,
@@ -504,6 +549,7 @@ export function LeaguesClient() {
   const [memberships, setMemberships] = useState<MembershipMap>({});
   const [seasonMemberships, setSeasonMemberships] = useState<MembershipMap>({});
   const [leaderboards, setLeaderboards] = useState<LeaderboardMap>({});
+  const [accessSnapshot, setAccessSnapshot] = useState<LeagueAccessSnapshot>(GUEST_ACCESS_SNAPSHOT);
   const [loading, setLoading] = useState(false);
   const [joiningLeagueId, setJoiningLeagueId] = useState<string | null>(null);
   const [joiningSeasonLeagueId, setJoiningSeasonLeagueId] = useState<string | null>(null);
@@ -515,16 +561,22 @@ export function LeaguesClient() {
     if (!user || verificationRequired) {
       setMemberships({});
       setSeasonMemberships({});
+      setAccessSnapshot(GUEST_ACCESS_SNAPSHOT);
       return;
     }
     setLoading(true);
     Promise.all([
       getUserLeagueMemberships(user.uid),
       getUserSeasonMemberships(user.uid),
+      getUserAccountAccess(user.uid),
     ])
-      .then(([nextMemberships, nextSeasonMemberships]) => {
+      .then(([nextMemberships, nextSeasonMemberships, nextAccess]) => {
         setMemberships(toMembershipMap(nextMemberships));
         setSeasonMemberships(toMembershipMap(nextSeasonMemberships));
+        setAccessSnapshot(buildLeagueAccessSnapshot(nextAccess, calculateLeagueAccessUsage({
+          freeMemberships: nextMemberships,
+          paidMemberships: nextSeasonMemberships,
+        })));
       })
       .catch(() => setError("Could not load your leagues."))
       .finally(() => setLoading(false));
@@ -573,6 +625,7 @@ export function LeaguesClient() {
     try {
       const membership = await joinUserLeague(user.uid, leagueId);
       setMemberships((current) => ({ ...current, [leagueId]: membership }));
+      refresh();
     } catch {
       setError("Could not join that league. Try again.");
     } finally {
@@ -587,6 +640,7 @@ export function LeaguesClient() {
     try {
       const membership = await joinUserSeasonLeague(user.uid, leagueId);
       setSeasonMemberships((current) => ({ ...current, [membership.leagueId]: membership }));
+      refresh();
     } catch {
       setError("Could not join the paid league. Try again.");
     } finally {
@@ -601,6 +655,7 @@ export function LeaguesClient() {
     try {
       const membership = await joinUserFriendLeague(user.uid, number);
       setMemberships((current) => ({ ...current, [membership.leagueId]: membership }));
+      refresh();
     } catch {
       setError("Enter a friend league number with at least four digits.");
     } finally {
@@ -639,6 +694,7 @@ export function LeaguesClient() {
 
         {error && <p className="mb-4 rounded-lg border border-[var(--color-danger)]/30 px-3 py-2 text-xs text-[var(--color-danger)]">{error}</p>}
         {loading && <p className="mb-4 text-xs text-[var(--color-text-muted)]">Loading your leagues...</p>}
+        <AccessSummary snapshot={accessSnapshot} />
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px]">
           <section className="flex flex-col gap-4">
