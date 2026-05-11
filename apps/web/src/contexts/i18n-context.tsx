@@ -8,7 +8,7 @@ import { getStoredLanguage, saveStoredLanguage } from "@/lib/language-store";
 interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: TranslationKey) => string;
+  t: (key: TranslationKey, params?: Record<string, string>) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -60,7 +60,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<I18nContextValue>(() => ({
     locale,
     setLocale,
-    t: (key) => DICTIONARY[locale][key] ?? DICTIONARY.en[key],
+    t: (key, params) => {
+      const rawTemplate = DICTIONARY[locale][key] ?? DICTIONARY.en[key];
+      const template = typeof rawTemplate === "string" ? rawTemplate : String(rawTemplate);
+      if (!params) return template;
+      return Object.entries(params).reduce<string>((text, [name, value]) => (
+        text.replaceAll(`{${name}}`, value)
+      ), template);
+    },
   }), [locale, setLocale]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import { useI18n } from "@/contexts/i18n-context";
+import { type TranslationKey } from "@/lib/i18n";
+
 interface KeyDate {
   label: string;
   date: string;
@@ -22,7 +25,7 @@ interface CalendarEvent extends KeyDate {
   sport: SportSeason;
   parsedDate: Date;
   daysAway: number;
-  mood: string;
+  mood: TranslationKey;
   marketCount: number;
 }
 
@@ -292,19 +295,19 @@ const SPORTS: SportSeason[] = [
 
 const CATEGORIES = [
   {
-    label: "Happening Now / Next Up",
+    label: "calendar.categoryNow",
     sports: ["FIFA World Cup", "MLB", "US Open Tennis"],
   },
   {
-    label: "Fall 2026",
+    label: "calendar.categoryFall",
     sports: ["NFL", "College Football", "Premier League", "UEFA Champions League", "NBA", "NHL"],
   },
   {
-    label: "Winter / Spring 2027",
+    label: "calendar.categoryWinter",
     sports: ["College Basketball", "Australian Open"],
   },
   {
-    label: "Spring / Summer 2027",
+    label: "calendar.categorySpring",
     sports: [
       "Golf - Masters",
       "Golf - PGA Championship",
@@ -333,21 +336,21 @@ function daysBetween(from: Date, to: Date) {
   return Math.max(0, Math.ceil((end - start) / ONE_DAY));
 }
 
-function eventMood(event: KeyDate, sport: SportSeason) {
+function eventMood(event: KeyDate, sport: SportSeason): TranslationKey {
   const text = `${sport.sport} ${event.label}`.toLowerCase();
   if (text.includes("final") || text.includes("championship") || text.includes("super bowl") || text.includes("world series")) {
-    return "Marquee";
+    return "calendar.moodMarquee";
   }
   if (text.includes("trade") || text.includes("deadline") || text.includes("selection")) {
-    return "Market shift";
+    return "calendar.moodMarketShift";
   }
   if (text.includes("opens") || text.includes("begins") || text.includes("week 1")) {
-    return "Opening bell";
+    return "calendar.moodOpeningBell";
   }
   if (text.includes("playoff") || text.includes("knockout") || text.includes("round")) {
-    return "Pressure slate";
+    return "calendar.moodPressureSlate";
   }
-  return "Watchlist";
+  return "calendar.moodWatchlist";
 }
 
 function marketCountFor(event: KeyDate, sport: SportSeason) {
@@ -361,10 +364,10 @@ function marketCountFor(event: KeyDate, sport: SportSeason) {
 
 function intensityFor(sport: SportSeason) {
   const count = sport.keyDates.length;
-  if (count >= 9) return { label: "Loaded", bar: "w-full", tone: "from-red-500 to-amber-400" };
-  if (count >= 6) return { label: "Active", bar: "w-3/4", tone: "from-sky-400 to-red-400" };
-  if (count >= 4) return { label: "Playable", bar: "w-1/2", tone: "from-emerald-400 to-sky-400" };
-  return { label: "Light", bar: "w-1/3", tone: "from-zinc-500 to-zinc-300" };
+  if (count >= 9) return { label: "calendar.intensityLoaded" as const, bar: "w-full", tone: "from-red-500 to-amber-400" };
+  if (count >= 6) return { label: "calendar.intensityActive" as const, bar: "w-3/4", tone: "from-sky-400 to-red-400" };
+  if (count >= 4) return { label: "calendar.intensityPlayable" as const, bar: "w-1/2", tone: "from-emerald-400 to-sky-400" };
+  return { label: "calendar.intensityLight" as const, bar: "w-1/3", tone: "from-zinc-500 to-zinc-300" };
 }
 
 function buildEvents(today: Date): CalendarEvent[] {
@@ -384,6 +387,7 @@ function buildEvents(today: Date): CalendarEvent[] {
 }
 
 export default function SportsCalendarPage() {
+  const { t } = useI18n();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const today = useMemo(() => new Date(), []);
   const sportMap = useMemo(() => Object.fromEntries(SPORTS.map((s) => [s.sport, s])), []);
@@ -394,9 +398,9 @@ export default function SportsCalendarPage() {
     return (
       <div className="min-h-screen bg-[var(--color-background)] p-8 text-[var(--color-text-primary)]">
         <Link href="/card" className="text-sm font-bold text-[var(--color-brand-primary)] hover:underline">
-          Back to Card
+          {t("calendar.back")}
         </Link>
-        <p className="mt-6 text-sm text-[var(--color-text-muted)]">No calendar events are available yet.</p>
+        <p className="mt-6 text-sm text-[var(--color-text-muted)]">{t("calendar.empty")}</p>
       </div>
     );
   }
@@ -407,11 +411,11 @@ export default function SportsCalendarPage() {
       <div className="mx-auto max-w-6xl px-4">
         <div className="mb-6 flex items-center justify-between gap-4">
           <Link href="/card" className="text-sm font-bold text-[var(--color-brand-primary)] hover:underline">
-            Back to Card
+            {t("calendar.back")}
           </Link>
           <div className="hidden items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)] sm:flex">
             <span className="h-2 w-2 rounded-full bg-red-500" />
-            Live slate planner
+            {t("calendar.livePlanner")}
           </div>
         </div>
 
@@ -424,30 +428,30 @@ export default function SportsCalendarPage() {
             <div className="relative grid min-h-[300px] gap-6 p-5 sm:p-7 lg:grid-cols-[1.4fr_0.9fr]">
               <div className="flex max-w-2xl flex-col justify-end">
                 <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
-                  Featured slate
+                  {t("calendar.featuredSlate")}
                 </p>
                 <h1 className="mt-2 text-4xl font-display font-black text-white sm:text-5xl">
                   {featured.sport.sport}: {featured.label}
                 </h1>
                 <p className="mt-3 max-w-xl text-sm text-white/72">
-                  {featured.date} opens the next planning window with {featured.marketCount} expected markets, quick links into The Card, and a detail drawer for the whole date.
+                  {t("calendar.featuredBody", { date: featured.date, count: String(featured.marketCount) })}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <SlateLink href="/card" label="Open Card" />
-                  <SlateLink href="/forecast" label="Forecast board" />
-                  <SlateLink href="/live" label="Live markets" />
+                  <SlateLink href="/card" label={t("calendar.openCard")} />
+                  <SlateLink href="/forecast" label={t("calendar.forecastBoard")} />
+                  <SlateLink href="/live" label={t("calendar.liveMarkets")} />
                 </div>
               </div>
               <div className="self-end rounded-lg border border-white/15 bg-black/45 p-4 backdrop-blur">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/45">Next lock</p>
-                <p className="mt-2 text-2xl font-display font-black text-white">{featured.daysAway} days</p>
-                <p className="mt-1 text-xs text-white/60">{featured.mood} / {featured.sport.season}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/45">{t("calendar.nextLock")}</p>
+                <p className="mt-2 text-2xl font-display font-black text-white">{featured.daysAway} {t("calendar.days")}</p>
+                <p className="mt-1 text-xs text-white/60">{t(featured.mood)} / {featured.sport.season}</p>
                 <button
                   type="button"
                   onClick={() => setSelectedEvent(featured)}
                   className="mt-4 w-full rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-sm font-black text-white transition hover:brightness-110"
                 >
-                  View slate details
+                  {t("calendar.viewDetails")}
                 </button>
               </div>
             </div>
@@ -457,15 +461,15 @@ export default function SportsCalendarPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           <main>
             <section className="mb-6 grid gap-3 sm:grid-cols-3">
-              <PulseMetric label="Next markets" value={String(upcoming.length)} detail="in the lock rail" />
-              <PulseMetric label="Featured count" value={String(featured.marketCount)} detail="expected markets" />
-              <PulseMetric label="Calendar mood" value={featured.mood} detail="current slate tag" />
+              <PulseMetric label={t("calendar.nextMarkets")} value={String(upcoming.length)} detail={t("calendar.inLockRail")} />
+              <PulseMetric label={t("calendar.featuredCount")} value={String(featured.marketCount)} detail={t("calendar.expectedMarkets")} />
+              <PulseMetric label={t("calendar.calendarMood")} value={t(featured.mood)} detail={t("calendar.currentSlateTag")} />
             </section>
 
             {CATEGORIES.map((cat) => (
               <section key={cat.label} className="mb-10">
                 <h2 className="mb-4 text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
-                  {cat.label}
+                  {t(cat.label as TranslationKey)}
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   {cat.sports.map((name) => {
@@ -477,6 +481,7 @@ export default function SportsCalendarPage() {
                         sport={sport}
                         today={today}
                         onSelectEvent={setSelectedEvent}
+                        t={t}
                       />
                     );
                   })}
@@ -486,8 +491,8 @@ export default function SportsCalendarPage() {
           </main>
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-            <UpcomingLocks events={upcoming} onSelectEvent={setSelectedEvent} />
-            <TodayDrawer event={drawerEvent} />
+            <UpcomingLocks events={upcoming} onSelectEvent={setSelectedEvent} t={t} />
+            <TodayDrawer event={drawerEvent} t={t} />
           </aside>
         </div>
       </div>
@@ -519,16 +524,18 @@ function PulseMetric({ label, value, detail }: { label: string; value: string; d
 function UpcomingLocks({
   events,
   onSelectEvent,
+  t,
 }: {
   events: CalendarEvent[];
   onSelectEvent: (event: CalendarEvent) => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-black text-[var(--color-card-text)]">Upcoming locks</h2>
+        <h2 className="text-sm font-black text-[var(--color-card-text)]">{t("calendar.upcomingLocks")}</h2>
         <span className="rounded-full bg-red-500/15 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-red-300">
-          Live rail
+          {t("calendar.liveRail")}
         </span>
       </div>
       <div className="space-y-2">
@@ -553,19 +560,19 @@ function UpcomingLocks({
   );
 }
 
-function TodayDrawer({ event }: { event: CalendarEvent }) {
+function TodayDrawer({ event, t }: { event: CalendarEvent; t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <section className="rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-card-surface)] p-4 shadow-[0_0_35px_rgba(239,68,68,0.08)]">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Date drawer</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("calendar.dateDrawer")}</p>
       <h2 className="mt-2 text-xl font-display font-black text-[var(--color-card-text)]">{event.sport.sport}</h2>
       <p className="mt-1 text-sm font-bold text-[var(--color-text-secondary)]">{event.label}</p>
       <p className="mt-1 text-xs text-[var(--color-text-muted)]">{event.date}</p>
 
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <DrawerStat label="Mood" value={event.mood} />
-        <DrawerStat label="Markets" value={String(event.marketCount)} />
-        <DrawerStat label="Locks in" value={`${event.daysAway}d`} />
-        <DrawerStat label="Season" value={event.sport.season} />
+        <DrawerStat label={t("calendar.mood")} value={t(event.mood)} />
+        <DrawerStat label={t("calendar.markets")} value={String(event.marketCount)} />
+        <DrawerStat label={t("calendar.locksIn")} value={`${event.daysAway}d`} />
+        <DrawerStat label={t("calendar.season")} value={event.sport.season} />
       </div>
 
       {event.sport.note && (
@@ -576,14 +583,14 @@ function TodayDrawer({ event }: { event: CalendarEvent }) {
 
       <div className="mt-4 grid gap-2">
         <Link href="/card" className="rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-center text-sm font-black text-white">
-          Build this card
+          {t("calendar.buildCard")}
         </Link>
         <div className="grid grid-cols-2 gap-2">
           <Link href="/forecast" className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-center text-xs font-bold text-[var(--color-card-text)]">
-            Forecast
+            {t("calendar.forecast")}
           </Link>
           <Link href="/live" className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-center text-xs font-bold text-[var(--color-card-text)]">
-            Live
+            {t("calendar.live")}
           </Link>
         </div>
       </div>
@@ -604,10 +611,12 @@ function SportCard({
   sport,
   today,
   onSelectEvent,
+  t,
 }: {
   sport: SportSeason;
   today: Date;
   onSelectEvent: (event: CalendarEvent) => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const intensity = intensityFor(sport);
   const nextDate = parseEventDate(sport.keyDates[0]?.date ?? sport.start);
@@ -630,14 +639,14 @@ function SportCard({
             {sport.note && <p className="mt-2 text-xs text-[var(--color-text-muted)]">{sport.note}</p>}
           </div>
           <span className="shrink-0 rounded-full bg-black/15 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">
-            {intensity.label}
+            {t(intensity.label)}
           </span>
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <MiniStat label="Start" value={sport.start.split(",")[0] ?? sport.start} />
-          <MiniStat label="Next" value={`${daysAway}d`} />
-          <MiniStat label="Dates" value={String(sport.keyDates.length)} />
+          <MiniStat label={t("calendar.start")} value={sport.start.split(",")[0] ?? sport.start} />
+          <MiniStat label={t("calendar.next")} value={`${daysAway}d`} />
+          <MiniStat label={t("calendar.dates")} value={String(sport.keyDates.length)} />
         </div>
       </div>
 
