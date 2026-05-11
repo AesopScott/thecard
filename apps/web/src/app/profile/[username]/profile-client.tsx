@@ -13,6 +13,8 @@ import {
   type SettledPositionRecord,
   type UserProfile,
 } from "@/lib/user-store";
+import { useAuth } from "@/contexts/auth-context";
+import { ThemePicker } from "@/components/theme-picker";
 import { friendLeagueNumberFromId } from "@/lib/league-store";
 import { getLeaguesByGroup, getSportLeagueById, leagueTypeBadge, sportLeagueIdFromPaidLeagueId } from "@/lib/sport-leagues";
 import { ACTIVE_SEASON, GLOBAL_LEAGUE } from "@/lib/season-store";
@@ -22,6 +24,7 @@ interface ProfileClientProps {
 }
 
 export function ProfileClient({ username }: ProfileClientProps) {
+  const { username: currentUsername } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [settledPositions, setSettledPositions] = useState<SettledPositionRecord[]>([]);
   const [leagueSummaries, setLeagueSummaries] = useState<PublicLeagueSummary[]>([]);
@@ -81,6 +84,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
 
   const score = Math.round(profile.calibrationScore);
   const avgBrier = profile.avgBrierScore === null ? "-" : profile.avgBrierScore.toFixed(3);
+  const isOwnProfile = currentUsername === profile.username;
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-6">
@@ -126,6 +130,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
       </section>
 
       <LeagueBankrolls leagues={leagueSummaries} />
+      {isOwnProfile && <ThemePicker />}
       <LeagueBetHistory bets={betHistory} />
       <PositionHistory positions={settledPositions} username={profile.username} />
     </div>
