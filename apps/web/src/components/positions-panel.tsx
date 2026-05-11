@@ -2,6 +2,7 @@
 
 import { useCallback, useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { exchange } from "@/lib/exchange";
 import { closeAccountPosition, placeAccountOrder } from "@/lib/account-order";
 import { consolidatePositions, subscribeToPositions } from "@/lib/user-store";
@@ -42,6 +43,7 @@ function defaultOrders(currentCents: number): LimitOrders {
 
 export function PositionsPanel() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [positions, setPositions] = useState<Position[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
 
@@ -74,8 +76,8 @@ export function PositionsPanel() {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-[var(--color-card-text)]">Your Positions</h2>
-        <span className="text-xs text-[var(--color-card-muted)]">{positions.length} open</span>
+        <h2 className="text-sm font-bold text-[var(--color-card-text)]">{t("shared.yourPositions")}</h2>
+        <span className="text-xs text-[var(--color-card-muted)]">{t("shared.openCount", { count: String(positions.length) })}</span>
       </div>
       <div className="flex flex-col gap-2">
         {positions.map((pos) => (

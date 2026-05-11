@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { EmailVerificationNotice } from "./email-verification-notice";
 import { LeagueMembershipRequiredError, placeAccountOrder } from "@/lib/account-order";
 import {
@@ -55,6 +56,7 @@ function leagueLabel(leagueId: string): Pick<LeagueOption, "name" | "meta"> {
 
 export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProps) {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const [amount, setAmount] = useState("10");
   const [sheetState, setSheetState] = useState<SheetState>("input");
   const [orderError, setOrderError] = useState<string | null>(null);
@@ -161,8 +163,8 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
       }, 1800);
     } catch (error) {
       setOrderError(error instanceof LeagueMembershipRequiredError
-        ? "Choose one league for this position before placing the order."
-        : "Could not place that order. Check the selected league bankroll and try again.");
+        ? t("shared.chooseLeagueOrder")
+        : t("shared.orderFailed"));
       setSheetState("input");
     }
   }
@@ -184,7 +186,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
       setSelectedLeagueId(GLOBAL_LEAGUE.id);
       window.dispatchEvent(new Event(SEASON_BANKROLL_EVENT));
     } catch {
-      setOrderError("Could not join the league yet. Try again in a moment.");
+      setOrderError(t("shared.joinLeagueFailed"));
     }
   }
 
@@ -211,7 +213,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                 {sheetState === "success" ? (
                   <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-3 py-8">
                     <span className="text-5xl font-black" style={{ color: sideColor }}>OK</span>
-                    <p className="text-base font-bold text-[var(--color-card-text)]">Order placed!</p>
+                    <p className="text-base font-bold text-[var(--color-card-text)]">{t("shared.orderPlaced")}</p>
                     <p className="text-center text-sm text-[var(--color-card-muted)]">
                       {contracts.toFixed(1)} {side.toUpperCase()} contracts in{" "}
                       <span className="font-semibold text-[var(--color-card-text)]">{selectedLeague?.name}</span>
@@ -221,18 +223,18 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                   <motion.div key="form" className="flex flex-col gap-4">
                     {orderError && (
                       <div className="rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 px-4 py-3">
-                        <p className="text-sm font-black text-[var(--color-card-text)]">League required</p>
+                        <p className="text-sm font-black text-[var(--color-card-text)]">{t("shared.leagueRequired")}</p>
                         <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">{orderError}</p>
                         {user && !verificationRequired && (
                           <button type="button" onClick={handleJoinLeague} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white">
-                            Join global league
+                            {t("shared.joinGlobalLeague")}
                           </button>
                         )}
                       </div>
                     )}
 
                     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position league</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("shared.positionLeague")}</label>
                       {leagueOptions.length > 0 ? (
                         <select
                           value={selectedLeagueId}
@@ -246,13 +248,13 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                           ))}
                         </select>
                       ) : (
-                        <p className="mt-2 text-xs text-[var(--color-card-muted)]">Join a league before taking a position.</p>
+                        <p className="mt-2 text-xs text-[var(--color-card-muted)]">{t("shared.joinLeagueBeforePosition")}</p>
                       )}
                       <div className="mt-2 flex items-center justify-between gap-3 text-xs">
-                        <span className="truncate text-[var(--color-card-muted)]">{selectedLeague?.meta ?? "No league selected"}</span>
+                        <span className="truncate text-[var(--color-card-muted)]">{selectedLeague?.meta ?? t("shared.noLeagueSelected")}</span>
                         <span className={`font-bold ${selectedLeague && dollarAmount > bankroll ? "text-[var(--color-card-no)]" : "text-[var(--color-card-text)]"}`}>
                           ${selectedLeague ? bankroll.toLocaleString() : STARTING_BANKROLL.toLocaleString()}
-                          {selectedLeague && dollarAmount > bankroll && " - insufficient"}
+                          {selectedLeague && dollarAmount > bankroll && ` - ${t("shared.insufficient")}`}
                         </span>
                       </div>
                     </div>
@@ -264,11 +266,11 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                         </span>
                         <p className="text-sm font-bold leading-snug text-[var(--color-card-text)]">{market.title}</p>
                       </div>
-                      <button onClick={handleClose} className="shrink-0 text-xl leading-none text-[var(--color-card-muted)] transition-colors hover:text-[var(--color-card-text)]" aria-label="Close">x</button>
+                      <button onClick={handleClose} className="shrink-0 text-xl leading-none text-[var(--color-card-muted)] transition-colors hover:text-[var(--color-card-text)]" aria-label={t("shared.close")}>x</button>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-medium text-[var(--color-card-muted)]">Amount</label>
+                      <label className="text-xs font-medium text-[var(--color-card-muted)]">{t("shared.amount")}</label>
                       <div className="relative">
                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--color-card-muted)]">$</span>
                         <input
@@ -285,16 +287,16 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
 
                     <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3.5">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-[var(--color-card-muted)]">Contracts</span>
+                        <span className="text-[var(--color-card-muted)]">{t("profile.contracts")}</span>
                         <span className="font-semibold text-[var(--color-card-text)]">{dollarAmount > 0 ? contracts.toFixed(1) : "-"}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-[var(--color-card-muted)]">Price per contract</span>
+                        <span className="text-[var(--color-card-muted)]">{t("shared.pricePerContract")}</span>
                         <span className="font-semibold text-[var(--color-card-text)]">{priceCents}c</span>
                       </div>
                       <div className="h-px bg-[var(--color-card-border)]" />
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-[var(--color-card-muted)]">If {side.toUpperCase()} wins</span>
+                        <span className="text-[var(--color-card-muted)]">{t("shared.ifSideWins", { side: side.toUpperCase() })}</span>
                         <span className="font-bold" style={{ color: sideColor }}>{dollarAmount > 0 ? `$${payout.toFixed(2)}` : "-"}</span>
                       </div>
                     </div>
@@ -306,11 +308,11 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                       style={{ backgroundColor: sideDimColor, color: sideColor, border: `1px solid color-mix(in srgb, ${sideColor} 30%, transparent)` }}
                     >
                       {sheetState === "confirming"
-                        ? "Placing..."
-                        : `Buy ${contracts > 0 ? contracts.toFixed(1) : "0"} ${side.toUpperCase()} in ${selectedLeague?.name ?? "a league"} - $${dollarAmount > 0 ? dollarAmount : "0"}`}
+                        ? t("shared.placing")
+                        : t("shared.buyOrder", { contracts: contracts > 0 ? contracts.toFixed(1) : "0", side: side.toUpperCase(), league: selectedLeague?.name ?? t("shared.aLeague"), amount: dollarAmount > 0 ? String(dollarAmount) : "0" })}
                     </button>
 
-                    <p className="text-center text-[10px] text-[var(--color-card-muted)]">No real funds at risk</p>
+                    <p className="text-center text-[10px] text-[var(--color-card-muted)]">{t("shared.noRealFunds")}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

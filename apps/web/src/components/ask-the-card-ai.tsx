@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 
 type AiMode = "card" | "forecast" | "live" | "blitz" | "h2h";
 
@@ -78,6 +79,7 @@ function answerFor(mode: AiMode, question: string, context: string) {
 }
 
 export function AskTheCardAi({ mode, context, suggestions }: AskTheCardAiProps) {
+  const { t } = useI18n();
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<AiMessage[]>([
     { role: "assistant", text: STARTER_ANSWERS[mode] },
@@ -106,10 +108,10 @@ export function AskTheCardAi({ mode, context, suggestions }: AskTheCardAiProps) 
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Ask The Card AI</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--color-card-text)]">Ask a question about {label}.</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("shared.askAi")}</p>
+          <p className="mt-1 text-sm font-semibold text-[var(--color-card-text)]">{t("shared.askQuestionAbout", { label })}</p>
         </div>
-        <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">Context aware</span>
+        <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{t("shared.contextAware")}</span>
       </div>
 
       <div className="mt-4 rounded-lg bg-[var(--color-card-bg)] p-3">
@@ -133,7 +135,7 @@ export function AskTheCardAi({ mode, context, suggestions }: AskTheCardAiProps) 
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder={`Ask about ${label}...`}
+          placeholder={t("shared.askPlaceholder", { label })}
           className="min-h-11 flex-1 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 text-sm font-semibold text-[var(--color-card-text)] outline-none transition-colors placeholder:text-[var(--color-card-muted)] focus:border-[var(--color-brand-primary)]"
         />
         <button
@@ -141,7 +143,7 @@ export function AskTheCardAi({ mode, context, suggestions }: AskTheCardAiProps) 
           disabled={!trimmed}
           className="rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-xs font-black uppercase text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Ask
+          {t("shared.ask")}
         </button>
       </form>
     </div>

@@ -2,6 +2,7 @@
 
 import { THEME_LABELS, THEMES, type AppTheme } from "@/lib/theme-store";
 import { useTheme } from "@/contexts/theme-context";
+import { useI18n } from "@/contexts/i18n-context";
 
 const SWATCHES: Record<AppTheme, string> = {
   default: "linear-gradient(135deg, #ff3c3c 0 38%, #111118 38% 100%)",
@@ -18,11 +19,12 @@ const SWATCHES: Record<AppTheme, string> = {
 
 export function ThemePicker({ compact = false }: { compact?: boolean }) {
   const { theme, setTheme, syncStatus } = useTheme();
+  const { t } = useI18n();
 
   return (
     <div className={compact ? "px-3 py-2" : "rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4"}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Theme</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("shared.theme")}</p>
         <span className="text-[10px] font-bold uppercase text-[var(--color-card-muted)]">{syncStatus}</span>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">

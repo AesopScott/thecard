@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/contexts/i18n-context";
 
 interface ExplainSection {
   title: string;
@@ -16,12 +17,13 @@ interface ExplainBettingProps {
 
 export function ExplainBetting({ buttonLabel, title, summary, sections }: ExplainBettingProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Need the rules?</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("shared.needRules")}</p>
           <p className="mt-1 text-sm font-semibold text-[var(--color-card-text)]">{title}</p>
         </div>
         <button
@@ -30,7 +32,7 @@ export function ExplainBetting({ buttonLabel, title, summary, sections }: Explai
           aria-expanded={open}
           className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 py-2 text-xs font-black uppercase text-[var(--color-card-text)] transition-colors hover:border-[var(--color-brand-primary)]/60"
         >
-          {open ? "Hide explanation" : buttonLabel}
+          {open ? t("shared.hideExplanation") : buttonLabel}
         </button>
       </div>
 

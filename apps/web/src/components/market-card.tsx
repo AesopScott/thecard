@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { Market, Odds } from "@thecard/types";
 import { exchange } from "@/lib/exchange";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { SignInSheet } from "./sign-in-sheet";
 import { OrderSheet } from "./order-sheet";
 import { EmailVerificationNotice } from "./email-verification-notice";
@@ -42,6 +43,7 @@ export function MarketCard({
   onExplain,
 }: MarketCardProps) {
   const { user, verificationRequired, loading: authLoading } = useAuth();
+  const { t } = useI18n();
   const [odds, setOdds] = useState<Odds | null>(initialOdds ?? null);
   const [orderSide, setOrderSide] = useState<"yes" | "no" | null>(null);
 
@@ -84,12 +86,12 @@ export function MarketCard({
                       : "border-[var(--color-card-border)] text-[var(--color-card-muted)] hover:border-[var(--color-brand-primary)]/50"
                   }`}
                 >
-                  {watched ? "Watching" : "Watch"}
+                  {watched ? t("shared.watching") : t("shared.watch")}
                 </button>
               )}
               {onExplain && (
                 <button onClick={onExplain} className="w-fit rounded-lg border border-[var(--color-card-border)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)] transition-colors hover:border-[var(--color-brand-primary)]/50">
-                  Explain
+                  {t("shared.explain")}
                 </button>
               )}
             </div>
@@ -99,7 +101,7 @@ export function MarketCard({
         {yesPct !== null && (
           <div className="flex shrink-0 flex-col items-end gap-2">
             <div className="text-2xl font-display font-black text-[var(--color-card-yes)]">{yesPct}c</div>
-            <span className="text-[10px] font-medium text-[var(--color-card-muted)]">crowd</span>
+            <span className="text-[10px] font-medium text-[var(--color-card-muted)]">{t("shared.crowd")}</span>
           </div>
         )}
       </div>
@@ -119,13 +121,13 @@ export function MarketCard({
           <div className="grid grid-cols-2 gap-2">
             {edgeLabel && (
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">Edge</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">{t("shared.edge")}</p>
                 <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{edgeLabel}</p>
               </div>
             )}
             {movement && (
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">Move</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">{t("shared.move")}</p>
                 <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{movement}</p>
               </div>
             )}
@@ -154,8 +156,8 @@ export function MarketCard({
         <div className="flex flex-col gap-2 px-4 pb-4">
           {onAddToTicket && (
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => onAddToTicket("yes")} className={`rounded-lg border px-3 py-2 text-xs font-black transition-all ${selectedSide === "yes" ? "border-[var(--color-card-yes)] bg-[var(--color-card-yes)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)]"}`}>Add YES</button>
-              <button onClick={() => onAddToTicket("no")} className={`rounded-lg border px-3 py-2 text-xs font-black transition-all ${selectedSide === "no" ? "border-[var(--color-card-no)] bg-[var(--color-card-no)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-no-dim)] text-[var(--color-card-no)]"}`}>Add NO</button>
+              <button onClick={() => onAddToTicket("yes")} className={`rounded-lg border px-3 py-2 text-xs font-black transition-all ${selectedSide === "yes" ? "border-[var(--color-card-yes)] bg-[var(--color-card-yes)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)]"}`}>{t("shared.addYes")}</button>
+              <button onClick={() => onAddToTicket("no")} className={`rounded-lg border px-3 py-2 text-xs font-black transition-all ${selectedSide === "no" ? "border-[var(--color-card-no)] bg-[var(--color-card-no)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-no-dim)] text-[var(--color-card-no)]"}`}>{t("shared.addNo")}</button>
             </div>
           )}
           <div className="flex gap-3">
@@ -166,7 +168,7 @@ export function MarketCard({
       )}
 
       <div className="border-t border-[var(--color-card-border)] px-4 pb-4 pt-2">
-        <p className="text-[10px] leading-relaxed text-[var(--color-text-muted)]">Prices are cents on the dollar. A 62c YES price means a 62% chance this happens.</p>
+        <p className="text-[10px] leading-relaxed text-[var(--color-text-muted)]">{t("shared.priceHelp")}</p>
       </div>
 
       {orderSide && !user && <SignInSheet open onClose={() => setOrderSide(null)} />}
