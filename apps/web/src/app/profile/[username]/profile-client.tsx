@@ -89,7 +89,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
   const isOwnProfile = currentUsername === profile.username;
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6">
       <header className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
         <div className="flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-card-accent)] text-xl font-black text-white">
@@ -100,12 +100,22 @@ export function ProfileClient({ username }: ProfileClientProps) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-2xl font-black text-[var(--color-card-text)]">@{profile.username}</h1>
-              {profile.emailVerified && (
-                <span className="rounded-full border border-[var(--color-brand-primary)]/30 px-2 py-0.5 text-[10px] font-bold text-[var(--color-brand-primary)]">
-                  Verified
-                </span>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <h1 className="truncate text-2xl font-black text-[var(--color-card-text)]">@{profile.username}</h1>
+                {profile.emailVerified && (
+                  <span className="rounded-full border border-[var(--color-brand-primary)]/30 px-2 py-0.5 text-[10px] font-bold text-[var(--color-brand-primary)]">
+                    Verified
+                  </span>
+                )}
+              </div>
+              {isOwnProfile && (
+                <Link
+                  href="/support"
+                  className="shrink-0 rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)]"
+                >
+                  {t("profile.openSupport")}
+                </Link>
               )}
             </div>
             <p className="mt-1 text-sm text-[var(--color-card-muted)]">
@@ -136,23 +146,13 @@ export function ProfileClient({ username }: ProfileClientProps) {
         ))}
       </section>
 
-      <LeagueBankrolls leagues={leagueSummaries} />
-      {isOwnProfile && (
-        <>
-          <ThemePicker />
-          <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("support.title")}</p>
-            <p className="mt-1 text-sm leading-relaxed text-[var(--color-card-muted)]">
-              {t("profile.supportBody")}
-            </p>
-            <Link href="/support" className="mt-3 inline-flex rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)]">
-              {t("profile.openSupport")}
-            </Link>
-          </section>
-        </>
-      )}
-      <LeagueBetHistory bets={betHistory} />
-      <PositionHistory positions={settledPositions} username={profile.username} />
+      {isOwnProfile && <ThemePicker />}
+
+      <section className="grid gap-4 lg:grid-cols-3 lg:items-start">
+        <LeagueBetHistory bets={betHistory} />
+        <LeagueBankrolls leagues={leagueSummaries} />
+        <PositionHistory positions={settledPositions} username={profile.username} />
+      </section>
     </div>
   );
 }
