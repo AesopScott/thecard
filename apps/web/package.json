@@ -1,6 +1,6 @@
 {
   "name": "@thecard/web",
-  "version": "1.0.34",
+  "version": "1.0.40",
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -38,4 +38,3 @@
     "typescript": "^5.8.3"
   }
 }
-

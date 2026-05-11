@@ -4,7 +4,7 @@ export const metadata = { title: "Leaderboard — The Card" };
 
 export default function LeaderboardPage() {
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5">
+    <div className="max-w-lg mx-auto px-4 pt-6 pb-28 flex flex-col gap-5">
 
       <header className="flex flex-col gap-2 pt-2">
         <h1 className="text-4xl font-display font-black tracking-tight text-[var(--color-card-text)]">

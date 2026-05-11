@@ -1,9 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Market, Odds } from "@thecard/types";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const anthropicApiKey = process.env.ANTHROPIC_API_KEY?.trim();
+const client = anthropicApiKey
+  ? new Anthropic({ apiKey: anthropicApiKey })
+  : null;
 
 // Module-level cache — scoped to this server instance, TTL 1 hour
 const cache = new Map<string, { take: string; cachedAt: number }>();
@@ -52,7 +53,7 @@ export async function getHostTake(
   market: Market,
   odds: Odds
 ): Promise<HostTake> {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!client) {
     return {
       text: FALLBACKS[market.id] ?? "No take available for this market.",
       source: "fallback",

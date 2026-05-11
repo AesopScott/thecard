@@ -13,12 +13,16 @@ import {
 import { db } from "./firebase";
 
 export type LivePickSide = "yes" | "no";
+export type LiveRiskMode = "conservative" | "balanced" | "aggressive";
 
 export interface LivePick {
   marketId: string;
   title: string;
   side: LivePickSide;
   price: number;
+  status?: "pending" | "live" | "settled" | "busted" | "boosted";
+  openedAt?: number;
+  currentPrice?: number;
 }
 
 export interface LiveRun {
@@ -26,18 +30,30 @@ export interface LiveRun {
   gameId: string;
   picks: LivePick[];
   outcomes: Record<string, LivePickSide>;
+  boostMarketId?: string | null;
+  riskMode?: LiveRiskMode;
   score: number;
   correct: number;
+  streak: number;
+  boostedCorrect: boolean;
+  perfectTicket: boolean;
+  isBust: boolean;
+  insuranceBadge: boolean;
   completedAtMs: number;
 }
 
 export interface LiveLeaderboardEntry {
   uid: string;
+  username?: string;
   displayName: string;
   photoURL: string | null;
   score: number;
   correct: number;
   pickCount: number;
+  streak: number;
+  boostedCorrect: boolean;
+  perfectTicket: boolean;
+  isBust: boolean;
   completedAtMs: number;
 }
 
@@ -59,16 +75,39 @@ export function getLiveOutcomes(picks: LivePick[], date = liveDateId()): Record<
 
 export function scoreLiveRun(
   picks: LivePick[],
-  outcomes: Record<string, LivePickSide> = getLiveOutcomes(picks)
-): Pick<LiveRun, "outcomes" | "score" | "correct"> {
+  outcomes: Record<string, LivePickSide> = getLiveOutcomes(picks),
+  boostMarketId?: string | null,
+  riskMode: LiveRiskMode = "balanced"
+): Pick<LiveRun, "outcomes" | "score" | "correct" | "streak" | "boostedCorrect" | "perfectTicket" | "isBust" | "insuranceBadge" | "riskMode" | "boostMarketId"> {
   let score = 0;
   let correct = 0;
+  let currentStreak = 0;
+  let streak = 0;
+  let boostedCorrect = false;
+  const riskMultiplier = riskMode === "conservative" ? 0.8 : riskMode === "aggressive" ? 1.25 : 1;
+
   picks.forEach((pick) => {
-    if (pick.side !== outcomes[pick.marketId]) return;
+    if (pick.side !== outcomes[pick.marketId]) {
+      currentStreak = 0;
+      return;
+    }
     correct += 1;
-    score += pick.price >= 60 ? 1 : 2;
+    currentStreak += 1;
+    streak = Math.max(streak, currentStreak);
+    let earned = pick.price >= 60 ? 1 : 2;
+    if (pick.marketId === boostMarketId) {
+      earned += 2;
+      boostedCorrect = true;
+    }
+    score += earned;
   });
-  return { outcomes, score, correct };
+
+  if (streak >= 3) score += 1;
+  score = Math.max(0, Math.round(score * riskMultiplier));
+  const perfectTicket = picks.length > 0 && correct === picks.length;
+  const isBust = picks.length > 0 && correct === 0;
+  const insuranceBadge = !perfectTicket && picks.length > 1 && correct === picks.length - 1 && Boolean(boostMarketId);
+  return { outcomes, score, correct, streak, boostedCorrect, perfectTicket, isBust, insuranceBadge, riskMode, boostMarketId: boostMarketId ?? null };
 }
 
 function isLivePick(value: unknown): value is LivePick {
@@ -95,14 +134,27 @@ function toLiveRun(date: string, data: Record<string, unknown>): LiveRun | null 
   ) {
     return null;
   }
+  const scored = scoreLiveRun(
+    picks,
+    outcomes,
+    (data.boostMarketId as string | null | undefined) ?? null,
+    (data.riskMode as LiveRiskMode | undefined) ?? "balanced"
+  );
 
   return {
     date,
     gameId: data.gameId,
     picks,
     outcomes,
+    boostMarketId: (data.boostMarketId as string | null | undefined) ?? null,
+    riskMode: (data.riskMode as LiveRiskMode | undefined) ?? "balanced",
     score: data.score,
     correct: data.correct,
+    streak: (data.streak as number | undefined) ?? scored.streak,
+    boostedCorrect: (data.boostedCorrect as boolean | undefined) ?? scored.boostedCorrect,
+    perfectTicket: (data.perfectTicket as boolean | undefined) ?? scored.perfectTicket,
+    isBust: (data.isBust as boolean | undefined) ?? scored.isBust,
+    insuranceBadge: (data.insuranceBadge as boolean | undefined) ?? scored.insuranceBadge,
     completedAtMs: data.completedAtMs,
   };
 }
@@ -119,13 +171,14 @@ export async function saveLiveRun(
   gameId: string,
   picks: LivePick[],
   profile?: { displayName?: string | null; photoURL?: string | null },
-  date = liveDateId()
+  date = liveDateId(),
+  options?: { boostMarketId?: string | null; riskMode?: LiveRiskMode }
 ): Promise<LiveRun> {
   if (!db) throw new Error("Firebase not configured");
   const firestore = db;
   if (picks.length === 0) throw new Error("At least one live pick is required");
   if (!picks.every(isLivePick)) throw new Error("Invalid live pick");
-  const scored = scoreLiveRun(picks, getLiveOutcomes(picks, date));
+  const scored = scoreLiveRun(picks, getLiveOutcomes(picks, date), options?.boostMarketId, options?.riskMode ?? "balanced");
   const run: LiveRun = {
     date,
     gameId,
@@ -136,11 +189,17 @@ export async function saveLiveRun(
 
   await runTransaction(firestore, async (tx) => {
     const runRef = doc(firestore, "users", uid, "liveRuns", date);
+    const profileRef = doc(firestore, "users", uid);
     const leaderboardRef = doc(firestore, "liveLeaderboards", date, "entries", uid);
     const existing = await tx.get(runRef);
     if (existing.exists()) {
       throw new Error("Live Read already locked for today");
     }
+    const profileSnap = await tx.get(profileRef);
+    const profileData = profileSnap.data();
+    const username = (profileData?.username as string | undefined) ?? undefined;
+    const displayName = (profileData?.displayName as string | undefined) ?? profile?.displayName ?? username ?? "Anonymous";
+    const photoURL = (profileData?.photoURL as string | null | undefined) ?? profile?.photoURL ?? null;
 
     tx.set(runRef, {
       ...run,
@@ -148,11 +207,16 @@ export async function saveLiveRun(
     });
     tx.set(leaderboardRef, {
       uid,
-      displayName: profile?.displayName || "Anonymous",
-      photoURL: profile?.photoURL ?? null,
+      ...(username && { username }),
+      displayName,
+      photoURL,
       score: run.score,
       correct: run.correct,
       pickCount: run.picks.length,
+      streak: run.streak,
+      boostedCorrect: run.boostedCorrect,
+      perfectTicket: run.perfectTicket,
+      isBust: run.isBust,
       completedAtMs: run.completedAtMs,
       completedAt: serverTimestamp(),
     });
@@ -163,10 +227,13 @@ export async function saveLiveRun(
 
 export function subscribeLiveLeaderboard(
   date = liveDateId(),
-  cb: (entries: LiveLeaderboardEntry[]) => void
+  cb: (entries: LiveLeaderboardEntry[]) => void,
+  onError?: () => void
 ): Unsubscribe {
-  cb(buildMockLiveLeaderboard());
-  if (!db) return () => {};
+  if (!db) {
+    cb([]);
+    return () => {};
+  }
   const q = query(
     collection(db, "liveLeaderboards", date, "entries"),
     orderBy("score", "desc"),
@@ -177,24 +244,23 @@ export function subscribeLiveLeaderboard(
       const data = entryDoc.data();
       return {
         uid: (data.uid as string | undefined) ?? entryDoc.id,
+        username: (data.username as string | undefined) ?? undefined,
         displayName: (data.displayName as string | undefined) ?? "Anonymous",
         photoURL: (data.photoURL as string | null | undefined) ?? null,
         score: (data.score as number | undefined) ?? 0,
         correct: (data.correct as number | undefined) ?? 0,
         pickCount: (data.pickCount as number | undefined) ?? 0,
+        streak: (data.streak as number | undefined) ?? 0,
+        boostedCorrect: (data.boostedCorrect as boolean | undefined) ?? false,
+        perfectTicket: (data.perfectTicket as boolean | undefined) ?? false,
+        isBust: (data.isBust as boolean | undefined) ?? false,
         completedAtMs: (data.completedAtMs as number | undefined) ?? 0,
       };
     });
-    entries.sort((a, b) => b.score - a.score || b.correct - a.correct || a.completedAtMs - b.completedAtMs);
-    cb([...entries, ...buildMockLiveLeaderboard()]);
-  }, () => cb(buildMockLiveLeaderboard()));
-}
-
-function buildMockLiveLeaderboard(): LiveLeaderboardEntry[] {
-  return [
-    { uid: "mock-live-1", displayName: "DriveReader", photoURL: "/avatars/preview-drive-reader.svg", score: 7, correct: 4, pickCount: 5, completedAtMs: Date.now() - 600000 },
-    { uid: "mock-live-2", displayName: "RedZoneRay", photoURL: "/avatars/preview-red-zone-ray.svg", score: 6, correct: 4, pickCount: 5, completedAtMs: Date.now() - 900000 },
-    { uid: "mock-live-3", displayName: "ClockSharp", photoURL: "/avatars/preview-clock-sharp.svg", score: 5, correct: 3, pickCount: 4, completedAtMs: Date.now() - 1200000 },
-    { uid: "mock-live-4", displayName: "Momentum", photoURL: "/avatars/preview-momentum.svg", score: 4, correct: 3, pickCount: 5, completedAtMs: Date.now() - 1500000 },
-  ];
+    entries.sort((a, b) => b.score - a.score || b.correct - a.correct || b.streak - a.streak || a.completedAtMs - b.completedAtMs);
+    cb(entries);
+  }, () => {
+    onError?.();
+    cb([]);
+  });
 }

@@ -51,7 +51,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: 21
           protocol: ftps
-          local-dir: ./apps/web/out/
+          local-dir: ./apps/web/.next-build/
           server-dir: /
           force: true
           exclude: |

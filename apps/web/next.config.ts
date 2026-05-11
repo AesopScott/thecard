@@ -5,6 +5,9 @@ const config: NextConfig = {
   output: "export",
   trailingSlash: true,
   images: { unoptimized: true },
+  experimental: {
+    cpus: 1,
+  },
   transpilePackages: [
     "@thecard/types",
     "@thecard/exchange-client",
@@ -13,4 +16,3 @@ const config: NextConfig = {
 };
 
 export default config;
-

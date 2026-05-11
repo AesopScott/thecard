@@ -5,6 +5,8 @@ node_modules/
 
 # Build outputs
 .next/
+.next-build/
+.next-dev/
 dist/
 out/
 build/
@@ -24,6 +26,7 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+.claude/
 *.swp
 *.swo
 

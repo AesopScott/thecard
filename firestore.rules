@@ -94,7 +94,12 @@ service cloud.firestore {
           && request.resource.data.picks is list
           && request.resource.data.times is list
           && request.resource.data.score is number
-          && request.resource.data.correct is number;
+          && request.resource.data.correct is number
+          && request.resource.data.avgTime is number
+          && request.resource.data.bestStreak is number
+          && request.resource.data.perfectRun is bool
+          && request.resource.data.completedAtMs is number
+          && request.resource.data.marketIds is list;
         allow update, delete: if false;
       }
 
@@ -106,8 +111,13 @@ service cloud.firestore {
           && request.resource.data.picks is list
           && request.resource.data.opponentPicks is map
           && request.resource.data.outcomes is map
+          && (request.resource.data.confidenceMarketId == null || request.resource.data.confidenceMarketId is string)
           && request.resource.data.yourCorrect is number
           && request.resource.data.opponentCorrect is number
+          && request.resource.data.yourScore is number
+          && request.resource.data.opponentScore is number
+          && request.resource.data.upsetHits is number
+          && request.resource.data.swing is list
           && request.resource.data.result in ['win', 'loss', 'tie-win'];
         allow update, delete: if false;
       }
@@ -120,8 +130,15 @@ service cloud.firestore {
           && request.resource.data.gameId is string
           && request.resource.data.picks is list
           && request.resource.data.outcomes is map
+          && (request.resource.data.boostMarketId == null || request.resource.data.boostMarketId is string)
+          && request.resource.data.riskMode in ['conservative', 'balanced', 'aggressive']
           && request.resource.data.score is number
           && request.resource.data.correct is number
+          && request.resource.data.streak is number
+          && request.resource.data.boostedCorrect is bool
+          && request.resource.data.perfectTicket is bool
+          && request.resource.data.isBust is bool
+          && request.resource.data.insuranceBadge is bool
           && request.resource.data.completedAtMs is number;
         allow update, delete: if false;
       }
@@ -177,39 +194,54 @@ service cloud.firestore {
 
     match /blitzLeaderboards/{dateId}/entries/{uid} {
       allow read: if true;
-      allow create, update: if isVerified()
+      allow create: if isVerified()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
+        && request.resource.data.displayName is string
+        && (request.resource.data.photoURL == null || request.resource.data.photoURL is string)
         && request.resource.data.score is number
         && request.resource.data.correct is number
         && request.resource.data.avgTime is number
+        && request.resource.data.bestStreak is number
+        && request.resource.data.perfectRun is bool
         && request.resource.data.completedAtMs is number;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     match /h2hLeaderboards/{dateId}/entries/{uid} {
       allow read: if true;
-      allow create, update: if isVerified()
+      allow create: if isVerified()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
+        && request.resource.data.displayName is string
+        && (request.resource.data.photoURL == null || request.resource.data.photoURL is string)
         && request.resource.data.result in ['win', 'loss', 'tie-win']
         && request.resource.data.yourCorrect is number
         && request.resource.data.opponentCorrect is number
+        && request.resource.data.yourScore is number
+        && request.resource.data.opponentScore is number
         && request.resource.data.margin is number
+        && request.resource.data.upsetHits is number
         && request.resource.data.completedAtMs is number;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     match /liveLeaderboards/{dateId}/entries/{uid} {
       allow read: if true;
-      allow create, update: if isVerified()
+      allow create: if isVerified()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
+        && request.resource.data.displayName is string
+        && (request.resource.data.photoURL == null || request.resource.data.photoURL is string)
         && request.resource.data.score is number
         && request.resource.data.correct is number
         && request.resource.data.pickCount is number
+        && request.resource.data.streak is number
+        && request.resource.data.boostedCorrect is bool
+        && request.resource.data.perfectTicket is bool
+        && request.resource.data.isBust is bool
         && request.resource.data.completedAtMs is number;
-      allow delete: if false;
+      allow update, delete: if false;
     }
 
     match /seasonLeaderboards/{leagueId}/entries/{uid} {

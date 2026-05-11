@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
@@ -8,55 +9,77 @@ import {
   getStoredLiveRun,
   liveDateId,
   saveLiveRun,
+  scoreLiveRun,
   subscribeLiveLeaderboard,
   type LiveLeaderboardEntry,
   type LivePick,
   type LivePickSide,
+  type LiveRiskMode,
   type LiveRun,
 } from "@/lib/live-store";
 
-// ── Mock data ──────────────────────────────────────────────────────────────
-
 interface Game {
   id: string;
-  away: string; awayScore: number; awayRecord: string;
-  home: string; homeScore: number; homeRecord: string;
-  period: string; clock: string;
+  away: string;
+  awayScore: number;
+  awayRecord: string;
+  home: string;
+  homeScore: number;
+  homeRecord: string;
+  period: string;
+  clock: string;
   status: "live" | "upcoming" | "final";
-  kickoff?: string;
 }
 
 interface MicroMarket {
-  id: string; title: string; baseYes: number;
-  trend: "up" | "down" | "flat"; closesIn: string;
+  id: string;
+  title: string;
+  baseYes: number;
+  openYes: number;
+  trend: "up" | "down" | "flat";
+  closesIn: string;
+  tag: "drive" | "spread" | "total" | "prop";
 }
 
-interface CommentaryItem {
-  id: string; time: string; text: string; oddsRef?: string;
+interface TimelineItem {
+  id: string;
+  time: string;
+  type: "odds" | "score" | "ticket" | "sweat";
+  text: string;
+  oddsRef?: string;
 }
+
+type BoardFilter = "today" | "slate" | "friends" | "verified" | "boosted" | "perfect";
 
 const GAMES: Game[] = [
   { id: "kc-sf", away: "KC", awayScore: 17, awayRecord: "11-3", home: "SF", homeScore: 14, homeRecord: "10-4", period: "Q3", clock: "8:42", status: "live" },
-  { id: "dal-phi", away: "DAL", awayScore: 0, awayRecord: "7-7", home: "PHI", homeScore: 0, homeRecord: "12-2", period: "—", clock: "8:20 PM", status: "upcoming", kickoff: "Tonight" },
+  { id: "dal-phi", away: "DAL", awayScore: 0, awayRecord: "7-7", home: "PHI", homeScore: 0, homeRecord: "12-2", period: "pregame", clock: "8:20 PM", status: "upcoming" },
   { id: "buf-mia", away: "BUF", awayScore: 27, awayRecord: "11-3", home: "MIA", homeScore: 20, homeRecord: "8-6", period: "FINAL", clock: "", status: "final" },
 ];
 
 const MICRO_MARKETS: MicroMarket[] = [
-  { id: "mm1", title: "Next score: Chiefs TD", baseYes: 0.45, trend: "up",   closesIn: "2:34" },
-  { id: "mm2", title: "Chiefs win by 7+",      baseYes: 0.38, trend: "flat", closesIn: "game" },
-  { id: "mm3", title: "Total points over 47.5", baseYes: 0.61, trend: "up",  closesIn: "game" },
-  { id: "mm4", title: "49ers cover +3.5",       baseYes: 0.44, trend: "down", closesIn: "game" },
+  { id: "main", title: "Chiefs to win", baseYes: 0.71, openYes: 0.62, trend: "up", closesIn: "game", tag: "spread" },
+  { id: "mm1", title: "Next score: Chiefs TD", baseYes: 0.45, openYes: 0.33, trend: "up", closesIn: "2:34", tag: "drive" },
+  { id: "mm2", title: "Chiefs win by 7+", baseYes: 0.38, openYes: 0.41, trend: "flat", closesIn: "game", tag: "spread" },
+  { id: "mm3", title: "Total points over 47.5", baseYes: 0.61, openYes: 0.55, trend: "up", closesIn: "game", tag: "total" },
+  { id: "mm4", title: "49ers cover +3.5", baseYes: 0.44, openYes: 0.52, trend: "down", closesIn: "game", tag: "prop" },
 ];
 
-const COMMENTARY: CommentaryItem[] = [
-  { id: "c1", time: "8:42 Q3", text: "Mahomes just converted on 3rd-and-8 — Chiefs are 71% to win and climbing. The 49ers pass rush hasn't touched him since halftime.", oddsRef: "71¢ YES" },
-  { id: "c2", time: "11:05 Q3", text: "SF scored to cut it to 17–14. Watch the total — 31 points through three quarters with the over at 47.5. Needs 17 more in one quarter. Lean under.", oddsRef: "over 61¢" },
-  { id: "c3", time: "14:22 Q3", text: "Chiefs opened this half at 64¢. The Kelce touchdown moved them to 76¢ briefly before the 49ers answered. Now sitting at 71¢ — the market isn't convinced either way.", oddsRef: "71¢ YES" },
-  { id: "c4", time: "Halftime", text: "49ers held to a field goal on four red zone plays. That inefficiency is priced in — Chiefs came out at 64¢ to start the half. If SF's offense doesn't wake up in Q3, this moves fast.", oddsRef: "64¢ YES" },
+const BASE_TIMELINE: TimelineItem[] = [
+  { id: "t1", time: "8:42 Q3", type: "odds", text: "Chiefs win price is climbing after a third-down conversion.", oddsRef: "71c YES" },
+  { id: "t2", time: "8:20 Q3", type: "score", text: "Red-zone pressure is up. Next touchdown markets are moving fastest.", oddsRef: "TD +12c" },
+  { id: "t3", time: "11:05 Q3", type: "sweat", text: "The total needs pace. Over backers need one more explosive drive.", oddsRef: "over 61c" },
+  { id: "t4", time: "Halftime", type: "odds", text: "Chiefs opened the half at 64c before the first two drives split the market.", oddsRef: "64c YES" },
 ];
 
 const STORAGE_KEY = "live_v1";
+const HISTORY_KEY = "live_history_v1";
+const WATCHLIST_KEY = "live_watchlist_v1";
 const MAX_PICKS = 5;
+
+function normalizeRun(run: LiveRun): LiveRun {
+  return { ...run, ...scoreLiveRun(run.picks, run.outcomes, run.boostMarketId, run.riskMode ?? "balanced") };
+}
 
 function loadSavedRun(): LiveRun | null {
   if (typeof window === "undefined") return null;
@@ -64,14 +87,45 @@ function loadSavedRun(): LiveRun | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const run = JSON.parse(raw) as LiveRun;
-    return run.date === liveDateId() ? run : null;
+    return run.date === liveDateId() ? normalizeRun(run) : null;
   } catch {
     return null;
   }
 }
 
+function loadHistory(): LiveRun[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return [];
+    const history = JSON.parse(raw) as LiveRun[];
+    return Array.isArray(history) ? history.map(normalizeRun).slice(0, 10) : [];
+  } catch {
+    return [];
+  }
+}
+
 function persistRun(run: LiveRun): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(run));
+  if (typeof window === "undefined") return;
+  const normalized = normalizeRun(run);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  const next = [normalized, ...loadHistory().filter((item) => item.date !== normalized.date)].slice(0, 10);
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+}
+
+function loadWatchlist(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(WATCHLIST_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWatchlist(ids: string[]) {
+  if (typeof window !== "undefined") localStorage.setItem(WATCHLIST_KEY, JSON.stringify(ids));
 }
 
 function timeUntilMidnight(): string {
@@ -84,375 +138,319 @@ function timeUntilMidnight(): string {
 }
 
 function shareText(run: LiveRun): string {
-  return `I scored ${run.score} on today's Live Read at The Card (${run.correct}/${run.picks.length} live calls).`;
+  const badge = run.perfectTicket ? "perfect ticket" : run.insuranceBadge ? "near-miss insurance" : run.isBust ? "bust" : `${run.streak}-pick streak`;
+  return `I scored ${run.score} on today's Live Ticket at The Card (${run.correct}/${run.picks.length}, ${badge}).`;
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────
+function driftLabel(openYes: number, currentYes: number): string {
+  const move = Math.round((currentYes - openYes) * 100);
+  if (Math.abs(move) < 10) return `${move >= 0 ? "+" : ""}${move}c`;
+  return `${move > 0 ? "+" : ""}${move}c alert`;
+}
+
+function statusForPick(pick: LivePick, boostMarketId: string | null): "Pending" | "Live" | "Settled" | "Busted" | "Boosted" {
+  if (pick.marketId === boostMarketId) return "Boosted";
+  if (pick.marketId === "mm1") return "Pending";
+  if (pick.marketId === "mm4") return "Busted";
+  if (pick.marketId === "main") return "Live";
+  return "Settled";
+}
 
 function LivePulse() {
   return (
     <span className="flex items-center gap-1.5">
       <span className="relative flex h-2 w-2">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-card-yes)] opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-card-yes)]" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-card-yes)] opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--color-card-yes)]" />
       </span>
-      <span className="text-[10px] font-bold text-[var(--color-card-yes)] uppercase tracking-widest">Live</span>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-card-yes)]">Live</span>
     </span>
   );
 }
 
-function GameChip({ game, selected, onClick }: { game: Game; selected: boolean; onClick: () => void }) {
-  const isLive = game.status === "live";
-  const isFinal = game.status === "final";
-
+function StatPill({ label, value }: { label: string; value: string | number }) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex-shrink-0 rounded-xl border p-3 flex flex-col gap-1 min-w-[120px] transition-colors text-left ${
-        selected
-          ? "border-[var(--color-card-accent)] bg-[var(--color-card-accent-dim)]"
-          : "border-[var(--color-card-border)] bg-[var(--color-card-surface)] hover:border-[var(--color-card-muted)]"
-      }`}
-    >
+    <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 py-2">
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">{label}</p>
+      <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{value}</p>
+    </div>
+  );
+}
+
+function GameChip({ game, selected, onClick }: { game: Game; selected: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`min-w-[124px] flex-shrink-0 rounded-xl border p-3 text-left transition-colors ${selected ? "border-[var(--color-card-accent)] bg-[var(--color-card-accent-dim)]" : "border-[var(--color-card-border)] bg-[var(--color-card-surface)] hover:border-[var(--color-card-muted)]"}`}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-black text-[var(--color-card-text)]">{game.away}</span>
-        <span className={`text-xs font-black ${isFinal ? "text-[var(--color-card-muted)]" : "text-[var(--color-card-text)]"}`}>
-          {game.awayScore}
-        </span>
+        <span className="text-xs font-black text-[var(--color-card-text)]">{game.awayScore}</span>
       </div>
-      <div className="flex items-center justify-between gap-2">
+      <div className="mt-1 flex items-center justify-between gap-2">
         <span className="text-xs font-black text-[var(--color-card-text)]">{game.home}</span>
-        <span className={`text-xs font-black ${isFinal ? "text-[var(--color-card-muted)]" : "text-[var(--color-card-text)]"}`}>
-          {game.homeScore}
-        </span>
+        <span className="text-xs font-black text-[var(--color-card-text)]">{game.homeScore}</span>
       </div>
-      <div className="mt-0.5">
-        {isLive && (
-          <span className="text-[9px] font-bold text-[var(--color-card-yes)] uppercase tracking-wider">
-            {game.period} · {game.clock}
-          </span>
-        )}
-        {game.status === "upcoming" && (
-          <span className="text-[9px] font-medium text-[var(--color-card-muted)]">{game.clock}</span>
-        )}
-        {isFinal && (
-          <span className="text-[9px] font-medium text-[var(--color-card-muted)]">Final</span>
-        )}
-      </div>
+      <p className="mt-2 text-[9px] font-bold uppercase tracking-wider text-[var(--color-card-muted)]">{game.status === "live" ? `${game.period} - ${game.clock}` : game.status}</p>
     </button>
   );
 }
 
-function Scoreboard({ game }: { game: Game }) {
-  const quarters = ["Q1", "Q2", "Q3", "Q4"];
-  const currentQ = parseInt(game.period.replace("Q", "")) - 1;
-
+function Scoreboard({ game, momentum }: { game: Game; momentum: string }) {
   return (
-    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
         <LivePulse />
-        <span className="text-xs text-[var(--color-card-muted)]">{game.period} · {game.clock} remaining</span>
+        <span className="text-xs text-[var(--color-card-muted)]">{game.period} - {game.clock} remaining</span>
       </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-3xl font-black text-[var(--color-card-text)]">{game.awayScore}</span>
-          <span className="text-sm font-bold text-[var(--color-card-muted)]">{game.away}</span>
-          <span className="text-[10px] text-[var(--color-card-muted)]">{game.awayRecord}</span>
+      <div className="mt-4 flex items-center justify-between">
+        <div className="text-center">
+          <p className="text-3xl font-black text-[var(--color-card-text)]">{game.awayScore}</p>
+          <p className="text-sm font-bold text-[var(--color-card-muted)]">{game.away}</p>
+          <p className="text-[10px] text-[var(--color-card-muted)]">{game.awayRecord}</p>
         </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-xs text-[var(--color-card-muted)]">vs</span>
-          <div className="flex gap-1">
-            {quarters.map((q, i) => (
-              <div
-                key={q}
-                className={`w-5 h-1.5 rounded-full ${
-                  i < currentQ ? "bg-[var(--color-card-accent)]"
-                  : i === currentQ ? "bg-[var(--color-card-accent)] opacity-50"
-                  : "bg-[var(--color-card-border)]"
-                }`}
-              />
-            ))}
-          </div>
+        <div className="text-center">
+          <p className="text-xs text-[var(--color-card-muted)]">Momentum</p>
+          <p className="mt-1 rounded-lg bg-[var(--color-card-accent-dim)] px-3 py-2 text-sm font-black text-[var(--color-card-accent)]">{momentum}</p>
         </div>
-
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="text-3xl font-black text-[var(--color-card-text)]">{game.homeScore}</span>
-          <span className="text-sm font-bold text-[var(--color-card-muted)]">{game.home}</span>
-          <span className="text-[10px] text-[var(--color-card-muted)]">{game.homeRecord}</span>
+        <div className="text-center">
+          <p className="text-3xl font-black text-[var(--color-card-text)]">{game.homeScore}</p>
+          <p className="text-sm font-bold text-[var(--color-card-muted)]">{game.home}</p>
+          <p className="text-[10px] text-[var(--color-card-muted)]">{game.homeRecord}</p>
         </div>
       </div>
     </div>
   );
 }
 
-function MainMarket({
-  yes,
-  onPick,
-  disabled,
-}: {
-  yes: number;
-  onPick: (pick: LivePick) => void;
-  disabled: boolean;
-}) {
-  const yesPct = Math.round(yes * 100);
-  const noPct = 100 - yesPct;
-
+function RiskSelector({ value, onChange, disabled }: { value: LiveRiskMode; onChange: (value: LiveRiskMode) => void; disabled: boolean }) {
   return (
-    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-widest">Chiefs to win</span>
-        <LivePulse />
-      </div>
-
-      {/* Odds bar */}
-      <div className="flex rounded-lg overflow-hidden h-10 text-sm font-black">
-        <div
-          className="flex items-center justify-center bg-[var(--color-card-yes)] text-white transition-all duration-1000"
-          style={{ width: `${yesPct}%` }}
-        >
-          YES {yesPct}¢
-        </div>
-        <div
-          className="flex items-center justify-center bg-[var(--color-card-no)] text-white transition-all duration-1000"
-          style={{ width: `${noPct}%` }}
-        >
-          NO {noPct}¢
-        </div>
-      </div>
-
-      <p className="text-xs text-[var(--color-card-muted)]">
-        The market gives Kansas City a <strong className="text-[var(--color-card-text)]">{yesPct}% chance</strong> to win — up from 62% at kickoff.
-      </p>
-
-      <div className="flex gap-2">
-        <BetButton side="yes" cents={yesPct} disabled={disabled} onPick={() => onPick({ marketId: "main", title: "Chiefs to win", side: "yes", price: yesPct })} />
-        <BetButton side="no" cents={noPct} disabled={disabled} onPick={() => onPick({ marketId: "main", title: "Chiefs to win", side: "no", price: noPct })} />
-      </div>
-    </div>
-  );
-}
-
-function BetButton({
-  side,
-  cents,
-  disabled,
-  onPick,
-}: {
-  side: LivePickSide;
-  cents: number;
-  disabled: boolean;
-  onPick: () => void;
-}) {
-  const [tapped, setTapped] = useState(false);
-
-  function handleTap() {
-    if (disabled) return;
-    onPick();
-    setTapped(true);
-    setTimeout(() => setTapped(false), 800);
-  }
-
-  const isYes = side === "yes";
-  const base = isYes
-    ? "bg-[var(--color-card-yes-dim)] border-[var(--color-card-yes)] text-[var(--color-card-yes)]"
-    : "bg-[var(--color-card-no-dim)] border-[var(--color-card-no)] text-[var(--color-card-no)]";
-
-  return (
-    <button
-      onClick={handleTap}
-      disabled={disabled}
-      className={`flex-1 border rounded-lg py-2.5 text-sm font-black transition-opacity disabled:cursor-not-allowed disabled:opacity-40 ${base} ${tapped ? "opacity-50" : "opacity-100"}`}
-    >
-      {tapped ? "✓ Added" : `${isYes ? "YES" : "NO"} · ${cents}¢`}
-    </button>
-  );
-}
-
-function MicroMarketCard({
-  market,
-  yes,
-  onPick,
-  disabled,
-}: {
-  market: MicroMarket;
-  yes: number;
-  onPick: (pick: LivePick) => void;
-  disabled: boolean;
-}) {
-  const yesPct = Math.round(yes * 100);
-  const isUp = market.trend === "up";
-  const isDown = market.trend === "down";
-
-  return (
-    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-semibold text-[var(--color-card-text)] leading-snug">{market.title}</span>
-        <span className={`text-[10px] font-bold flex-shrink-0 ${
-          isUp ? "text-[var(--color-card-yes)]" : isDown ? "text-[var(--color-card-no)]" : "text-[var(--color-card-muted)]"
-        }`}>
-          {isUp ? "▲" : isDown ? "▼" : "—"} {isUp ? "rising" : isDown ? "falling" : "stable"}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 rounded-full bg-[var(--color-card-border)] overflow-hidden">
-          <div
-            className="h-full rounded-full bg-[var(--color-card-yes)] transition-all duration-1000"
-            style={{ width: `${yesPct}%` }}
-          />
-        </div>
-        <span className="text-xs font-bold text-[var(--color-card-text)] w-8 text-right">{yesPct}¢</span>
-      </div>
-
-      <div className="flex gap-1.5">
-        <BetButton side="yes" cents={yesPct} disabled={disabled} onPick={() => onPick({ marketId: market.id, title: market.title, side: "yes", price: yesPct })} />
-        <BetButton side="no" cents={100 - yesPct} disabled={disabled} onPick={() => onPick({ marketId: market.id, title: market.title, side: "no", price: 100 - yesPct })} />
-      </div>
-
-      {market.closesIn !== "game" && (
-        <span className="text-[10px] text-[var(--color-card-muted)]">⚡ Closes in {market.closesIn}</span>
-      )}
-    </div>
-  );
-}
-
-function CommentaryFeed({ items }: { items: CommentaryItem[] }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-widest">Host Commentary</span>
-        <LivePulse />
-      </div>
-      {items.map((item) => (
-        <div key={item.id} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-[var(--color-card-accent)] uppercase tracking-wider">{item.time}</span>
-            {item.oddsRef && (
-              <span className="text-[10px] text-[var(--color-card-muted)]">{item.oddsRef}</span>
-            )}
-          </div>
-          <p className="text-sm text-[var(--color-card-text)] leading-relaxed">{item.text}</p>
-        </div>
+    <div className="grid grid-cols-3 gap-2">
+      {(["conservative", "balanced", "aggressive"] as LiveRiskMode[]).map((mode) => (
+        <button key={mode} disabled={disabled} onClick={() => onChange(mode)} className={`rounded-lg border px-2 py-2 text-[11px] font-black uppercase transition-all disabled:opacity-50 ${value === mode ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] bg-[var(--color-card-bg)] text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]"}`}>
+          {mode}
+        </button>
       ))}
     </div>
   );
 }
 
-// ── Main export ────────────────────────────────────────────────────────────
+function BetButton({ side, cents, disabled, onPick }: { side: LivePickSide; cents: number; disabled: boolean; onPick: () => void }) {
+  const isYes = side === "yes";
+  return (
+    <button onClick={onPick} disabled={disabled} className={`flex-1 rounded-lg border py-2.5 text-sm font-black transition-all disabled:cursor-not-allowed disabled:opacity-40 ${isYes ? "border-[var(--color-card-yes)] bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)] hover:bg-[var(--color-card-yes)] hover:text-white" : "border-[var(--color-card-no)] bg-[var(--color-card-no-dim)] text-[var(--color-card-no)] hover:bg-[var(--color-card-no)] hover:text-white"}`}>
+      {isYes ? "YES" : "NO"} - {cents}c
+    </button>
+  );
+}
 
-function LiveSlip({
+function MarketCard({
+  market,
+  yes,
+  watched,
+  disabled,
+  onPick,
+  onWatch,
+}: {
+  market: MicroMarket;
+  yes: number;
+  watched: boolean;
+  disabled: boolean;
+  onPick: (pick: LivePick) => void;
+  onWatch: () => void;
+}) {
+  const yesPct = Math.round(yes * 100);
+  const move = driftLabel(market.openYes, yes);
+  const closingSoon = market.closesIn !== "game";
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{market.tag}</span>
+            <span className={`rounded-md px-2 py-1 text-[10px] font-black uppercase ${Math.abs(Math.round((yes - market.openYes) * 100)) >= 10 ? "bg-[var(--color-brand-primary)] text-white" : "bg-[var(--color-card-bg)] text-[var(--color-card-muted)]"}`}>{move}</span>
+            {closingSoon && <span className="rounded-md bg-[var(--color-card-no-dim)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-no)]">closing {market.closesIn}</span>}
+          </div>
+          <p className="mt-2 text-sm font-semibold leading-snug text-[var(--color-card-text)]">{market.title}</p>
+        </div>
+        <button onClick={onWatch} className={`h-9 w-9 rounded-lg border text-sm font-black ${watched ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] text-[var(--color-card-muted)]"}`} title="Watch market">
+          *
+        </button>
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--color-card-border)]">
+          <div className="h-full rounded-full bg-[var(--color-card-yes)] transition-all duration-1000" style={{ width: `${yesPct}%` }} />
+        </div>
+        <span className="w-10 text-right text-xs font-bold text-[var(--color-card-text)]">{yesPct}c</span>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <BetButton side="yes" cents={yesPct} disabled={disabled} onPick={() => onPick({ marketId: market.id, title: market.title, side: "yes", price: yesPct, openedAt: market.openYes * 100, currentPrice: yesPct })} />
+        <BetButton side="no" cents={100 - yesPct} disabled={disabled} onPick={() => onPick({ marketId: market.id, title: market.title, side: "no", price: 100 - yesPct, openedAt: (1 - market.openYes) * 100, currentPrice: 100 - yesPct })} />
+      </div>
+    </div>
+  );
+}
+
+function LiveTimeline({ items, picks }: { items: TimelineItem[]; picks: LivePick[] }) {
+  const ticketItems: TimelineItem[] = picks.slice(-2).map((pick, index) => ({
+    id: `pick-${pick.marketId}-${index}`,
+    time: "now",
+    type: "ticket",
+    text: `${pick.side.toUpperCase()} added to ticket: ${pick.title}.`,
+    oddsRef: `${pick.price}c`,
+  }));
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live sweat timeline</p>
+        <LivePulse />
+      </div>
+      <div className="mt-3 flex flex-col gap-3">
+        {[...ticketItems, ...items].slice(0, 6).map((item) => (
+          <div key={item.id} className="rounded-lg bg-[var(--color-card-bg)] px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--color-card-accent)]">{item.time}</span>
+              {item.oddsRef && <span className="text-[10px] text-[var(--color-card-muted)]">{item.oddsRef}</span>}
+            </div>
+            <p className="mt-1 text-sm leading-relaxed text-[var(--color-card-text)]">{item.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ActiveTicket({
   picks,
   savedRun,
-  onLock,
-  onClear,
+  boostMarketId,
+  riskMode,
+  cashOut,
   saving,
   error,
+  onBoost,
+  onSwap,
+  onCashOut,
+  onLock,
+  onClear,
 }: {
   picks: LivePick[];
   savedRun: LiveRun | null;
-  onLock: () => void;
-  onClear: () => void;
+  boostMarketId: string | null;
+  riskMode: LiveRiskMode;
+  cashOut: boolean;
   saving: boolean;
   error: string | null;
+  onBoost: (id: string) => void;
+  onSwap: (id: string) => void;
+  onCashOut: () => void;
+  onLock: () => void;
+  onClear: () => void;
 }) {
+  const preview = scoreLiveRun(picks, undefined, boostMarketId, riskMode);
+  const bustRisk = picks.length === 0 ? "low" : riskMode === "aggressive" ? "high" : picks.length >= 4 ? "medium" : "low";
+
   if (savedRun) {
     return (
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Live Read Locked</span>
-          <span className="text-sm font-black text-[var(--color-card-text)]">{savedRun.score} pts</span>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live ticket locked</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{savedRun.score} pts</p>
         </div>
-        <p className="text-xs text-[var(--color-card-muted)]">
-          {savedRun.correct}/{savedRun.picks.length} live calls correct. Next read in {timeUntilMidnight()}.
-        </p>
+        <p className="mt-2 text-xs text-[var(--color-card-muted)]">{savedRun.correct}/{savedRun.picks.length} settled. Next live ticket in {timeUntilMidnight()}.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Live Read</span>
-        <span className="text-xs font-bold text-[var(--color-card-muted)]">{picks.length}/{MAX_PICKS} calls</span>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Active ticket</p>
+        <p className="text-xs font-bold text-[var(--color-card-muted)]">{picks.length}/{MAX_PICKS}</p>
       </div>
-      {picks.length === 0 ? (
-        <p className="text-xs text-[var(--color-card-muted)]">Tap YES or NO on live markets to build a read, then lock it for today&apos;s board.</p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {picks.map((pick) => (
-            <div key={pick.marketId} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--color-card-bg)] px-3 py-2">
-              <span className="min-w-0 truncate text-xs font-semibold text-[var(--color-card-text)]">{pick.title}</span>
-              <span className={`text-xs font-black ${pick.side === "yes" ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>
-                {pick.side.toUpperCase()} {pick.price}c
-              </span>
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <StatPill label="Preview" value={preview.score} />
+        <StatPill label="Streak" value={preview.streak} />
+        <StatPill label="Bust risk" value={bustRisk} />
+      </div>
+      <div className="mt-3 flex flex-col gap-2">
+        {picks.length === 0 ? (
+          <p className="text-sm text-[var(--color-card-muted)]">Add live calls or star markets in watchlist mode.</p>
+        ) : picks.map((pick) => (
+          <div key={pick.marketId} className="rounded-lg bg-[var(--color-card-bg)] px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-xs font-semibold text-[var(--color-card-text)]">{pick.title}</p>
+              <span className={`text-xs font-black ${pick.side === "yes" ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>{pick.side.toUpperCase()} {pick.price}c</span>
             </div>
-          ))}
-        </div>
-      )}
-      <div className="flex gap-2">
-        <button
-          onClick={onLock}
-          disabled={picks.length === 0 || saving}
-          className="flex-1 rounded-lg bg-[var(--color-brand-primary)] px-3 py-3 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {saving ? "Locking..." : "Lock Live Read"}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{statusForPick(pick, boostMarketId)}</span>
+              <button onClick={() => onBoost(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{boostMarketId === pick.marketId ? "Boosted" : "Boost"}</button>
+              <button onClick={() => onSwap(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-card-muted)]">Late swap</button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {cashOut && picks.length > 0 && (
+        <button onClick={onCashOut} className="mt-3 w-full rounded-lg border border-[var(--color-card-yes)] bg-[var(--color-card-yes-dim)] py-3 text-xs font-black uppercase text-[var(--color-card-yes)]">
+          Cash out moment: hold ticket
         </button>
-        <button
-          onClick={onClear}
-          disabled={picks.length === 0 || saving}
-          className="rounded-lg border border-[var(--color-card-border)] px-3 py-3 text-xs font-bold text-[var(--color-card-muted)] disabled:opacity-50"
-        >
+      )}
+      <div className="mt-3 flex gap-2">
+        <button onClick={onLock} disabled={picks.length === 0 || saving} className="flex-1 rounded-lg bg-[var(--color-brand-primary)] px-3 py-3 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50">
+          {saving ? "Locking..." : "Lock Ticket"}
+        </button>
+        <button onClick={onClear} disabled={picks.length === 0 || saving} className="rounded-lg border border-[var(--color-card-border)] px-3 py-3 text-xs font-bold text-[var(--color-card-muted)] disabled:opacity-50">
           Clear
         </button>
       </div>
-      {error && <p className="rounded-lg border border-[var(--color-card-no)]/30 px-3 py-2 text-xs text-[var(--color-card-no)]">{error}</p>}
+      {error && <p className="mt-3 rounded-lg border border-[var(--color-card-no)]/30 px-3 py-2 text-xs text-[var(--color-card-no)]">{error}</p>}
     </div>
   );
 }
 
-function LiveLeaderboard({
-  entries,
-  userId,
-  loading,
-}: {
-  entries: LiveLeaderboardEntry[];
-  userId: string | null;
-  loading: boolean;
-}) {
+function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLeaderboardEntry[]; userId: string | null; loading: boolean; error: string | null }) {
+  const [filter, setFilter] = useState<BoardFilter>("today");
+  const filtered = entries.filter((entry) => {
+    if (filter === "friends") return userId ? entry.uid === userId : false;
+    if (filter === "boosted") return entry.boostedCorrect;
+    if (filter === "perfect") return entry.perfectTicket;
+    return true;
+  });
   return (
-    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
       <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-4 py-3">
-        <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Today&apos;s Live Board</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live Board</p>
         <span className="text-xs font-bold text-[var(--color-card-muted)]">{entries.length} reads</span>
       </div>
-      {loading && (
-        <div className="px-4 py-6 text-center text-xs font-semibold text-[var(--color-card-muted)]">
-          Loading live board...
+      <div className="flex gap-2 overflow-x-auto border-b border-[var(--color-card-border)] px-4 py-3">
+        {(["today", "slate", "friends", "verified", "boosted", "perfect"] as BoardFilter[]).map((item) => (
+          <button key={item} onClick={() => setFilter(item)} className={`rounded-lg px-3 py-1.5 text-xs font-black uppercase transition-all ${filter === item ? "bg-[var(--color-brand-primary)] text-white" : "bg-[var(--color-card-bg)] text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]"}`}>{item}</button>
+        ))}
+      </div>
+      {loading ? (
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm font-black text-[var(--color-card-text)]">Loading live board</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Verified tickets only.</p>
         </div>
-      )}
-      {entries.slice(0, 8).map((entry, index) => {
+      ) : error ? (
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm font-black text-[var(--color-card-text)]">Could not load live board</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{error}</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm font-black text-[var(--color-card-text)]">No live tickets yet</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{filter === "today" || filter === "verified" ? "Be the first verified ticket on today's board." : "No entries match this filter yet."}</p>
+        </div>
+      ) : filtered.slice(0, 8).map((entry, index) => {
         const isYou = userId === entry.uid;
-        const isPreview = entry.uid.startsWith("mock-live-");
+        const name = entry.username ? <Link href={`/profile?u=${encodeURIComponent(entry.username)}`} className="hover:text-[var(--color-brand-primary)]">{entry.displayName}</Link> : entry.displayName;
         return (
-          <div key={entry.uid} className={`grid grid-cols-[28px_32px_1fr_48px_52px] items-center gap-2 border-b border-[var(--color-card-border)] px-4 py-3 last:border-0 ${isYou ? "bg-[var(--color-brand-primary)]/10" : ""}`}>
+          <div key={entry.uid} className={`grid grid-cols-[28px_32px_1fr_54px] items-center gap-2 border-b border-[var(--color-card-border)] px-4 py-3 last:border-0 ${isYou ? "bg-[var(--color-brand-primary)]/10" : ""}`}>
             <span className="text-right text-xs font-black text-[var(--color-card-muted)]">{index + 1}</span>
-            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--color-card-accent-dim)] text-xs font-black text-[var(--color-card-accent)]">
-              {entry.photoURL ? (
-                <img src={entry.photoURL} alt="" className="h-full w-full object-cover" />
-              ) : (
-                entry.displayName.slice(0, 1).toUpperCase()
-              )}
-            </span>
+            <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--color-card-accent-dim)] text-xs font-black text-[var(--color-card-accent)]">{entry.displayName.slice(0, 1).toUpperCase()}</span>
             <div className="min-w-0">
-              <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>{entry.displayName}{isYou ? " (you)" : ""}</p>
-              <p className="text-[10px] text-[var(--color-card-muted)]">
-                {isPreview ? "Preview row" : `${entry.correct}/${entry.pickCount} correct`}
-              </p>
+              <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>{name}{isYou ? " (you)" : ""}</p>
+              <p className="text-[10px] text-[var(--color-card-muted)]">{entry.correct}/{entry.pickCount} correct - streak {entry.streak}{entry.perfectTicket ? " - perfect" : ""}</p>
             </div>
             <span className="text-right text-sm font-black text-[var(--color-card-text)]">{entry.score}</span>
-            <span className="text-right text-xs font-bold text-[var(--color-card-muted)]">pts</span>
           </div>
         );
       })}
@@ -460,51 +458,43 @@ function LiveLeaderboard({
   );
 }
 
-function LiveResults({
-  run,
-  leaderboard,
-  userId,
-  leaderboardLoading,
-  shareStatus,
-  onShare,
-}: {
-  run: LiveRun;
-  leaderboard: LiveLeaderboardEntry[];
-  userId: string | null;
-  leaderboardLoading: boolean;
-  shareStatus: string | null;
-  onShare: () => void;
-}) {
+function LiveResults({ run, leaderboard, userId, leaderboardLoading, leaderboardError, shareStatus, onShare, onH2H }: { run: LiveRun; leaderboard: LiveLeaderboardEntry[]; userId: string | null; leaderboardLoading: boolean; leaderboardError: string | null; shareStatus: string | null; onShare: () => void; onH2H: () => void }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 flex flex-col gap-2">
-        <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Live Read Results</p>
-        <div className="flex items-end gap-2">
-          <span className="text-6xl font-black text-[var(--color-card-text)]">{run.score}</span>
-          <span className="pb-2 text-sm font-bold text-[var(--color-card-muted)]">{run.correct}/{run.picks.length} correct</span>
+      <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Ticket share card</p>
+        <div className="mt-3 rounded-xl bg-[var(--color-card-bg)] p-5">
+          <p className="text-sm font-black text-[var(--color-card-text)]">Live Ticket</p>
+          <p className="mt-2 text-6xl font-black text-[var(--color-brand-primary)]">{run.score}</p>
+          <p className="text-sm text-[var(--color-card-muted)]">{run.correct}/{run.picks.length} correct - streak {run.streak}</p>
+          <p className="mt-3 text-xs text-[var(--color-card-muted)]">{run.perfectTicket ? "Perfect ticket." : run.insuranceBadge ? "Bust insurance badge: one miss from perfect." : run.isBust ? "Ticket busted. The next slate is clean." : run.boostedCorrect ? "Boost landed." : "Solid sweat."}</p>
         </div>
-        <p className="text-xs text-[var(--color-card-muted)]">Longer-shot correct calls are worth 2 points. Chalk correct calls are worth 1.</p>
       </div>
-      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
         {run.picks.map((pick) => {
           const outcome = run.outcomes[pick.marketId]!;
           const correct = pick.side === outcome;
           return (
-            <div key={pick.marketId} className="flex items-center gap-3 border-b border-[var(--color-card-border)] px-4 py-3 last:border-0">
-              <span className={`w-5 text-lg font-black ${correct ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>{correct ? "Y" : "N"}</span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-[var(--color-card-text)]">{pick.title}</p>
-                <p className="text-xs text-[var(--color-card-muted)]">You: {pick.side.toUpperCase()} / Result: {outcome.toUpperCase()}</p>
+            <div key={pick.marketId} className="border-b border-[var(--color-card-border)] px-4 py-3 last:border-0">
+              <div className="flex items-center gap-3">
+                <span className={`w-5 text-lg font-black ${correct ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>{correct ? "Y" : "N"}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-[var(--color-card-text)]">{pick.title}</p>
+                  <p className="text-xs text-[var(--color-card-muted)]">You: {pick.side.toUpperCase()} / Result: {outcome.toUpperCase()} / {pick.price}c</p>
+                </div>
+                <span className="rounded-md bg-[var(--color-card-bg)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{statusForPick(pick, run.boostMarketId ?? null)}</span>
               </div>
-              <span className="text-xs font-black text-[var(--color-card-muted)]">{pick.price}c</span>
+              <p className="mt-2 text-xs text-[var(--color-card-muted)]">Replay: the market settled {outcome.toUpperCase()} after the live price moved through the drive.</p>
             </div>
           );
         })}
       </div>
-      <LiveLeaderboard entries={leaderboard} userId={userId} loading={leaderboardLoading} />
-      <button onClick={onShare} className="w-full rounded-xl bg-[var(--color-surface-2)] py-4 text-base font-black text-[var(--color-text-primary)]">
-        Share Result
-      </button>
+      <LiveLeaderboard entries={leaderboard} userId={userId} loading={leaderboardLoading} error={leaderboardError} />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <button onClick={onShare} className="rounded-xl bg-[var(--color-surface-2)] py-4 text-base font-black text-[var(--color-text-primary)]">Share Result</button>
+        <button onClick={onH2H} className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-base font-black text-white">Challenge H2H</button>
+        <Link href="/card" className="rounded-xl border border-[var(--color-card-border)] py-4 text-center text-sm font-bold text-[var(--color-card-muted)]">Full Card</Link>
+      </div>
       {shareStatus && <p className="text-center text-xs font-semibold text-[var(--color-card-yes)]">{shareStatus}</p>}
     </div>
   );
@@ -513,29 +503,39 @@ function LiveResults({
 export function LiveClient() {
   const { user, verificationRequired } = useAuth();
   const [selectedId, setSelectedId] = useState("kc-sf");
-  const [mainYes, setMainYes] = useState(0.71);
-  const [microYes, setMicroYes] = useState(MICRO_MARKETS.map((m) => m.baseYes));
+  const [marketYes, setMarketYes] = useState(MICRO_MARKETS.map((market) => market.baseYes));
   const [picks, setPicks] = useState<LivePick[]>([]);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [boostMarketId, setBoostMarketId] = useState<string | null>(null);
+  const [riskMode, setRiskMode] = useState<LiveRiskMode>("balanced");
+  const [swapUsed, setSwapUsed] = useState(false);
+  const [cashOut, setCashOut] = useState(true);
   const [savedRun, setSavedRun] = useState<LiveRun | null>(null);
+  const [history, setHistory] = useState<LiveRun[]>([]);
   const [leaderboard, setLeaderboard] = useState<LiveLeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [chatPrompt, setChatPrompt] = useState<string | null>(null);
 
   useEffect(() => {
     const local = loadSavedRun();
     if (local) setSavedRun(local);
+    setHistory(loadHistory());
+    setWatchlist(loadWatchlist());
   }, []);
 
-  useEffect(() => {
-    setLeaderboardLoading(true);
-    return subscribeLiveLeaderboard(liveDateId(), (entries) => {
-      setLeaderboard(entries);
-      setLeaderboardLoading(false);
-    });
-  }, []);
+  useEffect(() => subscribeLiveLeaderboard(liveDateId(), (entries) => {
+    setLeaderboard(entries);
+    setLeaderboardLoading(false);
+    setLeaderboardError(null);
+  }, () => {
+    setLeaderboardLoading(false);
+    setLeaderboardError("Refresh the page or try again after live tickets land.");
+  }), []);
 
   useEffect(() => {
     if (!user || verificationRequired) return;
@@ -544,32 +544,40 @@ export function LiveClient() {
         if (!run) return;
         persistRun(run);
         setSavedRun(run);
+        setHistory(loadHistory());
       })
-      .catch(() => setSaveError("Could not load today's Live Read."));
+      .catch(() => setSaveError("Could not load today's Live Ticket."));
   }, [user, verificationRequired]);
 
-  // Simulate live odds drift
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMainYes((prev) => {
-        const delta = (Math.random() - 0.48) * 0.012;
-        return Math.min(0.92, Math.max(0.52, prev + delta));
-      });
-      setMicroYes((prev) =>
-        prev.map((y, i) => {
-          const m = MICRO_MARKETS[i]!;
-          const bias = m.trend === "up" ? 0.003 : m.trend === "down" ? -0.003 : 0;
-          const delta = (Math.random() - 0.5) * 0.018 + bias;
-          return Math.min(0.92, Math.max(0.08, y + delta));
-        })
-      );
+    const interval = window.setInterval(() => {
+      setMarketYes((current) => current.map((yes, index) => {
+        const market = MICRO_MARKETS[index]!;
+        const bias = market.trend === "up" ? 0.004 : market.trend === "down" ? -0.004 : 0;
+        return Math.min(0.92, Math.max(0.08, yes + (Math.random() - 0.5) * 0.018 + bias));
+      }));
     }, 2200);
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, []);
 
-  const selected = GAMES.find((g) => g.id === selectedId) ?? GAMES[0]!;
+  const selected = GAMES.find((game) => game.id === selectedId) ?? GAMES[0]!;
   const isLiveGame = selected.status === "live";
   const picksDisabled = !user || verificationRequired || Boolean(savedRun) || picks.length >= MAX_PICKS;
+  const momentum = useMemo(() => {
+    const rising = marketYes.filter((yes, index) => yes > MICRO_MARKETS[index]!.openYes).length;
+    if (rising >= 4) return "Heating up";
+    if (rising <= 1) return "Cooling off";
+    return "Balanced";
+  }, [marketYes]);
+  const smartNext = MICRO_MARKETS.find((market) => !picks.some((pick) => pick.marketId === market.id) && watchlist.includes(market.id)) ?? MICRO_MARKETS.find((market) => !picks.some((pick) => pick.marketId === market.id));
+
+  function toggleWatch(id: string) {
+    setWatchlist((current) => {
+      const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
+      saveWatchlist(next);
+      return next;
+    });
+  }
 
   function handlePick(pick: LivePick) {
     if (!user) {
@@ -578,14 +586,18 @@ export function LiveClient() {
     }
     if (picksDisabled) return;
     setPicks((current) => {
-      if (current.length >= MAX_PICKS || current.some((existing) => existing.marketId === pick.marketId)) {
-        return current;
-      }
+      if (current.length >= MAX_PICKS || current.some((existing) => existing.marketId === pick.marketId)) return current;
       return [...current, pick];
     });
   }
 
-  async function lockLiveRead() {
+  function lateSwap(id: string) {
+    if (swapUsed || savedRun) return;
+    setPicks((current) => current.filter((pick) => pick.marketId !== id));
+    setSwapUsed(true);
+  }
+
+  async function lockLiveTicket() {
     if (!user) {
       setSignInOpen(true);
       return;
@@ -597,11 +609,12 @@ export function LiveClient() {
       const run = await saveLiveRun(user.uid, selected.id, picks, {
         displayName: user.displayName || user.email?.split("@")[0] || "You",
         photoURL: user.photoURL,
-      });
+      }, liveDateId(), { boostMarketId, riskMode });
       persistRun(run);
       setSavedRun(run);
+      setHistory(loadHistory());
     } catch {
-      setSaveError("Your Live Read could not be saved. Try locking it again.");
+      setSaveError("Your Live Ticket could not be saved. Try locking it again.");
     } finally {
       setSaving(false);
     }
@@ -614,7 +627,7 @@ export function LiveClient() {
     setShareStatus(null);
     try {
       if (navigator.share) {
-        await navigator.share({ title: "The Card Live Read", text, url });
+        await navigator.share({ title: "The Card Live Ticket", text, url });
         setShareStatus("Shared.");
         return;
       }
@@ -625,89 +638,85 @@ export function LiveClient() {
     }
   }
 
-  return (
-    <div className="max-w-lg mx-auto px-4 py-6 flex flex-col gap-5">
+  function challengeH2H() {
+    if (!savedRun || typeof window === "undefined") return;
+    window.location.href = `/h2h?challenge=${savedRun.score}`;
+  }
 
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-black tracking-tight text-[var(--color-card-text)]">Live</h1>
-        <p className="text-sm text-[var(--color-card-muted)]">One game. Every market. In real time.</p>
+  return (
+    <div className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-6 pb-24">
+      <header className="grid gap-3 md:grid-cols-[1fr_320px]">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight text-[var(--color-card-text)]">Live</h1>
+          <p className="mt-1 text-sm text-[var(--color-card-muted)]">Build a live ticket, watch odds move, and lock one verified slate per day.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <StatPill label="History" value={history.length} />
+          <StatPill label="Swap" value={swapUsed ? "used" : "ready"} />
+          <StatPill label="Watchlist" value={watchlist.length} />
+        </div>
       </header>
 
       {!user && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-center">
-          <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to lock a Live Read</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">One verified Live Read per day.</p>
-          <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
-            Sign in
-          </button>
+          <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to lock a Live Ticket</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">One verified ticket per day. Watchlist mode is open.</p>
+          <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">Sign in</button>
         </div>
       )}
       {user && verificationRequired && <EmailVerificationNotice compact />}
 
-      {savedRun && (
-        <LiveResults
-          run={savedRun}
-          leaderboard={leaderboard}
-          userId={user?.uid ?? null}
-          leaderboardLoading={leaderboardLoading}
-          shareStatus={shareStatus}
-          onShare={shareResult}
-        />
-      )}
-
-      {/* Game picker */}
-      <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4">
-        {GAMES.map((game) => (
-          <GameChip
-            key={game.id}
-            game={game}
-            selected={game.id === selectedId}
-            onClick={() => setSelectedId(game.id)}
-          />
-        ))}
-      </div>
-
-      {isLiveGame ? (
-        <>
-          <Scoreboard game={selected} />
-          <LiveSlip
-            picks={picks}
-            savedRun={savedRun}
-            onLock={lockLiveRead}
-            onClear={() => setPicks([])}
-            saving={saving}
-            error={saveError}
-          />
-          <MainMarket yes={mainYes} disabled={picksDisabled} onPick={handlePick} />
-
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-[var(--color-card-muted)] uppercase tracking-widest">
-              In-play markets
-            </span>
-            <span className="text-[10px] text-[var(--color-card-muted)]">
-              Fast-moving. Odds update with every play. {picks.length}/{MAX_PICKS} calls locked.
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {MICRO_MARKETS.map((market, i) => (
-              <MicroMarketCard key={market.id} market={market} yes={microYes[i]!} disabled={picksDisabled} onPick={handlePick} />
-            ))}
-          </div>
-
-          <CommentaryFeed items={COMMENTARY} />
-        </>
+      {savedRun ? (
+        <LiveResults run={savedRun} leaderboard={leaderboard} userId={user?.uid ?? null} leaderboardLoading={leaderboardLoading} leaderboardError={leaderboardError} shareStatus={shareStatus} onShare={shareResult} onH2H={challengeH2H} />
       ) : (
-        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 flex flex-col gap-2">
-          <p className="text-sm font-semibold text-[var(--color-card-text)]">
-            {selected.status === "upcoming" ? `${selected.away} vs ${selected.home} · ${selected.clock}` : `${selected.away} ${selected.awayScore} · ${selected.home} ${selected.homeScore} · Final`}
-          </p>
-          <p className="text-xs text-[var(--color-card-muted)]">
-            {selected.status === "upcoming"
-              ? "Live mode activates when the game kicks off. Check back then."
-              : "This game has ended. Pick a live game above to see real-time markets."}
-          </p>
-        </div>
+        <>
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            {GAMES.map((game) => <GameChip key={game.id} game={game} selected={game.id === selectedId} onClick={() => setSelectedId(game.id)} />)}
+          </div>
+          {isLiveGame ? (
+            <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
+              <div className="flex flex-col gap-4">
+                <Scoreboard game={selected} momentum={momentum} />
+                <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Risk slider</p>
+                    <p className="text-xs text-[var(--color-card-muted)]">Choose before lock</p>
+                  </div>
+                  <div className="mt-3"><RiskSelector value={riskMode} onChange={setRiskMode} disabled={picks.length > 0} /></div>
+                </div>
+                <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Smart next pick</p>
+                  <p className="mt-2 text-sm text-[var(--color-card-text)]">{smartNext ? smartNext.title : "Ticket is full."}</p>
+                  <p className="mt-1 text-xs text-[var(--color-card-muted)]">Based on your watchlist and open ticket risk.</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {MICRO_MARKETS.map((market, index) => (
+                    <MarketCard key={market.id} market={market} yes={marketYes[index]!} watched={watchlist.includes(market.id)} disabled={picksDisabled || picks.some((pick) => pick.marketId === market.id)} onPick={handlePick} onWatch={() => toggleWatch(market.id)} />
+                  ))}
+                </div>
+              </div>
+              <aside className="flex flex-col gap-4">
+                <ActiveTicket picks={picks} savedRun={savedRun} boostMarketId={boostMarketId} riskMode={riskMode} cashOut={cashOut} saving={saving} error={saveError} onBoost={(id) => setBoostMarketId((current) => current === id ? null : id)} onSwap={lateSwap} onCashOut={() => setCashOut(false)} onLock={lockLiveTicket} onClear={() => { setPicks([]); setBoostMarketId(null); }} />
+                <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Sweat room prompts</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {["hold", "bad beat", "lock it", "need one more"].map((line) => (
+                      <button key={line} onClick={() => setChatPrompt(line)} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-bold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]">{line}</button>
+                    ))}
+                  </div>
+                  {chatPrompt && <p className="mt-3 rounded-lg bg-[var(--color-card-bg)] px-3 py-2 text-sm font-bold text-[var(--color-card-text)]">{chatPrompt}</p>}
+                </div>
+                <LiveTimeline items={BASE_TIMELINE} picks={picks} />
+                <LiveLeaderboard entries={leaderboard} userId={user?.uid ?? null} loading={leaderboardLoading} error={leaderboardError} />
+              </aside>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
+              <p className="text-sm font-semibold text-[var(--color-card-text)]">{selected.status === "upcoming" ? `${selected.away} vs ${selected.home} - ${selected.clock}` : `${selected.away} ${selected.awayScore} - ${selected.home} ${selected.homeScore} - Final`}</p>
+              <p className="mt-1 text-xs text-[var(--color-card-muted)]">{selected.status === "upcoming" ? "Live mode activates when the game kicks off." : "This game has ended. Pick a live game above to see real-time markets."}</p>
+            </div>
+          )}
+        </>
       )}
       <SignInSheet open={signInOpen} onClose={() => setSignInOpen(false)} />
     </div>

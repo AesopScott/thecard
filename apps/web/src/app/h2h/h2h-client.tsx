@@ -599,12 +599,8 @@ function H2HLeaderboard({ entries, userId, loading, error }: { entries: H2HLeade
           return (
             <div key={entry.uid} className={`grid grid-cols-[28px_32px_1fr_64px_64px] items-center gap-2 border-b border-[var(--color-border)] px-4 py-3 last:border-0 ${isYou ? "bg-[var(--color-brand-primary)]/10" : ""}`}>
               <span className="text-right text-xs font-black text-[var(--color-text-muted)]">{index + 1}</span>
-              <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface-3)] text-xs font-black text-[var(--color-brand-primary)]">
-                {entry.photoURL ? (
-                  <img src={entry.photoURL} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  entry.displayName.slice(0, 1).toUpperCase()
-                )}
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-surface-3)] text-xs font-black text-[var(--color-brand-primary)]">
+                {entry.displayName.slice(0, 1).toUpperCase()}
               </span>
               <div className="min-w-0">
                 <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-text-primary)]"}`}>{name}{isYou ? " (you)" : ""}</p>
