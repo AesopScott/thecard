@@ -436,8 +436,15 @@ function LiveLeaderboard({
         const isYou = userId === entry.uid;
         const isPreview = entry.uid.startsWith("mock-live-");
         return (
-          <div key={entry.uid} className={`grid grid-cols-[28px_1fr_48px_52px] items-center gap-2 border-b border-[var(--color-card-border)] px-4 py-3 last:border-0 ${isYou ? "bg-[var(--color-brand-primary)]/10" : ""}`}>
+          <div key={entry.uid} className={`grid grid-cols-[28px_32px_1fr_48px_52px] items-center gap-2 border-b border-[var(--color-card-border)] px-4 py-3 last:border-0 ${isYou ? "bg-[var(--color-brand-primary)]/10" : ""}`}>
             <span className="text-right text-xs font-black text-[var(--color-card-muted)]">{index + 1}</span>
+            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[var(--color-card-accent-dim)] text-xs font-black text-[var(--color-card-accent)]">
+              {entry.photoURL ? (
+                <img src={entry.photoURL} alt="" className="h-full w-full object-cover" />
+              ) : (
+                entry.displayName.slice(0, 1).toUpperCase()
+              )}
+            </span>
             <div className="min-w-0">
               <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>{entry.displayName}{isYou ? " (you)" : ""}</p>
               <p className="text-[10px] text-[var(--color-card-muted)]">
