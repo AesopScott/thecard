@@ -37,5 +37,5 @@ Thumbs.db
 coverage/
 
 # Capacitor
-ios/
-android/
+/ios/
+/android/

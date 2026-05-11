@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">The Card</string>
+    <string name="title_activity_main">The Card</string>
+    <string name="package_name">bet.thecard.app</string>
+    <string name="custom_url_scheme">bet.thecard.app</string>
+</resources>

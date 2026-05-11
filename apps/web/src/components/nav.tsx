@@ -24,7 +24,7 @@ export function Nav() {
   if (pathname === "/") return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)] backdrop-blur-sm">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-card-border)] bg-[var(--color-card-surface)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
       <ul className="grid grid-cols-5 gap-1 px-2 pt-2 pb-1 max-w-lg mx-auto">
         {NAV_ITEMS.map(({ href, label, emoji }) => {
           const isActive = pathname.startsWith(href);

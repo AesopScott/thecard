@@ -11,9 +11,19 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-display", weight: ["400", "600", "700", "800", "900"] });
 
 export const metadata: Metadata = {
+  applicationName: "The Card",
   metadataBase: new URL("https://thecard.bet"),
   title: "The Card",
   description: "Sports prediction markets for fans, not traders. Real odds, live updates, compete for the jackpot.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "The Card",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "The Card",
     description: "Sports prediction markets for fans, not traders.",
@@ -30,6 +40,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
   themeColor: "#0a0a0f",
 };
 
@@ -49,7 +63,7 @@ export default function RootLayout({
           <UserButton />
           <EmailVerificationNotice />
           <OnboardingSheet />
-          <main className="pb-32 min-h-dvh">{children}</main>
+          <main className="min-h-dvh pb-[calc(8rem+env(safe-area-inset-bottom))]">{children}</main>
           <Nav />
         </Providers>
       </body>
