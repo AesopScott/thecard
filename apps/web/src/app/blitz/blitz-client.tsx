@@ -540,6 +540,7 @@ function ResultsScreen({
   onShare,
   onCopyChallenge,
   onPracticeAgain,
+  t,
 }: {
   picks: Pick[];
   times: number[];
@@ -555,6 +556,7 @@ function ResultsScreen({
   onShare: (metrics: RunMetrics) => void;
   onCopyChallenge: (metrics: RunMetrics) => void;
   onPracticeAgain: () => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const markets = practice ? PRACTICE_MARKETS : DAILY_MARKETS;
   const metrics = getMetrics(markets, picks, times, outcomes, leaderboard, powerMarketId);
@@ -563,7 +565,7 @@ function ResultsScreen({
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 pb-24">
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{practice ? "Warm-up Results" : "Blitz Results"}</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{practice ? t("blitz.warmupResults") : t("blitz.results")}</p>
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <span className="text-7xl font-display font-black text-[var(--color-text-primary)]">{metrics.score}</span>
             <span className="pb-2 text-xl text-[var(--color-text-muted)]">pts</span>
@@ -575,7 +577,7 @@ function ResultsScreen({
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatPill label="Streak" value={metrics.bestStreak} />
-            <StatPill label="Ghost" value={metrics.score >= 12 ? "beat" : `${12 - metrics.score} back`} />
+            <StatPill label={t("blitz.ghost")} value={metrics.score >= 12 ? t("blitz.beat") : t("blitz.back", { count: String(12 - metrics.score) })} />
             <StatPill label="No Skip" value={metrics.noSkip ? "yes" : "no"} />
             <StatPill label="Rare Hits" value={metrics.rareHits} />
           </div>
@@ -585,22 +587,22 @@ function ResultsScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Recap Card</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.recapCard")}</p>
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
             <p className="text-sm font-black text-[var(--color-text-primary)]">{dailyTheme()} Blitz</p>
             <p className="mt-3 text-4xl font-display font-black text-[var(--color-brand-primary)]">{metrics.score} pts</p>
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">{metrics.correct}/5 correct - {metrics.badge}</p>
             <div className="mt-4 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-text-secondary)]">
-              <p><span className="font-black">Best:</span> {metrics.bestPick}</p>
-              <p className="mt-2"><span className="font-black">Study:</span> {metrics.missedPick}</p>
+              <p><span className="font-black">{t("blitz.best")}:</span> {metrics.bestPick}</p>
+              <p className="mt-2"><span className="font-black">{t("blitz.study")}:</span> {metrics.missedPick}</p>
             </div>
           </div>
           <div className="mt-4 flex flex-col gap-2">
             <button onClick={() => onShare(metrics)} className="rounded-xl bg-[var(--color-surface-2)] py-3 text-sm font-black text-[var(--color-text-primary)] transition-all hover:bg-[var(--color-surface-3)]">
-              Share Result
+              {t("blitz.shareResult")}
             </button>
             <button onClick={() => onCopyChallenge(metrics)} className="rounded-xl border border-[var(--color-border)] py-3 text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-              Copy Friend Challenge
+              {t("blitz.copyFriendChallenge")}
             </button>
             {shareStatus && <p className="text-center text-xs font-semibold text-[var(--color-success)]">{shareStatus}</p>}
           </div>
@@ -624,20 +626,20 @@ function ResultsScreen({
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-bold text-[var(--color-text-primary)]">{market.question}</p>
-                    {market.id === powerMarketId && <span className="rounded-md bg-[var(--color-brand-primary)]/10 px-2 py-1 text-[10px] font-black uppercase text-[var(--color-brand-primary)]">Power</span>}
+                    {market.id === powerMarketId && <span className="rounded-md bg-[var(--color-brand-primary)]/10 px-2 py-1 text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{t("blitz.power")}</span>}
                   </div>
                   <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                    {pick === "skip" ? "Timed out" : `You: ${pick.toUpperCase()} (${pickedPrice}c)`}
+                    {pick === "skip" ? t("blitz.timedOut") : t("blitz.youPicked", { side: pick.toUpperCase(), price: String(pickedPrice) })}
                     {" - "}
-                    Correct: {outcome.toUpperCase()} - {responseTier(time)}
+                    {t("blitz.correctLine", { outcome: outcome.toUpperCase(), tier: responseTier(time) })}
                   </p>
                   <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{marketNote(market)}</p>
                 </div>
                 <div className="text-left sm:text-right">
                   <p className={`text-lg font-black ${breakdown.total > 0 ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"}`}>{breakdown.total > 0 ? `+${breakdown.total}` : "0"}</p>
                   <p className="text-[10px] text-[var(--color-text-muted)]">
-                    {breakdown.comeback > 0 ? "+ comeback " : ""}
-                    {breakdown.power > 0 ? "+ power" : ""}
+                    {breakdown.comeback > 0 ? `${t("blitz.comeback")} ` : ""}
+                    {breakdown.power > 0 ? t("blitz.powerPoints") : ""}
                   </p>
                 </div>
               </div>
@@ -646,21 +648,21 @@ function ResultsScreen({
         </div>
 
         <div className="flex flex-col gap-4">
-          <BlitzLeaderboard entries={leaderboard} userId={userId} currentEntry={practice ? null : currentEntry} loading={leaderboardLoading} error={leaderboardError} />
+          <BlitzLeaderboard entries={leaderboard} userId={userId} currentEntry={practice ? null : currentEntry} loading={leaderboardLoading} error={leaderboardError} t={t} />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Next Move</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.nextMove")}</p>
             <div className="mt-4 flex flex-col gap-2">
               {practice ? (
                 <button onClick={onPracticeAgain} className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-sm font-black text-white transition-all hover:bg-red-500">
-                  Run Another Warm-up
+                  {t("blitz.runAnotherWarmup")}
                 </button>
               ) : (
                 <Link href="/h2h" className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-center text-sm font-black text-white transition-all hover:bg-red-500">
-                  Challenge H2H
+                  {t("blitz.challengeH2H")}
                 </Link>
               )}
               <Link href="/card" className="rounded-xl border border-[var(--color-border)] py-3 text-center text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-                Open Full Card
+                {t("blitz.openFullCard")}
               </Link>
             </div>
           </div>
@@ -676,12 +678,14 @@ function BlitzLeaderboard({
   currentEntry,
   loading,
   error,
+  t,
 }: {
   entries: BlitzLeaderboardEntry[];
   userId: string | null;
   currentEntry: BlitzLeaderboardEntry | null;
   loading: boolean;
   error: string | null;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const [filter, setFilter] = useState<BoardFilter>("today");
   const filtered = entries.filter((entry) => {
@@ -696,8 +700,8 @@ function BlitzLeaderboard({
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden">
       <div className="border-b border-[var(--color-border)] px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Today&apos;s Blitz Board</p>
-          <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">All boards</Link>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.board")}</p>
+          <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">{t("blitz.allBoards")}</Link>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
           {(["today", "week", "friends", "perfect"] as BoardFilter[]).map((item) => (
@@ -713,34 +717,34 @@ function BlitzLeaderboard({
       </div>
       {loading && (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm font-black text-[var(--color-text-primary)]">Loading today&apos;s board</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Official ranked runs only.</p>
+          <p className="text-sm font-black text-[var(--color-text-primary)]">{t("blitz.loadingBoard")}</p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("blitz.officialOnly")}</p>
         </div>
       )}
       {!loading && error && (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm font-black text-[var(--color-danger)]">Could not load Blitz board</p>
+          <p className="text-sm font-black text-[var(--color-danger)]">{t("blitz.loadBoardError")}</p>
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">{error}</p>
         </div>
       )}
       {!loading && !error && rows.length === 0 && (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm font-black text-[var(--color-text-primary)]">No ranked runs yet</p>
+          <p className="text-sm font-black text-[var(--color-text-primary)]">{t("blitz.noRankedRuns")}</p>
           <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-            {filter === "today" ? "Be the first verified player on today's board." : "No entries match this filter yet."}
+            {filter === "today" ? t("blitz.firstVerified") : t("blitz.noFilterMatches")}
           </p>
         </div>
       )}
       {!loading && !error && rows.map((entry, index) => {
         const isYou = userId === entry.uid;
         return (
-          <BlitzLeaderboardRow key={entry.uid} entry={entry} rankLabel={String(index + 1)} isYou={isYou} />
+          <BlitzLeaderboardRow key={entry.uid} entry={entry} rankLabel={String(index + 1)} isYou={isYou} t={t} />
         );
       })}
       {!loading && !error && showCurrentEntry && currentEntry && (
         <div className="border-t border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10">
-          <div className="px-4 pt-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Your rank</div>
-          <BlitzLeaderboardRow entry={currentEntry} rankLabel={entries.length >= 25 ? "25+" : String(entries.length + 1)} isYou />
+          <div className="px-4 pt-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.yourRank")}</div>
+          <BlitzLeaderboardRow entry={currentEntry} rankLabel={entries.length >= 25 ? "25+" : String(entries.length + 1)} isYou t={t} />
         </div>
       )}
     </div>
@@ -751,14 +755,16 @@ function BlitzLeaderboardRow({
   entry,
   rankLabel,
   isYou,
+  t,
 }: {
   entry: BlitzLeaderboardEntry;
   rankLabel: string;
   isYou: boolean;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const name = (
     <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-text-primary)]"}`}>
-      {entry.displayName}{isYou ? " (you)" : ""}{entry.perfectRun ? " - Perfect" : ""}
+      {entry.displayName}{isYou ? t("blitz.youSuffix") : ""}{entry.perfectRun ? t("blitz.perfectSuffix") : ""}
     </p>
   );
 
@@ -771,7 +777,7 @@ function BlitzLeaderboardRow({
             {name}
           </Link>
         ) : name}
-        <p className="text-[10px] text-[var(--color-text-muted)]">{entry.correct}/{DAILY_MARKETS.length} correct - streak {entry.bestStreak ?? "-"} - avg {entry.avgTime || "-"}s</p>
+        <p className="text-[10px] text-[var(--color-text-muted)]">{t("blitz.rowDetail", { correct: String(entry.correct), total: String(DAILY_MARKETS.length), streak: String(entry.bestStreak ?? "-"), avg: String(entry.avgTime || "-") })}</p>
       </div>
       <span className="text-right text-sm font-black text-[var(--color-text-primary)]">{entry.score}</span>
       <span className="text-right text-xs font-bold text-[var(--color-text-muted)]">{entry.avgTime || "-"}s</span>
@@ -980,7 +986,7 @@ export function BlitzClient() {
               <p className="text-sm font-bold text-[var(--color-text-primary)]">{t("blitz.signInTitle")}</p>
               <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("blitz.signInBody")}</p>
               <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
-                Sign in
+                {t("account.signIn")}
               </button>
             </div>
           )}
@@ -1042,6 +1048,7 @@ export function BlitzClient() {
         onShare={shareResult}
         onCopyChallenge={copyChallenge}
         onPracticeAgain={() => startGame(true)}
+        t={t}
       />
       {saveError && <p className="mx-auto max-w-lg px-4 pb-24 text-xs text-[var(--color-danger)]">{saveError}</p>}
     </>
