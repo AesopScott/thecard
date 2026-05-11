@@ -14,6 +14,8 @@ import {
 import { db } from "./firebase";
 
 export const STARTING_BANKROLL = 1_000;
+export const MIN_PRIZE_BETS = 5;
+export const PAYOUT_SHARES = [0.4, 0.2, 0.1, 0.075, 0.06, 0.05, 0.04, 0.035, 0.025, 0.015] as const;
 
 // First season is August 2026 (NFL preseason opens)
 const FIRST_SEASON_YEAR = 2026;
@@ -34,6 +36,8 @@ function buildSeason(year: number, month: number): Season {
     startDate,
     endDate,
     prizePoolEstimate: 5_000,
+    minPrizeBets: MIN_PRIZE_BETS,
+    payoutShares: PAYOUT_SHARES,
   };
 }
 
@@ -60,13 +64,52 @@ export function getActiveSeason(): Season {
 
 export const ACTIVE_SEASON: Season = getActiveSeason();
 
-export const GLOBAL_LEAGUE: League = {
-  id: `global-${ACTIVE_SEASON.id}`,
-  seasonId: ACTIVE_SEASON.id,
-  name: "Global",
-  type: "global",
-  memberCount: 1_247,
-};
+export function getSeasonById(seasonId: string): Season {
+  const [yearStr, monthStr] = seasonId.split("-");
+  const year = parseInt(yearStr ?? String(FIRST_SEASON_YEAR), 10);
+  const month = parseInt(monthStr ?? String(FIRST_SEASON_MONTH + 1), 10) - 1;
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return buildSeason(FIRST_SEASON_YEAR, FIRST_SEASON_MONTH);
+  return buildSeason(year, month);
+}
+
+export function getGlobalLeagueForSeason(season: Season): League {
+  return {
+    id: `global-${season.id}`,
+    seasonId: season.id,
+    name: "Global",
+    type: "global",
+    memberCount: 1_247,
+  };
+}
+
+export function getSeasonTimeline(): Season[] {
+  const activeNumber = getSeasonNumber(ACTIVE_SEASON);
+  const startOffset = Math.max(0, activeNumber - 3);
+  return Array.from({ length: 5 }, (_, index) => {
+    const monthOffset = startOffset + index;
+    const date = new Date(FIRST_SEASON_YEAR, FIRST_SEASON_MONTH + monthOffset, 1);
+    return buildSeason(date.getFullYear(), date.getMonth());
+  });
+}
+
+export function getSeasonRolloverCopy(season = ACTIVE_SEASON): string {
+  const nextDate = new Date(season.endDate.getFullYear(), season.endDate.getMonth() + 1, 1);
+  const nextSeason = buildSeason(nextDate.getFullYear(), nextDate.getMonth());
+  return `Season ${getSeasonNumber(nextSeason)} opens ${nextSeason.startDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })} with every player reset to $${STARTING_BANKROLL.toLocaleString()}.`;
+}
+
+export const GLOBAL_LEAGUE: League = getGlobalLeagueForSeason(ACTIVE_SEASON);
+
+export const SEASON_RULES = {
+  minPrizeBets: MIN_PRIZE_BETS,
+  payoutShares: PAYOUT_SHARES,
+  startingBankroll: STARTING_BANKROLL,
+} as const;
+
+export const SEASON_PAYOUT_LABELS = PAYOUT_SHARES.map((share, index) => ({
+  rank: index + 1,
+  share,
+}));
 
 // Storage key includes season ID so bankrolls naturally reset each month
 const STORAGE_KEY = `thecard:season:v1:${ACTIVE_SEASON.id}`;

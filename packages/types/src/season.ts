@@ -10,6 +10,8 @@ export interface Season {
   readonly startDate: Date;
   readonly endDate: Date;
   readonly prizePoolEstimate: number;
+  readonly minPrizeBets: number;
+  readonly payoutShares: readonly number[];
 }
 
 export interface League {

@@ -8,9 +8,13 @@ import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-store"
 import {
   ACTIVE_SEASON,
   GLOBAL_LEAGUE,
+  MIN_PRIZE_BETS,
+  SEASON_PAYOUT_LABELS,
   SEASON_BANKROLL_EVENT,
   STARTING_BANKROLL,
   buildSeasonLeaderboard,
+  getSeasonRolloverCopy,
+  getSeasonTimeline,
   getMembership,
   getSeasonNumber,
   getSeasonStatus,
@@ -24,15 +28,12 @@ import type { SeasonLeaderboardEntry } from "@thecard/types";
 type Tab = "season" | "calibration";
 type SeasonFilter = "all" | "verified" | "eligible" | "prize" | "needs-bets";
 
-const MIN_PRIZE_BETS = 5;
-const PAYOUT_SHARES = [0.4, 0.2, 0.1, 0.075, 0.06, 0.05, 0.04, 0.035, 0.025, 0.015];
-
 function formatMoney(amount: number): string {
   return `$${Math.round(amount).toLocaleString()}`;
 }
 
 function projectedPayout(rank: number): number {
-  return ACTIVE_SEASON.prizePoolEstimate * (PAYOUT_SHARES[rank - 1] ?? 0);
+  return ACTIVE_SEASON.prizePoolEstimate * (ACTIVE_SEASON.payoutShares[rank - 1] ?? 0);
 }
 
 function pseudoRankDelta(entry: SeasonLeaderboardEntry): number {
@@ -225,19 +226,22 @@ function SeasonTab() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Prize preview</span>
-            <span className="text-xs text-[var(--color-card-muted)]">Projected top 10 split</span>
+            <span className="text-xs text-[var(--color-card-muted)]">Projected top 10 split / {MIN_PRIZE_BETS}+ bets required</span>
           </div>
           <span className="text-sm font-black text-[var(--color-card-text)]">{formatMoney(ACTIVE_SEASON.prizePoolEstimate)}</span>
         </div>
         <div className="grid grid-cols-5 gap-1.5">
-          {PAYOUT_SHARES.map((share, i) => (
-            <div key={share} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-2 py-2 text-center">
-              <p className="text-[10px] font-bold text-[var(--color-card-muted)]">#{i + 1}</p>
+          {SEASON_PAYOUT_LABELS.map(({ rank, share }) => (
+            <div key={rank} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-2 py-2 text-center">
+              <p className="text-[10px] font-bold text-[var(--color-card-muted)]">#{rank}</p>
               <p className="mt-0.5 text-[10px] font-black text-[var(--color-card-text)]">{formatMoney(ACTIVE_SEASON.prizePoolEstimate * share)}</p>
             </div>
           ))}
         </div>
       </div>
+
+      <SeasonMechanicsCard />
+      <SeasonArchiveCard />
 
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
@@ -355,6 +359,74 @@ function SeasonTab() {
           <p className="text-xs text-[var(--color-card-muted)] mt-1">Season {getSeasonNumber(ACTIVE_SEASON)} resets {ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function SeasonMechanicsCard() {
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Season mechanics</p>
+          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">Monthly reset, archived standings, fixed payout table</p>
+        </div>
+        <span className="shrink-0 rounded-lg border border-[var(--color-card-border)] px-2 py-1 text-[10px] font-black text-[var(--color-card-muted)]">
+          {ACTIVE_SEASON.id}
+        </span>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {[
+          ["Reset", `$${STARTING_BANKROLL.toLocaleString()}`, "Every new monthly season starts from the same bankroll."],
+          ["Eligible", `${MIN_PRIZE_BETS}+ bets`, "Top 10 prize rows require enough real season activity."],
+          ["Rollover", "Archived", getSeasonRolloverCopy(ACTIVE_SEASON)],
+        ].map(([label, value, detail]) => (
+          <div key={label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-card-muted)]">{label}</p>
+            <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{value}</p>
+            <p className="mt-1 text-[9px] leading-snug text-[var(--color-card-muted)]">{detail}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SeasonArchiveCard() {
+  const seasons = getSeasonTimeline();
+
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Season archive</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Current season and nearby monthly resets</p>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-5 gap-1.5">
+        {seasons.map((season) => {
+          const status = getSeasonStatus(season);
+          const active = season.id === ACTIVE_SEASON.id;
+          return (
+            <div
+              key={season.id}
+              className={`rounded-lg border px-2 py-2 text-center ${
+                active
+                  ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10"
+                  : "border-[var(--color-card-border)] bg-[var(--color-card-bg)]"
+              }`}
+            >
+              <p className="text-[10px] font-black text-[var(--color-card-text)]">S{getSeasonNumber(season)}</p>
+              <p className="mt-0.5 truncate text-[9px] text-[var(--color-card-muted)]">{season.name.split(" ")[0]}</p>
+              <p className={`mt-1 text-[8px] font-black uppercase ${
+                status === "active" ? "text-[var(--color-card-yes)]" : status === "closed" ? "text-[var(--color-card-muted)]" : "text-[var(--color-brand-primary)]"
+              }`}>
+                {active ? "current" : status}
+              </p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
