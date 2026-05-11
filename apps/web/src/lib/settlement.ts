@@ -4,6 +4,7 @@ import { db } from "./firebase";
 import { resolveForecast } from "./forecast-store";
 import { recordUserLeaguePayout } from "./league-store";
 import { GLOBAL_LEAGUE, recordUserSeasonPayout } from "./season-store";
+import { sportLeagueIdFromPaidLeagueId } from "./sport-leagues";
 import { resolveFirestoreForecast } from "./user-store";
 
 export interface SettleUserMarketInput {
@@ -65,7 +66,8 @@ async function settleUserPositions({
     await Promise.all(
       Array.from(payoutsByLeague.entries()).map(([leagueId, leaguePayout]) =>
         leagueId === GLOBAL_LEAGUE.id
-          ? recordUserSeasonPayout(uid, leaguePayout)
+        || sportLeagueIdFromPaidLeagueId(leagueId)
+          ? recordUserSeasonPayout(uid, leaguePayout, leagueId)
           : recordUserLeaguePayout(uid, leagueId, leaguePayout)
       )
     );

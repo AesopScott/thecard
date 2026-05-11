@@ -3,17 +3,19 @@ import { exchange } from "./exchange";
 import {
   getUserLeagueMembership,
   getUserLeagueMemberships,
+  isFriendLeagueId,
   placeUserLeagueBet,
   recordUserLeaguePayout,
   refundUserLeagueBet,
 } from "./league-store";
 import {
   GLOBAL_LEAGUE,
-  getExistingUserSeasonMembership,
+  getUserSeasonMemberships,
   placeUserSeasonBet,
   recordUserSeasonPayout,
   refundUserSeasonBet,
 } from "./season-store";
+import { getLeagueStatus, getSportLeagueById, sportLeagueIdFromPaidLeagueId } from "./sport-leagues";
 import { closeMatchingPositions, saveBetRecord, savePosition } from "./user-store";
 
 export class LeagueMembershipRequiredError extends Error {
@@ -49,16 +51,31 @@ export async function placeAccountOrder({
 }): Promise<AccountOrderResult> {
   if (!leagueId) throw new LeagueMembershipRequiredError();
 
-  const isSeasonLeague = leagueId === GLOBAL_LEAGUE.id;
-  const existingSeasonMembership = await getExistingUserSeasonMembership(uid);
+  const seasonMemberships = await getUserSeasonMemberships(uid);
+  const selectedSeasonMembership = seasonMemberships.find((membership) => membership.leagueId === leagueId);
+  const isSeasonLeague = Boolean(selectedSeasonMembership);
   const joinedLeagues = await getUserLeagueMemberships(uid);
   const selectedFreeMembership = joinedLeagues.find((membership) => membership.leagueId === leagueId);
+  const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
+  const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
+  const freeSportLeague = selectedFreeMembership ? getSportLeagueById(selectedFreeMembership.leagueId) : null;
 
-  if (isSeasonLeague && !existingSeasonMembership) throw new LeagueMembershipRequiredError();
-  if (!isSeasonLeague && !selectedFreeMembership) throw new LeagueMembershipRequiredError();
+  if (!selectedSeasonMembership && !selectedFreeMembership) throw new LeagueMembershipRequiredError();
+  if (selectedSeasonMembership && leagueId !== GLOBAL_LEAGUE.id && !paidSportLeague) {
+    throw new LeagueMembershipRequiredError();
+  }
+  if (paidSportLeague && (paidSportLeague.sport !== market.sport || getLeagueStatus(paidSportLeague) === "closed")) {
+    throw new LeagueMembershipRequiredError();
+  }
+  if (freeSportLeague && (freeSportLeague.sport !== market.sport || getLeagueStatus(freeSportLeague) === "closed")) {
+    throw new LeagueMembershipRequiredError();
+  }
+  if (selectedFreeMembership && !freeSportLeague && !isFriendLeagueId(selectedFreeMembership.leagueId)) {
+    throw new LeagueMembershipRequiredError();
+  }
 
   const debitedMembership = isSeasonLeague
-    ? await placeUserSeasonBet(uid, amountUsd)
+    ? await placeUserSeasonBet(uid, amountUsd, leagueId)
     : (await placeUserLeagueBet(uid, leagueId, amountUsd))
       ? await getUserLeagueMembership(uid, leagueId)
       : null;
@@ -96,11 +113,13 @@ export async function placeAccountOrder({
 
     return {
       ...position,
-      seasonBankroll: isSeasonLeague ? debitedMembership.currentBankroll : existingSeasonMembership?.currentBankroll ?? 0,
+      seasonBankroll: isSeasonLeague
+        ? debitedMembership.currentBankroll
+        : seasonMemberships.find((membership) => membership.leagueId === GLOBAL_LEAGUE.id)?.currentBankroll ?? 0,
       leagueBankroll: debitedMembership.currentBankroll,
     };
   } catch (error) {
-    await (isSeasonLeague ? refundUserSeasonBet(uid, amountUsd) : refundUserLeagueBet(uid, leagueId, amountUsd));
+    await (isSeasonLeague ? refundUserSeasonBet(uid, amountUsd, leagueId) : refundUserLeagueBet(uid, leagueId, amountUsd));
     throw error;
   }
 }
@@ -118,8 +137,8 @@ export async function closeAccountPosition({
   currentValue: number;
   leagueId: string;
 }): Promise<void> {
-  if (leagueId === GLOBAL_LEAGUE.id) {
-    await recordUserSeasonPayout(uid, currentValue);
+  if (leagueId === GLOBAL_LEAGUE.id || sportLeagueIdFromPaidLeagueId(leagueId)) {
+    await recordUserSeasonPayout(uid, currentValue, leagueId);
   } else {
     await recordUserLeaguePayout(uid, leagueId, currentValue);
   }

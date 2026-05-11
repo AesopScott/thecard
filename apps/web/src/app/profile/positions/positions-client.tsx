@@ -11,7 +11,7 @@ import {
 } from "@/lib/user-store";
 import { friendLeagueNumberFromId } from "@/lib/league-store";
 import { GLOBAL_LEAGUE } from "@/lib/season-store";
-import { getLeaguesByGroup } from "@/lib/sport-leagues";
+import { getLeaguesByGroup, getSportLeagueById, sportLeagueIdFromPaidLeagueId } from "@/lib/sport-leagues";
 
 type Filter = "all" | "wins" | "losses" | "settled" | "sold";
 
@@ -276,6 +276,9 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
 
 function leagueDisplayName(leagueId: string): string {
   if (leagueId === GLOBAL_LEAGUE.id) return `${GLOBAL_LEAGUE.name} League`;
+  const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
+  const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
+  if (paidSportLeague) return `${paidSportLeague.name} (Paid)`;
   const friendNumber = friendLeagueNumberFromId(leagueId);
   if (friendNumber) return `Friends League #${friendNumber}`;
   return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;

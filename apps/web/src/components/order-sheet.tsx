@@ -14,10 +14,16 @@ import {
   GLOBAL_LEAGUE,
   SEASON_BANKROLL_EVENT,
   STARTING_BANKROLL,
-  getExistingUserSeasonMembership,
+  getUserSeasonMemberships,
   joinUserSeasonLeague,
 } from "@/lib/season-store";
-import { getLeagueStatus, getLeaguesByGroup, leagueTypeBadge } from "@/lib/sport-leagues";
+import {
+  getLeagueStatus,
+  getLeaguesByGroup,
+  getSportLeagueById,
+  leagueTypeBadge,
+  sportLeagueIdFromPaidLeagueId,
+} from "@/lib/sport-leagues";
 import type { Market, Odds } from "@thecard/types";
 
 export const ORDER_PLACED_EVENT = "thecard:order:placed";
@@ -35,6 +41,11 @@ type LeagueOption = { id: string; name: string; meta: string; bankroll: number }
 
 function leagueLabel(leagueId: string): Pick<LeagueOption, "name" | "meta"> {
   if (leagueId === GLOBAL_LEAGUE.id) return { name: `${GLOBAL_LEAGUE.name} League`, meta: "Paid season league" };
+  const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
+  const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
+  if (paidSportLeague) {
+    return { name: `${paidSportLeague.name} (Paid)`, meta: `Paid league - ${leagueTypeBadge(paidSportLeague.type, paidSportLeague.half)}` };
+  }
   const friendNumber = friendLeagueNumberFromId(leagueId);
   if (friendNumber) return { name: `Friends League #${friendNumber}`, meta: "Free friends league - no payouts" };
   const league = getLeaguesByGroup().flatMap((group) => group.leagues).find((item) => item.id === leagueId);
@@ -61,20 +72,21 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
         return;
       }
       Promise.all([
-        getExistingUserSeasonMembership(user.uid),
+        getUserSeasonMemberships(user.uid),
         getUserLeagueMemberships(user.uid),
       ])
-        .then(([seasonMembership, freeMemberships]) => {
+        .then(([seasonMemberships, freeMemberships]) => {
           const sportLeagues = getLeaguesByGroup().flatMap((group) => group.leagues);
           const next: LeagueOption[] = [];
-          if (seasonMembership) {
-            next.push({
-              id: GLOBAL_LEAGUE.id,
-              name: `${GLOBAL_LEAGUE.name} League`,
-              meta: "Paid season league",
-              bankroll: seasonMembership.currentBankroll,
-            });
-          }
+          seasonMemberships.forEach((membership) => {
+            const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(membership.leagueId);
+            const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
+            const eligible = membership.leagueId === GLOBAL_LEAGUE.id
+              || (paidSportLeague?.sport === market.sport && getLeagueStatus(paidSportLeague) !== "closed");
+            if (!eligible) return;
+            const label = leagueLabel(membership.leagueId);
+            next.push({ ...label, id: membership.leagueId, bankroll: membership.currentBankroll });
+          });
           freeMemberships.forEach((membership) => {
             const sportLeague = sportLeagues.find((league) => league.id === membership.leagueId);
             const eligible = isFriendLeagueId(membership.leagueId)

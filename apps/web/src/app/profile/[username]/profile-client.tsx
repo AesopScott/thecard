@@ -14,7 +14,7 @@ import {
   type UserProfile,
 } from "@/lib/user-store";
 import { friendLeagueNumberFromId } from "@/lib/league-store";
-import { getLeaguesByGroup, leagueTypeBadge } from "@/lib/sport-leagues";
+import { getLeaguesByGroup, getSportLeagueById, leagueTypeBadge, sportLeagueIdFromPaidLeagueId } from "@/lib/sport-leagues";
 import { ACTIVE_SEASON, GLOBAL_LEAGUE } from "@/lib/season-store";
 
 interface ProfileClientProps {
@@ -134,6 +134,14 @@ export function ProfileClient({ username }: ProfileClientProps) {
 
 function leagueLabel(summary: PublicLeagueSummary): { name: string; meta: string } {
   if (summary.kind === "season") {
+    const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(summary.leagueId);
+    const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
+    if (paidSportLeague) {
+      return {
+        name: `${paidSportLeague.name} (Paid)`,
+        meta: `Paid ${leagueTypeBadge(paidSportLeague.type, paidSportLeague.half)} - ${paidSportLeague.sport.toUpperCase()}`,
+      };
+    }
     return {
       name: `${GLOBAL_LEAGUE.name} League`,
       meta: `Paid season - ${ACTIVE_SEASON.name}`,
@@ -163,6 +171,9 @@ function leagueLabel(summary: PublicLeagueSummary): { name: string; meta: string
 
 function leagueDisplayName(leagueId: string): string {
   if (leagueId === GLOBAL_LEAGUE.id) return `${GLOBAL_LEAGUE.name} League`;
+  const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
+  const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
+  if (paidSportLeague) return `${paidSportLeague.name} (Paid)`;
   const friendNumber = friendLeagueNumberFromId(leagueId);
   if (friendNumber) return `Friends League #${friendNumber}`;
   return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;

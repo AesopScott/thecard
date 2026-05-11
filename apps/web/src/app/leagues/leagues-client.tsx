@@ -10,7 +10,10 @@ import {
   formatLeagueDateRange,
   getLeagueStatus,
   getLeaguesByGroup,
+  getSportLeagueById,
   leagueTypeBadge,
+  paidSportLeagueId,
+  sportLeagueIdFromPaidLeagueId,
 } from "@/lib/sport-leagues";
 import {
   LEAGUE_BANKROLL_EVENT,
@@ -27,7 +30,7 @@ import {
   ACTIVE_SEASON,
   GLOBAL_LEAGUE,
   SEASON_BANKROLL_EVENT,
-  getExistingUserSeasonMembership,
+  getUserSeasonMemberships,
   joinUserSeasonLeague,
 } from "@/lib/season-store";
 
@@ -280,16 +283,17 @@ function FriendsLeagueBox({
 }
 
 function PaidLeagueColumn({
-  membership,
-  joining,
+  memberships,
+  joiningLeagueId,
   onJoin,
   groups,
 }: {
-  membership: LeagueMembership | null;
-  joining: boolean;
-  onJoin: () => void;
+  memberships: MembershipMap;
+  joiningLeagueId: string | null;
+  onJoin: (leagueId: string) => void;
   groups: ReturnType<typeof getLeaguesByGroup>;
 }) {
+  const globalMembership = memberships[GLOBAL_LEAGUE.id];
   return (
     <section className="flex flex-col gap-4">
       <div>
@@ -305,16 +309,16 @@ function PaidLeagueColumn({
               {ACTIVE_SEASON.name} - prize pool ${ACTIVE_SEASON.prizePoolEstimate.toLocaleString()}+
             </p>
           </div>
-          {membership ? (
-            <BankrollSummary membership={membership} />
+          {globalMembership ? (
+            <BankrollSummary membership={globalMembership} />
           ) : (
             <button
               type="button"
-              onClick={onJoin}
-              disabled={joining}
+              onClick={() => onJoin(GLOBAL_LEAGUE.id)}
+              disabled={joiningLeagueId === GLOBAL_LEAGUE.id}
               className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white disabled:opacity-60"
             >
-              {joining ? "Joining..." : "Join"}
+              {joiningLeagueId === GLOBAL_LEAGUE.id ? "Joining..." : "Join"}
             </button>
           )}
         </div>
@@ -323,8 +327,8 @@ function PaidLeagueColumn({
         <PaidSportGroupSection
           key={group.sport}
           group={group}
-          membership={membership}
-          joining={joining}
+          memberships={memberships}
+          joiningLeagueId={joiningLeagueId}
           onJoin={onJoin}
         />
       ))}
@@ -334,14 +338,14 @@ function PaidLeagueColumn({
 
 function PaidSportGroupSection({
   group,
-  membership,
-  joining,
+  memberships,
+  joiningLeagueId,
   onJoin,
 }: {
   group: ReturnType<typeof getLeaguesByGroup>[number];
-  membership: LeagueMembership | null;
-  joining: boolean;
-  onJoin: () => void;
+  memberships: MembershipMap;
+  joiningLeagueId: string | null;
+  onJoin: (leagueId: string) => void;
 }) {
   const [open, setOpen] = useState(true);
   return (
@@ -356,8 +360,8 @@ function PaidSportGroupSection({
             <PaidLeagueRow
               key={league.id}
               league={league}
-              membership={membership}
-              joining={joining}
+              membership={memberships[paidSportLeagueId(league.id)]}
+              joining={joiningLeagueId === paidSportLeagueId(league.id)}
               onJoin={onJoin}
             />
           ))}
@@ -374,9 +378,9 @@ function PaidLeagueRow({
   onJoin,
 }: {
   league: SportLeague;
-  membership: LeagueMembership | null;
+  membership: LeagueMembership | undefined;
   joining: boolean;
-  onJoin: () => void;
+  onJoin: (leagueId: string) => void;
 }) {
   const status = getLeagueStatus(league);
   const badge = leagueTypeBadge(league.type, league.half);
@@ -407,7 +411,7 @@ function PaidLeagueRow({
       ) : (
         <button
           type="button"
-          onClick={onJoin}
+          onClick={() => onJoin(paidSportLeagueId(league.id))}
           disabled={joining}
           className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-black text-white disabled:opacity-60"
         >
@@ -419,22 +423,36 @@ function PaidLeagueRow({
 }
 
 function leagueName(leagueId: string): string {
+  if (leagueId === GLOBAL_LEAGUE.id) return `${GLOBAL_LEAGUE.name} League`;
+  const paidLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
+  const paidLeague = paidLeagueId ? getSportLeagueById(paidLeagueId) : null;
+  if (paidLeague) return `${paidLeague.name} (Paid)`;
   const friendNumber = friendLeagueNumberFromId(leagueId);
   if (friendNumber) return `Friends League #${friendNumber}`;
   return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;
 }
 
+function leagueMeta(leagueId: string): string {
+  if (leagueId === GLOBAL_LEAGUE.id) return "Paid season league";
+  const paidLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
+  const paidLeague = paidLeagueId ? getSportLeagueById(paidLeagueId) : null;
+  if (paidLeague) return `Paid ${leagueTypeBadge(paidLeague.type, paidLeague.half)} - ${paidLeague.sport.toUpperCase()}`;
+  if (friendLeagueNumberFromId(leagueId)) return "Friends league - free, no payouts";
+  return "Free league";
+}
+
 function YourLeagues({
   memberships,
-  seasonMembership,
+  seasonMemberships,
   leaderboards,
 }: {
   memberships: MembershipMap;
-  seasonMembership: LeagueMembership | null;
+  seasonMemberships: MembershipMap;
   leaderboards: LeaderboardMap;
 }) {
   const joinedMemberships = useMemo(() => Object.values(memberships), [memberships]);
-  const hasAny = joinedMemberships.length > 0 || Boolean(seasonMembership);
+  const joinedSeasonMemberships = useMemo(() => Object.values(seasonMemberships), [seasonMemberships]);
+  const hasAny = joinedMemberships.length > 0 || joinedSeasonMemberships.length > 0;
 
   return (
     <aside className="lg:sticky lg:top-6 lg:self-start">
@@ -448,25 +466,23 @@ function YourLeagues({
         </div>
       )}
       <div className="flex flex-col gap-3">
-        {seasonMembership && (
-          <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+        {joinedSeasonMemberships.map((membership) => (
+          <div key={membership.leagueId} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
             <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-[var(--color-card-text)]">{GLOBAL_LEAGUE.name} League</p>
-                <p className="text-[10px] text-[var(--color-text-muted)]">Paid season league</p>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueName(membership.leagueId)}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId)}</p>
               </div>
-              <BankrollSummary membership={seasonMembership} />
+              <BankrollSummary membership={membership} />
             </div>
           </div>
-        )}
+        ))}
         {joinedMemberships.map((membership) => (
           <div key={membership.leagueId} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueName(membership.leagueId)}</p>
-                <p className="text-[10px] text-[var(--color-text-muted)]">
-                  {friendLeagueNumberFromId(membership.leagueId) ? "Friends league - free, no payouts" : "Free league"}
-                </p>
+                <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId)}</p>
               </div>
               <BankrollSummary membership={membership} />
             </div>
@@ -486,11 +502,11 @@ export function LeaguesClient() {
   const { user, verificationRequired } = useAuth();
   const groups = getLeaguesByGroup();
   const [memberships, setMemberships] = useState<MembershipMap>({});
-  const [seasonMembership, setSeasonMembership] = useState<LeagueMembership | null>(null);
+  const [seasonMemberships, setSeasonMemberships] = useState<MembershipMap>({});
   const [leaderboards, setLeaderboards] = useState<LeaderboardMap>({});
   const [loading, setLoading] = useState(false);
   const [joiningLeagueId, setJoiningLeagueId] = useState<string | null>(null);
-  const [joiningSeason, setJoiningSeason] = useState(false);
+  const [joiningSeasonLeagueId, setJoiningSeasonLeagueId] = useState<string | null>(null);
   const [joiningFriend, setJoiningFriend] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -498,17 +514,17 @@ export function LeaguesClient() {
   const refresh = useCallback(() => {
     if (!user || verificationRequired) {
       setMemberships({});
-      setSeasonMembership(null);
+      setSeasonMemberships({});
       return;
     }
     setLoading(true);
     Promise.all([
       getUserLeagueMemberships(user.uid),
-      getExistingUserSeasonMembership(user.uid),
+      getUserSeasonMemberships(user.uid),
     ])
-      .then(([nextMemberships, nextSeasonMembership]) => {
+      .then(([nextMemberships, nextSeasonMemberships]) => {
         setMemberships(toMembershipMap(nextMemberships));
-        setSeasonMembership(nextSeasonMembership);
+        setSeasonMemberships(toMembershipMap(nextSeasonMemberships));
       })
       .catch(() => setError("Could not load your leagues."))
       .finally(() => setLoading(false));
@@ -564,16 +580,17 @@ export function LeaguesClient() {
     }
   }
 
-  async function handleJoinSeason() {
-    if (!requireUser() || !user || joiningSeason) return;
-    setJoiningSeason(true);
+  async function handleJoinSeason(leagueId: string) {
+    if (!requireUser() || !user || joiningSeasonLeagueId) return;
+    setJoiningSeasonLeagueId(leagueId);
     setError(null);
     try {
-      setSeasonMembership(await joinUserSeasonLeague(user.uid));
+      const membership = await joinUserSeasonLeague(user.uid, leagueId);
+      setSeasonMemberships((current) => ({ ...current, [membership.leagueId]: membership }));
     } catch {
       setError("Could not join the paid league. Try again.");
     } finally {
-      setJoiningSeason(false);
+      setJoiningSeasonLeagueId(null);
     }
   }
 
@@ -643,15 +660,15 @@ export function LeaguesClient() {
           </section>
 
           <PaidLeagueColumn
-            membership={seasonMembership}
-            joining={joiningSeason}
+            memberships={seasonMemberships}
+            joiningLeagueId={joiningSeasonLeagueId}
             onJoin={handleJoinSeason}
             groups={groups}
           />
 
           <YourLeagues
             memberships={memberships}
-            seasonMembership={seasonMembership}
+            seasonMemberships={seasonMemberships}
             leaderboards={leaderboards}
           />
         </div>

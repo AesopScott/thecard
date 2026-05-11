@@ -288,6 +288,22 @@ export const SPORT_LEAGUES: SportLeague[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+export const PAID_SPORT_LEAGUE_PREFIX = "paid-";
+
+export function paidSportLeagueId(leagueId: string): string {
+  return `${PAID_SPORT_LEAGUE_PREFIX}${leagueId}`;
+}
+
+export function sportLeagueIdFromPaidLeagueId(leagueId: string): string | null {
+  return leagueId.startsWith(PAID_SPORT_LEAGUE_PREFIX)
+    ? leagueId.slice(PAID_SPORT_LEAGUE_PREFIX.length)
+    : null;
+}
+
+export function getSportLeagueById(leagueId: string): SportLeague | undefined {
+  return SPORT_LEAGUES.find((league) => league.id === leagueId);
+}
+
 export interface SportGroup {
   sport: string;
   icon: string;

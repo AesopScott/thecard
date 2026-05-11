@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
@@ -316,6 +317,18 @@ export async function getExistingUserSeasonMembership(uid: string, leagueId = GL
     return membership;
   }
   return null;
+}
+
+export async function getUserSeasonMemberships(uid: string): Promise<LeagueMembership[]> {
+  if (!db) return Object.values(read().memberships);
+  const snap = await getDocs(collection(db, "users", uid, "seasonMemberships"));
+  const memberships = snap.docs.map((membershipDoc) => {
+    const membership = fromFirestore(membershipDoc.id, membershipDoc.data());
+    cacheMembership(membership);
+    void syncSeasonLeaderboardEntry(uid, membership);
+    return membership;
+  });
+  return memberships.sort((a, b) => b.joinedAt - a.joinedAt);
 }
 
 export async function joinUserSeasonLeague(uid: string, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
