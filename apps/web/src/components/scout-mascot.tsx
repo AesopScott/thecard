@@ -31,29 +31,28 @@ const ACTION_OFFSET: Record<ScoutAction, string> = {
 
 const PAGE_FLOATERS: Record<ScoutPage, Array<ScoutVariant & { className: string; motion?: ScoutMotion; label: string }>> = {
   home: [
-    { sport: "football", motion: "drift", label: "Football Scout", className: "right-4 top-28 h-28 w-28 opacity-80 sm:h-40 sm:w-40 lg:right-12 lg:top-32" },
-    { sheet: "actions", action: "baseball", motion: "idle", label: "Baseball Scout", className: "left-3 top-[42rem] hidden h-24 w-24 opacity-60 lg:block" },
-    { sheet: "actions", action: "celebrate", motion: "hype", label: "Celebration Scout", className: "right-8 bottom-24 h-24 w-24 opacity-60 sm:h-32 sm:w-32" },
+    { sport: "football", motion: "drift", label: "Football Scout", className: "right-2 top-32 h-24 w-24 opacity-55 sm:right-6 sm:top-36 sm:h-32 sm:w-32 lg:right-[calc(50%-38rem)] lg:top-36 lg:h-40 lg:w-40 lg:opacity-70" },
+    { sheet: "actions", action: "celebrate", motion: "hype", label: "Celebration Scout", className: "hidden lg:block left-[calc(50%-39rem)] top-[38rem] h-28 w-28 opacity-45" },
   ],
   card: [
-    { sport: "football", motion: "idle", label: "Football Scout", className: "right-3 top-28 h-24 w-24 opacity-70 sm:h-36 sm:w-36 lg:right-10" },
-    { sheet: "actions", action: "trophy", motion: "drift", label: "Trophy Scout", className: "left-2 bottom-24 h-24 w-24 opacity-55 sm:h-32 sm:w-32" },
+    { sport: "football", motion: "idle", label: "Football Scout", className: "right-1 top-36 h-20 w-20 opacity-45 sm:right-4 sm:top-32 sm:h-28 sm:w-28 lg:right-[calc(50%-39rem)] lg:top-36 lg:h-36 lg:w-36 lg:opacity-62" },
+    { sheet: "actions", action: "trophy", motion: "drift", label: "Trophy Scout", className: "hidden xl:block left-[calc(50%-43rem)] top-[30rem] h-28 w-28 opacity-42" },
   ],
   blitz: [
-    { sport: "football", motion: "hype", label: "Blitz Football Scout", className: "right-3 top-24 h-28 w-28 opacity-75 sm:h-40 sm:w-40" },
-    { sheet: "actions", action: "baseball", motion: "drift", label: "Baseball Scout", className: "left-4 bottom-24 h-24 w-24 opacity-55 sm:h-32 sm:w-32" },
+    { sport: "football", motion: "hype", label: "Blitz Football Scout", className: "right-1 top-24 h-20 w-20 opacity-48 sm:right-5 sm:top-28 sm:h-32 sm:w-32 lg:right-[calc(50%-39rem)] lg:h-40 lg:w-40 lg:opacity-68" },
+    { sheet: "actions", action: "baseball", motion: "drift", label: "Baseball Scout", className: "hidden lg:block left-[calc(50%-40rem)] top-[34rem] h-28 w-28 opacity-42" },
   ],
   live: [
-    { sport: "basketball", motion: "hype", label: "Live Basketball Scout", className: "right-4 top-28 h-28 w-28 opacity-75 sm:h-40 sm:w-40" },
-    { sheet: "actions", action: "celebrate", motion: "drift", label: "Celebration Scout", className: "left-3 bottom-28 h-24 w-24 opacity-55 sm:h-32 sm:w-32" },
+    { sport: "basketball", motion: "hype", label: "Live Basketball Scout", className: "right-1 top-32 h-20 w-20 opacity-45 sm:right-5 sm:top-28 sm:h-32 sm:w-32 lg:right-[calc(50%-38rem)] lg:h-40 lg:w-40 lg:opacity-66" },
+    { sheet: "actions", action: "celebrate", motion: "drift", label: "Celebration Scout", className: "hidden xl:block left-[calc(50%-42rem)] top-[32rem] h-28 w-28 opacity-42" },
   ],
   h2h: [
-    { sheet: "actions", action: "fight", motion: "sweat", label: "H2H Fight Scout", className: "right-4 top-28 h-28 w-28 opacity-75 sm:h-40 sm:w-40" },
-    { sport: "soccer", motion: "idle", label: "Soccer Scout", className: "left-4 bottom-28 h-24 w-24 opacity-55 sm:h-32 sm:w-32" },
+    { sheet: "actions", action: "fight", motion: "sweat", label: "H2H Fight Scout", className: "right-1 top-28 h-20 w-20 opacity-48 sm:right-5 sm:h-32 sm:w-32 lg:right-[calc(50%-38rem)] lg:h-40 lg:w-40 lg:opacity-68" },
+    { sport: "soccer", motion: "idle", label: "Soccer Scout", className: "hidden xl:block left-[calc(50%-42rem)] top-[34rem] h-28 w-28 opacity-42" },
   ],
   forecast: [
-    { sport: "soccer", motion: "drift", label: "Forecast Soccer Scout", className: "right-4 top-28 h-28 w-28 opacity-75 sm:h-40 sm:w-40" },
-    { sheet: "actions", action: "trophy", motion: "idle", label: "Trophy Scout", className: "left-4 bottom-28 h-24 w-24 opacity-55 sm:h-32 sm:w-32" },
+    { sport: "soccer", motion: "drift", label: "Forecast Soccer Scout", className: "right-1 top-32 h-20 w-20 opacity-45 sm:right-5 sm:top-28 sm:h-32 sm:w-32 lg:right-[calc(50%-38rem)] lg:h-40 lg:w-40 lg:opacity-64" },
+    { sheet: "actions", action: "trophy", motion: "idle", label: "Trophy Scout", className: "hidden xl:block left-[calc(50%-42rem)] top-[31rem] h-28 w-28 opacity-42" },
   ],
 };
 
