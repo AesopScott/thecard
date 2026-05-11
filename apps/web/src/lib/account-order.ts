@@ -1,15 +1,15 @@
 import type { Market } from "@thecard/types";
 import { exchange } from "./exchange";
 import {
-  getActiveJoinedLeaguesForSportForUser,
+  getUserLeagueMembership,
   getUserLeagueMemberships,
   placeUserLeagueBet,
   recordUserLeaguePayout,
   refundUserLeagueBet,
 } from "./league-store";
 import {
+  GLOBAL_LEAGUE,
   getExistingUserSeasonMembership,
-  joinUserSeasonLeague,
   placeUserSeasonBet,
   recordUserSeasonPayout,
   refundUserSeasonBet,
@@ -18,7 +18,7 @@ import { closeMatchingPositions, savePosition } from "./user-store";
 
 export class LeagueMembershipRequiredError extends Error {
   constructor() {
-    super("Join a league before taking a position");
+    super("Choose a league before taking a position");
     this.name = "LeagueMembershipRequiredError";
   }
 }
@@ -30,6 +30,8 @@ export interface AccountOrderResult {
   contracts: number;
   averagePrice: number;
   seasonBankroll: number;
+  leagueId: string;
+  leagueBankroll: number;
 }
 
 export async function placeAccountOrder({
@@ -37,30 +39,32 @@ export async function placeAccountOrder({
   market,
   side,
   amountUsd,
+  leagueId,
 }: {
   uid: string;
   market: Pick<Market, "id" | "sport" | "title">;
   side: "yes" | "no";
   amountUsd: number;
+  leagueId: string;
 }): Promise<AccountOrderResult> {
+  if (!leagueId) throw new LeagueMembershipRequiredError();
+
+  const isSeasonLeague = leagueId === GLOBAL_LEAGUE.id;
   const existingSeasonMembership = await getExistingUserSeasonMembership(uid);
-  if (!existingSeasonMembership) {
-    const joinedLeagues = await getUserLeagueMemberships(uid);
-    if (joinedLeagues.length === 0) throw new LeagueMembershipRequiredError();
-    await joinUserSeasonLeague(uid);
-  }
+  const joinedLeagues = await getUserLeagueMemberships(uid);
+  const selectedFreeMembership = joinedLeagues.find((membership) => membership.leagueId === leagueId);
 
-  const seasonMembership = await placeUserSeasonBet(uid, amountUsd);
-  if (!seasonMembership) throw new Error("Insufficient bankroll");
+  if (isSeasonLeague && !existingSeasonMembership) throw new LeagueMembershipRequiredError();
+  if (!isSeasonLeague && !selectedFreeMembership) throw new LeagueMembershipRequiredError();
 
-  const debitedLeagueIds: string[] = [];
+  const debitedMembership = isSeasonLeague
+    ? await placeUserSeasonBet(uid, amountUsd)
+    : (await placeUserLeagueBet(uid, leagueId, amountUsd))
+      ? await getUserLeagueMembership(uid, leagueId)
+      : null;
+  if (!debitedMembership) throw new Error("Insufficient bankroll");
+
   try {
-    for (const leagueId of await getActiveJoinedLeaguesForSportForUser(uid, market.sport)) {
-      const debited = await placeUserLeagueBet(uid, leagueId, amountUsd);
-      if (!debited) throw new Error("Insufficient league bankroll");
-      debitedLeagueIds.push(leagueId);
-    }
-
     const fill = await exchange.placeOrder(uid, {
       marketId: market.id,
       side,
@@ -75,19 +79,18 @@ export async function placeAccountOrder({
       amountUsd: fill.filledAmountUsd,
       contracts: fill.filledAmountUsd / fill.price,
       averagePrice: fill.price,
-      leagueIds: debitedLeagueIds,
+      leagueId,
+      leagueIds: [leagueId],
     };
     await savePosition(uid, position);
 
     return {
       ...position,
-      seasonBankroll: seasonMembership.currentBankroll,
+      seasonBankroll: isSeasonLeague ? debitedMembership.currentBankroll : existingSeasonMembership?.currentBankroll ?? 0,
+      leagueBankroll: debitedMembership.currentBankroll,
     };
   } catch (error) {
-    await Promise.allSettled([
-      refundUserSeasonBet(uid, amountUsd),
-      ...debitedLeagueIds.map((leagueId) => refundUserLeagueBet(uid, leagueId, amountUsd)),
-    ]);
+    await (isSeasonLeague ? refundUserSeasonBet(uid, amountUsd) : refundUserLeagueBet(uid, leagueId, amountUsd));
     throw error;
   }
 }
@@ -97,15 +100,17 @@ export async function closeAccountPosition({
   market,
   side,
   currentValue,
+  leagueId,
 }: {
   uid: string;
   market: Pick<Market, "id" | "sport" | "title">;
   side: "yes" | "no";
   currentValue: number;
+  leagueId: string;
 }): Promise<void> {
-  await recordUserSeasonPayout(uid, currentValue);
-
-  for (const leagueId of await getActiveJoinedLeaguesForSportForUser(uid, market.sport)) {
+  if (leagueId === GLOBAL_LEAGUE.id) {
+    await recordUserSeasonPayout(uid, currentValue);
+  } else {
     await recordUserLeaguePayout(uid, leagueId, currentValue);
   }
 
@@ -114,5 +119,6 @@ export async function closeAccountPosition({
     sport: market.sport,
     payout: currentValue,
     outcome: "sold",
+    leagueId,
   });
 }

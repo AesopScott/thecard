@@ -154,6 +154,13 @@ function leagueLabel(summary: PublicLeagueSummary): { name: string; meta: string
   };
 }
 
+function leagueDisplayName(leagueId: string): string {
+  if (leagueId === GLOBAL_LEAGUE.id) return `${GLOBAL_LEAGUE.name} League`;
+  const friendNumber = friendLeagueNumberFromId(leagueId);
+  if (friendNumber) return `Friends League #${friendNumber}`;
+  return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;
+}
+
 function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
   const totals = leagues.reduce(
     (acc, league) => ({
@@ -315,6 +322,11 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
                       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
                         {position.side.toUpperCase()} / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
                       </p>
+                      {position.leagueId && (
+                        <p className="mt-1 truncate text-[10px] font-bold text-[var(--color-brand-primary)]">
+                          {leagueDisplayName(position.leagueId)}
+                        </p>
+                      )}
                     </div>
                     <div className="shrink-0 text-right">
                       <p className={`text-sm font-black ${isProfit ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>

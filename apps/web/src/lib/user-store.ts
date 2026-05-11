@@ -52,6 +52,7 @@ export interface SettledPositionRecord {
   id: string;
   marketId: string;
   marketTitle: string;
+  leagueId?: string;
   sport: Sport;
   side: "yes" | "no";
   contracts: number;
@@ -320,6 +321,7 @@ export async function savePosition(
     amountUsd: number;
     contracts: number;
     averagePrice: number;
+    leagueId?: string;
     leagueIds?: string[];
   }
 ): Promise<void> {
@@ -330,6 +332,7 @@ export async function savePosition(
     positionsRef,
     where("marketId", "==", data.marketId),
     where("side", "==", data.side),
+    ...(data.leagueId ? [where("leagueId", "==", data.leagueId)] : []),
     limit(1),
   ));
 
@@ -350,6 +353,7 @@ export async function savePosition(
       averagePrice: nextAveragePrice,
       ...(data.marketTitle && { marketTitle: data.marketTitle }),
       ...(data.sport && { sport: data.sport }),
+      ...(data.leagueId && { leagueId: data.leagueId }),
       openedAtMs: (current.openedAtMs as number | undefined) ?? now,
       lastTradeAtMs: now,
       leagueIds: Array.from(new Set([
@@ -388,6 +392,8 @@ export function subscribeToPositions(
           id: d.id,
           userId: uid,
           marketId: data.marketId as string,
+          leagueId: data.leagueId as string | undefined,
+          leagueIds: data.leagueIds as string[] | undefined,
           side: data.side as "yes" | "no",
           contracts,
           averagePrice,
@@ -412,7 +418,8 @@ export async function consolidatePositions(uid: string): Promise<void> {
     const marketId = data.marketId as string | undefined;
     const side = data.side as "yes" | "no" | undefined;
     if (!marketId || !side) continue;
-    const key = `${marketId}:${side}`;
+    const leagueId = (data.leagueId as string | undefined) ?? ((data.leagueIds as string[] | undefined) ?? [])[0] ?? "legacy";
+    const key = `${marketId}:${side}:${leagueId}`;
     groups.set(key, [...(groups.get(key) ?? []), positionDoc]);
   }
 
@@ -470,6 +477,7 @@ export async function closeMatchingPositions(
     sport: Sport;
     payout: number;
     outcome: "sold";
+    leagueId?: string;
   }
 ): Promise<void> {
   if (!db) return;
@@ -479,9 +487,17 @@ export async function closeMatchingPositions(
     where("side", "==", side),
   ));
   if (snap.empty) return;
+  const matchingDocs = settlement?.leagueId
+    ? snap.docs.filter((positionDoc) => {
+        const data = positionDoc.data();
+        const positionLeagueId = (data.leagueId as string | undefined) ?? ((data.leagueIds as string[] | undefined) ?? [])[0];
+        return positionLeagueId === settlement.leagueId;
+      })
+    : snap.docs;
+  if (matchingDocs.length === 0) return;
   const batch = writeBatch(db);
   if (settlement) {
-    const aggregate = snap.docs.reduce(
+    const aggregate = matchingDocs.reduce(
       (acc, positionDoc) => {
         const data = positionDoc.data();
         const contracts = (data.contracts as number | undefined) ?? 0;
@@ -501,6 +517,7 @@ export async function closeMatchingPositions(
       marketId,
       marketTitle: settlement.marketTitle,
       sport: settlement.sport,
+      leagueId: settlement.leagueId,
       side,
       contracts: aggregate.contracts,
       averagePrice: aggregate.contracts > 0 ? aggregate.weightedPrice / aggregate.contracts : 0,
@@ -513,7 +530,7 @@ export async function closeMatchingPositions(
       closedAt: serverTimestamp(),
     });
   }
-  snap.docs.forEach((positionDoc) => batch.delete(positionDoc.ref));
+  matchingDocs.forEach((positionDoc) => batch.delete(positionDoc.ref));
   await batch.commit();
 }
 
@@ -552,6 +569,7 @@ function toSettledPositionRecord(id: string, data: Record<string, unknown>): Set
     id,
     marketId: data.marketId as string,
     marketTitle: (data.marketTitle as string | undefined) ?? (data.marketId as string),
+    leagueId: data.leagueId as string | undefined,
     sport: (data.sport as Sport | undefined) ?? "other",
     side: data.side as "yes" | "no",
     contracts: (data.contracts as number | undefined) ?? 0,

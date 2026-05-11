@@ -53,6 +53,8 @@ export interface Position {
   readonly id?: string;
   readonly userId: string;
   readonly marketId: string;
+  readonly leagueId?: string;
+  readonly leagueIds?: string[];
   readonly side: "yes" | "no";
   readonly contracts: number;
   readonly averagePrice: number;

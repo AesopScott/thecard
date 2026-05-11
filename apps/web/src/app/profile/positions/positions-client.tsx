@@ -9,6 +9,9 @@ import {
   type SettledPositionRecord,
   type UserProfile,
 } from "@/lib/user-store";
+import { friendLeagueNumberFromId } from "@/lib/league-store";
+import { GLOBAL_LEAGUE } from "@/lib/season-store";
+import { getLeaguesByGroup } from "@/lib/sport-leagues";
 
 type Filter = "all" | "wins" | "losses" | "settled" | "sold";
 
@@ -240,6 +243,11 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
           <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
             {position.sport} / {position.side.toUpperCase()} at {priceCents}c / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
           </p>
+          {position.leagueId && (
+            <p className="mt-1 truncate text-[10px] font-bold text-[var(--color-brand-primary)]">
+              {leagueDisplayName(position.leagueId)}
+            </p>
+          )}
         </div>
         <div className="shrink-0 text-right">
           <p className={`text-base font-black ${isProfit ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>
@@ -264,4 +272,11 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
       </div>
     </article>
   );
+}
+
+function leagueDisplayName(leagueId: string): string {
+  if (leagueId === GLOBAL_LEAGUE.id) return `${GLOBAL_LEAGUE.name} League`;
+  const friendNumber = friendLeagueNumberFromId(leagueId);
+  if (friendNumber) return `Friends League #${friendNumber}`;
+  return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;
 }

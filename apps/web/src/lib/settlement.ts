@@ -2,8 +2,8 @@ import { collection, doc, getDocs, query, serverTimestamp, where, writeBatch } f
 import type { Sport } from "@thecard/types";
 import { db } from "./firebase";
 import { resolveForecast } from "./forecast-store";
-import { getActiveJoinedLeaguesForSportForUser, recordUserLeaguePayout } from "./league-store";
-import { recordUserSeasonPayout } from "./season-store";
+import { recordUserLeaguePayout } from "./league-store";
+import { GLOBAL_LEAGUE, recordUserSeasonPayout } from "./season-store";
 import { resolveFirestoreForecast } from "./user-store";
 
 export interface SettleUserMarketInput {
@@ -50,22 +50,24 @@ async function settleUserPositions({
   if (positionsSnap.empty) return { payout: 0, settledPositions: 0 };
 
   let payout = 0;
-  const leagueIds = new Set<string>();
+  const payoutsByLeague = new Map<string, number>();
   positionsSnap.docs.forEach((positionDoc) => {
     const data = positionDoc.data();
     if (data.side === outcome) {
-      payout += (data.contracts as number | undefined) ?? 0;
-      ((data.leagueIds as string[] | undefined) ?? []).forEach((leagueId) => leagueIds.add(leagueId));
+      const positionPayout = (data.contracts as number | undefined) ?? 0;
+      payout += positionPayout;
+      const leagueId = (data.leagueId as string | undefined) ?? ((data.leagueIds as string[] | undefined) ?? [])[0] ?? GLOBAL_LEAGUE.id;
+      payoutsByLeague.set(leagueId, (payoutsByLeague.get(leagueId) ?? 0) + positionPayout);
     }
   });
 
   if (payout > 0) {
-    await recordUserSeasonPayout(uid, payout);
-    const activeLeagueIds = leagueIds.size > 0
-      ? Array.from(leagueIds)
-      : await getActiveJoinedLeaguesForSportForUser(uid, sport);
     await Promise.all(
-      activeLeagueIds.map((leagueId) => recordUserLeaguePayout(uid, leagueId, payout))
+      Array.from(payoutsByLeague.entries()).map(([leagueId, leaguePayout]) =>
+        leagueId === GLOBAL_LEAGUE.id
+          ? recordUserSeasonPayout(uid, leaguePayout)
+          : recordUserLeaguePayout(uid, leagueId, leaguePayout)
+      )
     );
   }
 
@@ -77,10 +79,12 @@ async function settleUserPositions({
     const averagePrice = (data.averagePrice as number | undefined) ?? 0;
     const costBasis = (data.amountUsd as number | undefined) ?? contracts * averagePrice;
     const positionPayout = data.side === outcome ? contracts : 0;
+    const leagueId = (data.leagueId as string | undefined) ?? ((data.leagueIds as string[] | undefined) ?? [])[0];
     batch.set(doc(collection(firestore, "users", uid, "settledPositions")), {
       marketId,
       marketTitle: (data.marketTitle as string | undefined) ?? marketId,
       sport,
+      leagueId,
       side: data.side,
       contracts,
       averagePrice,

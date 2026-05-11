@@ -6,6 +6,9 @@ import { exchange } from "@/lib/exchange";
 import { closeAccountPosition, placeAccountOrder } from "@/lib/account-order";
 import { consolidatePositions, subscribeToPositions } from "@/lib/user-store";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { friendLeagueNumberFromId } from "@/lib/league-store";
+import { GLOBAL_LEAGUE } from "@/lib/season-store";
+import { getLeaguesByGroup } from "@/lib/sport-leagues";
 import type { Market, Odds, Position } from "@thecard/types";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -97,6 +100,8 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
   const isYes = position.side === "yes";
   const sideColor = isYes ? "var(--color-card-yes)" : "var(--color-card-no)";
   const market = markets.find((m) => m.id === position.marketId);
+  const positionLeagueId = position.leagueId ?? position.leagueIds?.[0] ?? GLOBAL_LEAGUE.id;
+  const positionLeagueName = getPositionLeagueName(positionLeagueId);
   const cost = position.contracts * position.averagePrice;
   const currentPrice = odds ? (isYes ? odds.yes : odds.no) : position.averagePrice;
   const currentCents = Math.round(currentPrice * 100);
@@ -132,7 +137,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
       fireOrder(`Take-profit hit at ${Math.round(cp * 100)}¢ — selling`);
       if (!market) return;
       setTimeout(() => {
-        closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue })
+        closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue, leagueId: positionLeagueId })
           .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
           .catch(() => fireOrder("Auto-sell failed. Try selling manually."));
       }, 400);
@@ -143,7 +148,7 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
       fireOrder(`Stop-loss hit at ${Math.round(cp * 100)}¢ — selling`);
       if (!market) return;
       setTimeout(() => {
-        closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue })
+        closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue, leagueId: positionLeagueId })
           .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
           .catch(() => fireOrder("Auto-sell failed. Try selling manually."));
       }, 400);
@@ -153,17 +158,17 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
       fired.autoBuy = true;
       fireOrder(`Auto-buy at ${Math.round(cp * 100)}¢ — adding $${o.autoBuy.amount}`);
       if (!market) return;
-      placeAccountOrder({ uid: user.uid, market, side: position.side, amountUsd: o.autoBuy.amount })
+      placeAccountOrder({ uid: user.uid, market, side: position.side, amountUsd: o.autoBuy.amount, leagueId: positionLeagueId })
         .then(() => window.dispatchEvent(new Event("thecard:order:placed")))
         .catch(() => fireOrder("Auto-buy skipped - insufficient bankroll"));
     }
-  }, [currentValue, fireOrder, isYes, market, odds, orders, position.side, user]);
+  }, [currentValue, fireOrder, isYes, market, odds, orders, position.side, positionLeagueId, user]);
 
   async function handleSell() {
     if (!user || !market || selling) return;
     setSelling(true);
     try {
-      await closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue });
+      await closeAccountPosition({ uid: user.uid, market, side: position.side, currentValue, leagueId: positionLeagueId });
       window.dispatchEvent(new Event("thecard:order:placed"));
     } finally {
       setSelling(false);
@@ -193,6 +198,9 @@ function PositionRow({ position, markets }: { position: Position; markets: Marke
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-[var(--color-card-text)] truncate">
             {market?.title ?? position.marketId}
+          </p>
+          <p className="mt-0.5 truncate text-[10px] font-bold text-[var(--color-brand-primary)]">
+            {positionLeagueName}
           </p>
           <p className="text-[10px] text-[var(--color-card-muted)]">
             {position.contracts.toFixed(1)} contracts · avg {Math.round(position.averagePrice * 100)}¢
@@ -385,4 +393,11 @@ function PriceInput({ value, min, max, onChange }: { value: number; min: number;
       className="w-12 rounded-md border border-[var(--color-card-border)] bg-[var(--color-card-bg)] text-[var(--color-card-text)] text-xs font-semibold px-1.5 py-0.5 text-center focus:outline-none focus:border-[var(--color-card-accent)]"
     />
   );
+}
+
+function getPositionLeagueName(leagueId: string): string {
+  if (leagueId === GLOBAL_LEAGUE.id) return `${GLOBAL_LEAGUE.name} League`;
+  const friendNumber = friendLeagueNumberFromId(leagueId);
+  if (friendNumber) return `Friends League #${friendNumber}`;
+  return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;
 }
