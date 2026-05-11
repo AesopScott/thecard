@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { subscribeToLeaderboard, type LeaderboardEntry } from "@/lib/user-store";
 import {
   ACTIVE_SEASON,
@@ -23,10 +24,14 @@ import {
   subscribeToSeasonLeaderboard,
 } from "@/lib/season-store";
 import { SeasonBanner } from "@/components/season-banner";
+import { ScoutMascot } from "@/components/scout-mascot";
 import type { SeasonLeaderboardEntry } from "@thecard/types";
 
 type Tab = "season" | "calibration";
 type SeasonFilter = "all" | "verified" | "eligible" | "prize" | "needs-bets";
+type TimeScope = "daily" | "weekly" | "season";
+type ModeScope = "overall" | "card" | "blitz" | "live" | "h2h" | "forecast";
+type SportScope = "all" | "nfl" | "nba" | "mlb" | "nhl" | "ufc" | "soccer";
 
 function formatMoney(amount: number): string {
   return `$${Math.round(amount).toLocaleString()}`;
@@ -66,10 +71,41 @@ function matchesFilter(entry: SeasonLeaderboardEntry, filter: SeasonFilter): boo
   return true;
 }
 
+function pseudoSport(entry: SeasonLeaderboardEntry): SportScope {
+  const sports: SportScope[] = ["nfl", "nba", "mlb", "nhl", "ufc", "soccer"];
+  const seed = Array.from(entry.displayName).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return sports[seed % sports.length]!;
+}
+
+function pseudoModeScore(entry: SeasonLeaderboardEntry, mode: ModeScope): number {
+  if (mode === "overall") return entry.bankroll;
+  const seed = Array.from(`${entry.displayName}-${mode}`).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return entry.bankroll + ((seed % 15) - 7) * 85;
+}
+
+function pseudoTimeScore(entry: SeasonLeaderboardEntry, scope: TimeScope): number {
+  if (scope === "season") return entry.bankroll;
+  const seed = Array.from(`${entry.displayName}-${scope}`).reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const swing = scope === "daily" ? 420 : 260;
+  return entry.bankroll + ((seed % 9) - 4) * swing;
+}
+
+function buildScopedBoard(board: SeasonLeaderboardEntry[], timeScope: TimeScope, modeScope: ModeScope, sportScope: SportScope): SeasonLeaderboardEntry[] {
+  const scoped = sportScope === "all" ? board : board.filter((entry) => entry.isYou || pseudoSport(entry) === sportScope);
+  return scoped
+    .map((entry) => ({
+      ...entry,
+      bankroll: Math.max(0, Math.round((pseudoModeScore(entry, modeScope) + pseudoTimeScore(entry, timeScope)) / 2)),
+    }))
+    .sort((a, b) => b.bankroll - a.bankroll)
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+}
+
 // ── Season tab ──────────────────────────────────────────────────────────────
 
 function SeasonTab() {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const [membership, setMembership] = useState(() => getMembership(GLOBAL_LEAGUE.id));
   const [board, setBoard] = useState<SeasonLeaderboardEntry[]>(() => {
     const membership = getMembership(GLOBAL_LEAGUE.id);
@@ -78,6 +114,9 @@ function SeasonTab() {
   const [isLive, setIsLive] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<SeasonFilter>("all");
+  const [timeScope, setTimeScope] = useState<TimeScope>("season");
+  const [modeScope, setModeScope] = useState<ModeScope>("overall");
+  const [sportScope, setSportScope] = useState<SportScope>("all");
   const [previewEntry, setPreviewEntry] = useState<SeasonLeaderboardEntry | null>(null);
   const status = getSeasonStatus(ACTIVE_SEASON);
 
@@ -130,16 +169,19 @@ function SeasonTab() {
   const pnlColor = pnl >= 0 ? "var(--color-card-yes)" : "var(--color-card-no)";
   const pnlSign = pnl >= 0 ? "+" : "-";
   const progress = seasonProgress();
-  const podium = board.slice(0, 3);
-  const filteredBoard = board.filter((entry) => matchesSearch(entry, search) && matchesFilter(entry, filter));
+  const scopedBoard = buildScopedBoard(board, timeScope, modeScope, sportScope);
+  const podium = scopedBoard.slice(0, 3);
+  const filteredBoard = scopedBoard.filter((entry) => matchesSearch(entry, search) && matchesFilter(entry, filter));
   const visibleBoard = filteredBoard.slice(0, 12);
-  const youEntry = board.find((entry) => entry.isYou);
+  const youEntry = scopedBoard.find((entry) => entry.isYou);
   const showStickyYou = Boolean(youEntry && !visibleBoard.some((entry) => entry.isYou));
-  const biggestMovers = board
+  const biggestMovers = scopedBoard
     .map((entry) => ({ entry, delta: pseudoRankDelta(entry) }))
     .filter(({ delta }) => delta !== 0)
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
     .slice(0, 3);
+  const prizeCutEntry = scopedBoard.find((entry) => entry.rank === 10);
+  const rivalEntry = youEntry ? scopedBoard.find((entry) => entry.rank === Math.max(1, youEntry.rank - 1)) : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -149,11 +191,11 @@ function SeasonTab() {
         <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-4 py-5 flex flex-col gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex flex-col gap-1">
-              <p className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Season {getSeasonNumber(ACTIVE_SEASON)} preview</p>
-              <p className="text-lg font-black text-[var(--color-card-text)]">Opening month leaderboard</p>
+              <p className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("leaderboard.seasonPreview").replace("{season}", String(getSeasonNumber(ACTIVE_SEASON)))}</p>
+              <p className="text-lg font-black text-[var(--color-card-text)]">{t("leaderboard.openingMonth")}</p>
             </div>
             <Link href="/card" className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-[10px] font-black text-white">
-              Join free
+              {t("leaderboard.joinFree")}
             </Link>
           </div>
           <p className="text-xs text-[var(--color-card-muted)] leading-relaxed">
@@ -161,12 +203,12 @@ function SeasonTab() {
             {ACTIVE_SEASON.startDate.toLocaleDateString("en-US", { month: "long", day: "numeric" })}. Top 10 eligible players split the prize pool.
           </p>
           <div className="flex items-center justify-between rounded-lg border border-[var(--color-brand-primary)]/20 bg-[var(--color-card-surface)] px-3 py-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">Projected pool</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">{t("leaderboard.projectedPool")}</span>
             <span className="text-sm font-black text-[var(--color-card-text)]">{formatMoney(ACTIVE_SEASON.prizePoolEstimate)}+</span>
           </div>
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between text-[10px] font-semibold text-[var(--color-card-muted)]">
-              <span>Season clock</span>
+              <span>{t("leaderboard.seasonClock")}</span>
               <span>0%</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-[var(--color-card-bg)]">
@@ -180,7 +222,7 @@ function SeasonTab() {
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Season clock</span>
+              <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("leaderboard.seasonClock")}</span>
               <span className="text-xs text-[var(--color-card-muted)]">
                 Closes {ACTIVE_SEASON.endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
@@ -196,7 +238,7 @@ function SeasonTab() {
       {/* Your stats row */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-0.5">
-          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">Bankroll</span>
+          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.bankroll")}</span>
           <span className="text-base font-black text-[var(--color-card-text)]">
             ${membership.currentBankroll.toLocaleString()}
           </span>
@@ -207,11 +249,11 @@ function SeasonTab() {
           )}
         </div>
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-0.5">
-          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">Bets</span>
+          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.bets")}</span>
           <span className="text-base font-black text-[var(--color-card-text)]">{membership.betCount}</span>
         </div>
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-0.5">
-          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">League</span>
+          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.league")}</span>
           <span className="text-base font-black text-[var(--color-card-text)]">Global</span>
         </div>
       </div>
@@ -225,8 +267,8 @@ function SeasonTab() {
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Prize preview</span>
-            <span className="text-xs text-[var(--color-card-muted)]">Projected top 10 split / {MIN_PRIZE_BETS}+ bets required</span>
+            <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("leaderboard.prizePreview")}</span>
+            <span className="text-xs text-[var(--color-card-muted)]">{t("leaderboard.prizeSplit").replace("{bets}", String(MIN_PRIZE_BETS))}</span>
           </div>
           <span className="text-sm font-black text-[var(--color-card-text)]">{formatMoney(ACTIVE_SEASON.prizePoolEstimate)}</span>
         </div>
@@ -246,8 +288,8 @@ function SeasonTab() {
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Biggest movers</span>
-            <span className="text-xs text-[var(--color-card-muted)]">Since the last standings snapshot</span>
+            <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("leaderboard.biggestMovers")}</span>
+            <span className="text-xs text-[var(--color-card-muted)]">{t("leaderboard.moversBody")}</span>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2">
@@ -257,7 +299,7 @@ function SeasonTab() {
                 {delta > 0 ? "+" : ""}{delta}
               </p>
               <p className="mt-1 truncate text-[10px] font-semibold text-[var(--color-card-text)]">{entry.displayName}</p>
-              <p className="text-[9px] text-[var(--color-card-muted)]">rank {entry.rank}</p>
+              <p className="text-[9px] text-[var(--color-card-muted)]">{t("leaderboard.rank")} {entry.rank}</p>
             </div>
           ))}
         </div>
@@ -269,7 +311,7 @@ function SeasonTab() {
 
       {youEntry && youEntry.betCount < MIN_PRIZE_BETS && (
         <div className="rounded-xl border border-[var(--color-card-no)]/30 bg-[var(--color-card-no-dim)] p-4">
-          <p className="text-sm font-black text-[var(--color-card-text)]">Prize eligibility pending</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{t("leaderboard.prizePending")}</p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">
             Place {MIN_PRIZE_BETS - youEntry.betCount} more bets this season to qualify for the top 10 payout table.
           </p>
@@ -283,33 +325,33 @@ function SeasonTab() {
         <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-              Global season standings
+              {t("leaderboard.globalStandings")}
             </span>
             <span className="truncate text-[10px] text-[var(--color-card-muted)]">
-              {isLive ? "Live from Firestore" : "Preview board until players join"}
+              {isLive ? t("leaderboard.liveFirestore") : t("leaderboard.previewBoard")}
             </span>
           </div>
           <span className="shrink-0 text-[10px] font-semibold text-[var(--color-card-muted)]">
-            {board.length} rows
+            {board.length} {t("leaderboard.rows")}
           </span>
         </div>
         <div className="px-4 py-3 flex flex-col gap-3">
           <label className="flex flex-col gap-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">Search players</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">{t("leaderboard.searchPlayers")}</span>
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search username"
+              placeholder={t("leaderboard.searchPlaceholder")}
               className="h-10 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-3 text-sm font-semibold text-[var(--color-card-text)] outline-none placeholder:text-[var(--color-card-muted)] focus:border-[var(--color-brand-primary)]"
             />
           </label>
           <div className="grid grid-cols-5 gap-1.5">
             {([
-              ["all", "All"],
-              ["verified", "Verified"],
-              ["eligible", "Eligible"],
-              ["prize", "Top 10"],
-              ["needs-bets", "Needs bets"],
+              ["all", t("leaderboard.all")],
+              ["verified", t("leaderboard.verified")],
+              ["eligible", t("leaderboard.eligible")],
+              ["prize", t("leaderboard.top10")],
+              ["needs-bets", t("leaderboard.needsBets")],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -328,9 +370,9 @@ function SeasonTab() {
         </div>
         <div className="px-4 py-3 grid grid-cols-[24px_1fr_80px_40px] gap-2 items-center">
           <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">#</span>
-          <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">Player</span>
-          <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider text-right">Bankroll</span>
-          <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider text-right">Bets</span>
+          <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.player")}</span>
+          <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider text-right">{t("leaderboard.bankroll")}</span>
+          <span className="text-[10px] font-semibold text-[var(--color-card-muted)] uppercase tracking-wider text-right">{t("leaderboard.bets")}</span>
         </div>
         {visibleBoard.length > 0 ? (
           visibleBoard.map((entry) => (
@@ -338,8 +380,8 @@ function SeasonTab() {
           ))
         ) : (
           <div className="px-4 py-8 text-center">
-            <p className="text-sm font-black text-[var(--color-card-text)]">No matching players</p>
-            <p className="mt-1 text-xs text-[var(--color-card-muted)]">Try a different search or filter.</p>
+            <p className="text-sm font-black text-[var(--color-card-text)]">{t("leaderboard.noMatching")}</p>
+            <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("leaderboard.noMatchingBody")}</p>
           </div>
         )}
         {showStickyYou && youEntry && (
@@ -466,6 +508,7 @@ function PodiumCard({ entry }: { entry: SeasonLeaderboardEntry }) {
 
 function ShareRankCard({ entry }: { entry: SeasonLeaderboardEntry }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useI18n();
 
   async function copyShareText() {
     const text = `${shareText(entry)} https://thecard.bet/leaderboard`;
@@ -482,15 +525,15 @@ function ShareRankCard({ entry }: { entry: SeasonLeaderboardEntry }) {
     <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Shareable rank card</span>
-          <span className="text-xs text-[var(--color-card-muted)]">A quick post for your current standing</span>
+          <span className="text-[10px] font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("leaderboard.shareRank")}</span>
+          <span className="text-xs text-[var(--color-card-muted)]">{t("leaderboard.shareBody")}</span>
         </div>
         <button
           type="button"
           onClick={copyShareText}
           className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-[10px] font-black text-[var(--color-card-text)] hover:bg-[var(--color-surface-2)]"
         >
-          {copied ? "Copied" : "Copy"}
+          {copied ? t("leaderboard.copied") : t("leaderboard.copy")}
         </button>
       </div>
       <div className="rounded-lg bg-[var(--color-card-bg)] p-3">
@@ -790,22 +833,23 @@ function CalibrationRow({ rank, entry }: { rank: number; entry: LeaderboardEntry
 
 export function LeaderboardClient() {
   const [tab, setTab] = useState<Tab>("season");
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-col gap-4">
       {/* Tab switcher */}
       <div className="flex rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-1 gap-1">
-        {(["season", "calibration"] as Tab[]).map((t) => (
+        {(["season", "calibration"] as Tab[]).map((item) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={item}
+            onClick={() => setTab(item)}
             className="flex-1 rounded-lg py-2 text-xs font-bold transition-all"
             style={{
-              backgroundColor: tab === t ? "var(--color-brand-primary)" : "transparent",
-              color: tab === t ? "#fff" : "var(--color-card-muted)",
+              backgroundColor: tab === item ? "var(--color-brand-primary)" : "transparent",
+              color: tab === item ? "#fff" : "var(--color-card-muted)",
             }}
           >
-            {t === "season" ? "🏆 Season" : "📊 Calibration"}
+            {item === "season" ? t("leaderboard.seasonTab") : t("leaderboard.calibrationTab")}
           </button>
         ))}
       </div>

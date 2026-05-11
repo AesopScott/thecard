@@ -6,6 +6,7 @@ import type { LeagueMembership, SportLeague } from "@thecard/types";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import {
   buildAccountAccess,
   buildLeagueAccessSnapshot,
@@ -54,9 +55,10 @@ function toMembershipMap(memberships: LeagueMembership[]): MembershipMap {
 }
 
 function StatusPill({ status }: { status: "upcoming" | "active" | "closed" }) {
-  if (status === "active") return <span className="text-[var(--color-card-yes)] font-semibold">Active</span>;
-  if (status === "upcoming") return <span className="text-[var(--color-text-muted)]">Upcoming</span>;
-  return <span className="text-[var(--color-card-no)]">Closed</span>;
+  const { t } = useI18n();
+  if (status === "active") return <span className="text-[var(--color-card-yes)] font-semibold">{t("leagues.active")}</span>;
+  if (status === "upcoming") return <span className="text-[var(--color-text-muted)]">{t("leagues.upcoming")}</span>;
+  return <span className="text-[var(--color-card-no)]">{t("leagues.closed")}</span>;
 }
 
 function BankrollSummary({ membership }: { membership: LeagueMembership }) {
@@ -75,17 +77,18 @@ function BankrollSummary({ membership }: { membership: LeagueMembership }) {
 }
 
 function CalendarTopCard({ mode }: { mode: "free" | "paid" }) {
+  const { t } = useI18n();
   return (
     <Link
       href="/sports-calendar"
       className="block rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 transition-colors hover:border-[var(--color-brand-primary)]/50"
     >
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Calendar</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leagues.calendar")}</p>
       <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">
-        {mode === "free" ? "Find free leagues by schedule" : "Paid league calendar"}
+        {mode === "free" ? t("leagues.freeCalendar") : t("leagues.paidCalendar")}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-        Start with the calendar, then jump into the league that matches the season, tournament, or event window.
+        {t("leagues.calendarBody")}
       </p>
     </Link>
   );
@@ -137,15 +140,16 @@ function FreeLeagueLeaderboard({
   membership: LeagueMembership;
   entries: FreeLeagueLeaderboardEntry[];
 }) {
+  const { t } = useI18n();
   const standings = entries.length > 0 ? entries : buildFreeLeagueStandings(leagueId, membership);
   return (
     <div className="mt-2 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
-          Free Board
+          {t("leagues.freeBoard")}
         </p>
         <span className="rounded-full border border-[var(--color-card-border)] px-2 py-1 text-[10px] font-bold text-[var(--color-card-muted)]">
-          No payouts
+          {t("leagues.noPayouts")}
         </span>
       </div>
       <div className="flex flex-col gap-1.5">
@@ -181,6 +185,7 @@ function LeagueRow({
   joining: boolean;
   onJoin: (leagueId: string) => void;
 }) {
+  const { t } = useI18n();
   const status = getLeagueStatus(league);
   const badge = leagueTypeBadge(league.type, league.half);
 
@@ -194,21 +199,21 @@ function LeagueRow({
           </span>
         </div>
         <p className="text-[10px] text-[var(--color-text-muted)]">
-          {formatLeagueDateRange(league)} - {league.memberCount.toLocaleString()} players
+          {formatLeagueDateRange(league)} - {league.memberCount.toLocaleString()} {t("leagues.players")}
         </p>
       </div>
 
       {membership ? (
         <BankrollSummary membership={membership} />
       ) : status === "closed" ? (
-        <span className="shrink-0 text-[10px] text-[var(--color-text-muted)]">Closed</span>
+        <span className="shrink-0 text-[10px] text-[var(--color-text-muted)]">{t("leagues.closed")}</span>
       ) : (
         <button
           onClick={() => onJoin(league.id)}
           disabled={joining}
           className="shrink-0 rounded-lg border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/15 px-3 py-1.5 text-xs font-bold text-[var(--color-brand-primary)] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {joining ? "Joining..." : "Join Free"}
+          {joining ? t("leagues.joining") : t("leagues.joinFree")}
         </button>
       )}
     </div>
@@ -226,12 +231,13 @@ function SportGroupSection({
   joiningLeagueId: string | null;
   onJoin: (leagueId: string) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(true);
   return (
     <div>
       <button onClick={() => setOpen((o) => !o)} className="mb-3 flex w-full items-center justify-between">
         <h3 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{group.label}</h3>
-        <span className="text-xs text-[var(--color-text-muted)]">{open ? "Hide" : "Show"}</span>
+        <span className="text-xs text-[var(--color-text-muted)]">{open ? t("leagues.hide") : t("leagues.show")}</span>
       </button>
       {open && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
@@ -257,13 +263,14 @@ function FriendsLeagueBox({
   joining: boolean;
   onJoin: (number: string) => void;
 }) {
+  const { t } = useI18n();
   const [number, setNumber] = useState("");
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Friends League</p>
-      <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">Join by number</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leagues.friendsLeague")}</p>
+      <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">{t("leagues.joinByNumber")}</p>
       <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-        Free, private-by-number leagues for friend groups. No prize payouts.
+        {t("leagues.friendsBody")}
       </p>
       <div className="mt-3 flex gap-2">
         <input
@@ -279,7 +286,7 @@ function FriendsLeagueBox({
           disabled={joining}
           className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white disabled:opacity-60"
         >
-          Join
+          {t("leagues.join")}
         </button>
       </div>
       <button
@@ -288,30 +295,31 @@ function FriendsLeagueBox({
         disabled={joining}
         className="mt-2 w-full rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-card-text)] disabled:opacity-60"
       >
-        Create new number
+        {t("leagues.createNumber")}
       </button>
     </div>
   );
 }
 
 function AccessSummary({ snapshot }: { snapshot: LeagueAccessSnapshot }) {
+  const { t } = useI18n();
   const { access, usage } = snapshot;
   return (
     <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Account Access</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leagues.accountAccess")}</p>
           <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">
-            {access.plan === "paid" ? "$10/month member" : "Free account"}
+            {access.plan === "paid" ? t("leagues.paidMember") : t("leagues.freeAccount")}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Global does not use a slot. Extra paid slots add one paid league and two free league slots.
+            {t("leagues.accessBody")}
           </p>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <AccessStat label="Free" used={usage.freeLeagues} limit={access.freeLeagueSlots} />
-          <AccessStat label="Friends" used={usage.friendLeagues} limit={access.friendLeagueSlots} />
-          <AccessStat label="Paid" used={usage.paidLeagues} limit={access.paidLeagueSlots} />
+          <AccessStat label={t("leagues.free")} used={usage.freeLeagues} limit={access.freeLeagueSlots} />
+          <AccessStat label={t("leagues.friends")} used={usage.friendLeagues} limit={access.friendLeagueSlots} />
+          <AccessStat label={t("leagues.paid")} used={usage.paidLeagues} limit={access.paidLeagueSlots} />
         </div>
       </div>
     </div>
@@ -338,20 +346,21 @@ function PaidLeagueColumn({
   onJoin: (leagueId: string) => void;
   groups: ReturnType<typeof getLeaguesByGroup>;
 }) {
+  const { t } = useI18n();
   const globalMembership = memberships[GLOBAL_LEAGUE.id];
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Paid Leagues</h2>
-        <p className="mt-1 text-xs text-[var(--color-text-muted)]">Calendar first, then paid contests.</p>
+        <h2 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leagues.paidLeagues")}</h2>
+        <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("leagues.paidBody")}</p>
       </div>
       <CalendarTopCard mode="paid" />
       <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-card-surface)] p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-black text-[var(--color-card-text)]">Global Season League</p>
+            <p className="text-sm font-black text-[var(--color-card-text)]">{t("leagues.globalSeason")}</p>
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              {ACTIVE_SEASON.name} - prize pool ${ACTIVE_SEASON.prizePoolEstimate.toLocaleString()}+
+              {ACTIVE_SEASON.name} - {t("leagues.prizePool")} ${ACTIVE_SEASON.prizePoolEstimate.toLocaleString()}+
             </p>
           </div>
           {globalMembership ? (
@@ -363,7 +372,7 @@ function PaidLeagueColumn({
               disabled={joiningLeagueId === GLOBAL_LEAGUE.id}
               className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white disabled:opacity-60"
             >
-              {joiningLeagueId === GLOBAL_LEAGUE.id ? "Joining..." : "Join"}
+              {joiningLeagueId === GLOBAL_LEAGUE.id ? t("leagues.joining") : t("leagues.join")}
             </button>
           )}
         </div>
@@ -392,12 +401,13 @@ function PaidSportGroupSection({
   joiningLeagueId: string | null;
   onJoin: (leagueId: string) => void;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(true);
   return (
     <div>
       <button onClick={() => setOpen((o) => !o)} className="mb-3 flex w-full items-center justify-between">
         <h3 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{group.label}</h3>
-        <span className="text-xs text-[var(--color-text-muted)]">{open ? "Hide" : "Show"}</span>
+        <span className="text-xs text-[var(--color-text-muted)]">{open ? t("leagues.hide") : t("leagues.show")}</span>
       </button>
       {open && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
@@ -427,6 +437,7 @@ function PaidLeagueRow({
   joining: boolean;
   onJoin: (leagueId: string) => void;
 }) {
+  const { t } = useI18n();
   const status = getLeagueStatus(league);
   const badge = leagueTypeBadge(league.type, league.half);
 
@@ -440,7 +451,7 @@ function PaidLeagueRow({
           </span>
         </div>
         <p className="text-[10px] text-[var(--color-text-muted)]">
-          {formatLeagueDateRange(league)} - prize eligible
+          {formatLeagueDateRange(league)} - {t("leagues.paidPrizeEligible")}
         </p>
       </div>
 
@@ -449,10 +460,10 @@ function PaidLeagueRow({
           <span className="text-xs font-black text-[var(--color-card-text)]">
             ${membership.currentBankroll.toLocaleString()}
           </span>
-          <span className="text-[9px] text-[var(--color-card-yes)] font-semibold">Joined</span>
+          <span className="text-[9px] text-[var(--color-card-yes)] font-semibold">{t("leagues.joined")}</span>
         </div>
       ) : status === "closed" ? (
-        <span className="shrink-0 text-[10px] text-[var(--color-text-muted)]">Closed</span>
+        <span className="shrink-0 text-[10px] text-[var(--color-text-muted)]">{t("leagues.closed")}</span>
       ) : (
         <button
           type="button"
@@ -460,7 +471,7 @@ function PaidLeagueRow({
           disabled={joining}
           className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-black text-white disabled:opacity-60"
         >
-          {joining ? "Joining..." : "Join Paid"}
+          {joining ? t("leagues.joining") : t("leagues.joinPaid")}
         </button>
       )}
     </div>
@@ -477,13 +488,13 @@ function leagueName(leagueId: string): string {
   return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;
 }
 
-function leagueMeta(leagueId: string): string {
-  if (leagueId === GLOBAL_LEAGUE.id) return "Paid season league";
+function leagueMeta(leagueId: string, t: ReturnType<typeof useI18n>["t"]): string {
+  if (leagueId === GLOBAL_LEAGUE.id) return t("leagues.paidSeasonMeta");
   const paidLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
   const paidLeague = paidLeagueId ? getSportLeagueById(paidLeagueId) : null;
   if (paidLeague) return `Paid ${leagueTypeBadge(paidLeague.type, paidLeague.half)} - ${paidLeague.sport.toUpperCase()}`;
-  if (friendLeagueNumberFromId(leagueId)) return "Friends league - free, no payouts";
-  return "Free league";
+  if (friendLeagueNumberFromId(leagueId)) return t("leagues.friendsMeta");
+  return t("leagues.freeLeague");
 }
 
 function YourLeagues({
@@ -495,18 +506,19 @@ function YourLeagues({
   seasonMemberships: MembershipMap;
   leaderboards: LeaderboardMap;
 }) {
+  const { t } = useI18n();
   const joinedMemberships = useMemo(() => Object.values(memberships), [memberships]);
   const joinedSeasonMemberships = useMemo(() => Object.values(seasonMemberships), [seasonMemberships]);
   const hasAny = joinedMemberships.length > 0 || joinedSeasonMemberships.length > 0;
 
   return (
     <aside className="lg:sticky lg:top-6 lg:self-start">
-      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Your Leagues</h2>
+      <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leagues.yourLeagues")}</h2>
       {!hasAny && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-          <p className="text-sm font-black text-[var(--color-card-text)]">No leagues yet</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{t("leagues.noLeagues")}</p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-            Join any free league, friends league, or paid league before taking a position.
+            {t("leagues.noLeaguesBody")}
           </p>
         </div>
       )}
@@ -516,7 +528,7 @@ function YourLeagues({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueName(membership.leagueId)}</p>
-                <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId)}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId, t)}</p>
               </div>
               <BankrollSummary membership={membership} />
             </div>
@@ -527,7 +539,7 @@ function YourLeagues({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueName(membership.leagueId)}</p>
-                <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId)}</p>
+                <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId, t)}</p>
               </div>
               <BankrollSummary membership={membership} />
             </div>
@@ -545,6 +557,7 @@ function YourLeagues({
 
 export function LeaguesClient() {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const groups = getLeaguesByGroup();
   const [memberships, setMemberships] = useState<MembershipMap>({});
   const [seasonMemberships, setSeasonMemberships] = useState<MembershipMap>({});
@@ -578,9 +591,9 @@ export function LeaguesClient() {
           paidMemberships: nextSeasonMemberships,
         })));
       })
-      .catch(() => setError("Could not load your leagues."))
+      .catch(() => setError(t("leagues.loadError")))
       .finally(() => setLoading(false));
-  }, [user, verificationRequired]);
+  }, [t, user, verificationRequired]);
 
   useEffect(() => {
     refresh();
@@ -627,7 +640,7 @@ export function LeaguesClient() {
       setMemberships((current) => ({ ...current, [leagueId]: membership }));
       refresh();
     } catch {
-      setError("Could not join that league. Try again.");
+      setError(t("leagues.joinError"));
     } finally {
       setJoiningLeagueId(null);
     }
@@ -642,7 +655,7 @@ export function LeaguesClient() {
       setSeasonMemberships((current) => ({ ...current, [membership.leagueId]: membership }));
       refresh();
     } catch {
-      setError("Could not join the paid league. Try again.");
+      setError(t("leagues.joinPaidError"));
     } finally {
       setJoiningSeasonLeagueId(null);
     }
@@ -657,7 +670,7 @@ export function LeaguesClient() {
       setMemberships((current) => ({ ...current, [membership.leagueId]: membership }));
       refresh();
     } catch {
-      setError("Enter a friend league number with at least four digits.");
+      setError(t("leagues.friendNumberError"));
     } finally {
       setJoiningFriend(false);
     }
@@ -668,20 +681,20 @@ export function LeaguesClient() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="mb-8 max-w-3xl">
           <Link href="/card" className="mb-4 inline-block text-sm text-[var(--color-brand-primary)] hover:underline">
-            Back
+            {t("leagues.back")}
           </Link>
-          <h1 className="mb-2 font-display text-4xl font-black">Leagues</h1>
+          <h1 className="mb-2 font-display text-4xl font-black">{t("leagues.title")}</h1>
           <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
-            Join a league before taking positions. Free leagues track shadow bankrolls with no payouts; paid leagues live in the middle column.
+            {t("leagues.subtitle")}
           </p>
         </div>
 
         {!user && (
           <div className="mb-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-center">
-            <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to join leagues</p>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">League memberships sync to your account.</p>
+            <p className="text-sm font-bold text-[var(--color-card-text)]">{t("leagues.signInTitle")}</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("leagues.signInBody")}</p>
             <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
-              Sign in
+              {t("account.signIn")}
             </button>
           </div>
         )}
@@ -693,14 +706,14 @@ export function LeaguesClient() {
         )}
 
         {error && <p className="mb-4 rounded-lg border border-[var(--color-danger)]/30 px-3 py-2 text-xs text-[var(--color-danger)]">{error}</p>}
-        {loading && <p className="mb-4 text-xs text-[var(--color-text-muted)]">Loading your leagues...</p>}
+        {loading && <p className="mb-4 text-xs text-[var(--color-text-muted)]">{t("leagues.loading")}</p>}
         <AccessSummary snapshot={accessSnapshot} />
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_340px]">
           <section className="flex flex-col gap-4">
             <div>
-              <h2 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Free Leagues</h2>
-              <p className="mt-1 text-xs text-[var(--color-text-muted)]">Calendar first, then free friend and sports leagues.</p>
+              <h2 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("leagues.freeLeagues")}</h2>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("leagues.freeBody")}</p>
             </div>
             <CalendarTopCard mode="free" />
             <FriendsLeagueBox joining={joiningFriend} onJoin={handleJoinFriend} />
