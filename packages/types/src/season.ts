@@ -33,6 +33,9 @@ export interface SportLeague {
   readonly startDate: Date;
   readonly endDate: Date;
   readonly memberCount: number;
+  readonly entryFeeUsd?: number;
+  readonly hasPayouts?: boolean;
+  readonly prizePoolEstimate?: number;
 }
 
 export interface LeagueMembership {

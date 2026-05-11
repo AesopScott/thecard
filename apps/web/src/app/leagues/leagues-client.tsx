@@ -19,6 +19,8 @@ import {
   getLeagueStatus,
   getLeaguesByGroup,
   getSportLeagueById,
+  isFreePrizeLeague,
+  isPaidSportLeagueAvailable,
   leagueTypeBadge,
   paidSportLeagueId,
   sportLeagueIdFromPaidLeagueId,
@@ -153,6 +155,7 @@ function FreeLeagueLeaderboard({
   entries: FreeLeagueLeaderboardEntry[];
 }) {
   const { t } = useI18n();
+  const isPrizeLeague = isFreePrizeLeague(leagueId);
   const standings = entries.length > 0 ? entries : buildFreeLeagueStandings(leagueId, membership);
   return (
     <div className="mt-2 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
@@ -161,7 +164,7 @@ function FreeLeagueLeaderboard({
           {t("leagues.freeBoard")}
         </p>
         <span className="rounded-full border border-[var(--color-card-border)] px-2 py-1 text-[10px] font-bold text-[var(--color-card-muted)]">
-          {t("leagues.noPayouts")}
+          {isPrizeLeague ? t("leagues.freePrizePayouts") : t("leagues.noPayouts")}
         </span>
       </div>
       <div className="flex flex-col gap-1.5">
@@ -200,6 +203,7 @@ function LeagueRow({
   const { t } = useI18n();
   const status = getLeagueStatus(league);
   const badge = leagueTypeBadge(league.type, league.half);
+  const isPrizeLeague = isFreePrizeLeague(league);
 
   return (
     <div className="flex items-center gap-3 px-4 py-3">
@@ -209,9 +213,15 @@ function LeagueRow({
           <span className="shrink-0 rounded-full border border-[var(--color-card-border)] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[var(--color-brand-primary)]">
             {badge}
           </span>
+          {isPrizeLeague && (
+            <span className="shrink-0 rounded-full border border-[var(--color-card-yes)]/40 bg-[var(--color-card-yes)]/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[var(--color-card-yes)]">
+              {t("leagues.freePrize")}
+            </span>
+          )}
         </div>
         <p className="text-[10px] text-[var(--color-text-muted)]">
           {formatLeagueDateRange(league)} - {league.memberCount.toLocaleString()} {t("leagues.players")}
+          {isPrizeLeague && league.prizePoolEstimate ? ` - ${t("leagues.prizePool")} $${league.prizePoolEstimate.toLocaleString()}` : ""}
         </p>
       </div>
 
@@ -415,6 +425,8 @@ function PaidSportGroupSection({
 }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(true);
+  const paidLeagues = group.leagues.filter(isPaidSportLeagueAvailable);
+  if (paidLeagues.length === 0) return null;
   return (
     <div>
       <button onClick={() => setOpen((o) => !o)} className="mb-3 flex w-full items-center justify-between">
@@ -423,7 +435,7 @@ function PaidSportGroupSection({
       </button>
       {open && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
-          {group.leagues.map((league) => (
+          {paidLeagues.map((league) => (
             <PaidLeagueRow
               key={league.id}
               league={league}
@@ -506,6 +518,7 @@ function leagueMeta(leagueId: string, t: ReturnType<typeof useI18n>["t"]): strin
   const paidLeague = paidLeagueId ? getSportLeagueById(paidLeagueId) : null;
   if (paidLeague) return `Paid ${leagueTypeBadge(paidLeague.type, paidLeague.half)} - ${paidLeague.sport.toUpperCase()}`;
   if (friendLeagueNumberFromId(leagueId)) return t("leagues.friendsMeta");
+  if (isFreePrizeLeague(leagueId)) return t("leagues.freePrizeLeague");
   return t("leagues.freeLeague");
 }
 

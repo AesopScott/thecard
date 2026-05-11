@@ -248,11 +248,14 @@ export const SPORT_LEAGUES: SportLeague[] = [
     id: WORLD_CUP_LEAGUE_ID,
     sport: "soccer",
     name: "World Cup 2026",
-    description: "Free World Cup campaign league, group stage through the Final",
+    description: "Free World Cup campaign league with cash prizes, group stage through the Final",
     type: "sport_tournament",
     startDate: d(2026, 5, 11),  // Jun 11
     endDate: d(2026, 6, 19),    // Jul 19
     memberCount: 5_104,
+    entryFeeUsd: 0,
+    hasPayouts: true,
+    prizePoolEstimate: 1_000,
   },
   {
     id: "soccer-2026-pl",
@@ -304,6 +307,15 @@ export const PAID_SPORT_LEAGUE_PREFIX = "paid-";
 
 export function paidSportLeagueId(leagueId: string): string {
   return `${PAID_SPORT_LEAGUE_PREFIX}${leagueId}`;
+}
+
+export function isFreePrizeLeague(league: SportLeague | string): boolean {
+  const leagueId = typeof league === "string" ? league : league.id;
+  return leagueId === WORLD_CUP_LEAGUE_ID;
+}
+
+export function isPaidSportLeagueAvailable(league: SportLeague): boolean {
+  return !isFreePrizeLeague(league);
 }
 
 export function sportLeagueIdFromPaidLeagueId(leagueId: string): string | null {

@@ -21,6 +21,7 @@ import {
   getLeagueStatus,
   getLeaguesByGroup,
   getSportLeagueById,
+  isFreePrizeLeague,
   leagueTypeBadge,
   sportLeagueIdFromPaidLeagueId,
 } from "@/lib/sport-leagues";
@@ -49,7 +50,12 @@ function leagueLabel(leagueId: string): Pick<LeagueOption, "name" | "meta"> {
   const friendNumber = friendLeagueNumberFromId(leagueId);
   if (friendNumber) return { name: `Friends League #${friendNumber}`, meta: "Free friends league - no payouts" };
   const league = getLeaguesByGroup().flatMap((group) => group.leagues).find((item) => item.id === leagueId);
-  if (league) return { name: league.name, meta: `Free league - ${leagueTypeBadge(league.type, league.half)}` };
+  if (league) {
+    return {
+      name: league.name,
+      meta: isFreePrizeLeague(league) ? "Free prize league - no entry fee" : `Free league - ${leagueTypeBadge(league.type, league.half)}`,
+    };
+  }
   return { name: leagueId, meta: "League" };
 }
 

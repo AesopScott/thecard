@@ -15,7 +15,7 @@ import {
   recordUserSeasonPayout,
   refundUserSeasonBet,
 } from "./season-store";
-import { getLeagueStatus, getSportLeagueById, sportLeagueIdFromPaidLeagueId } from "./sport-leagues";
+import { getLeagueStatus, getSportLeagueById, isFreePrizeLeague, sportLeagueIdFromPaidLeagueId } from "./sport-leagues";
 import { closeMatchingPositions, saveBetRecord, savePosition } from "./user-store";
 
 export class LeagueMembershipRequiredError extends Error {
@@ -64,7 +64,7 @@ export async function placeAccountOrder({
   if (selectedSeasonMembership && leagueId !== GLOBAL_LEAGUE.id && !paidSportLeague) {
     throw new LeagueMembershipRequiredError();
   }
-  if (paidSportLeague && (paidSportLeague.sport !== market.sport || getLeagueStatus(paidSportLeague) === "closed")) {
+  if (paidSportLeague && (isFreePrizeLeague(paidSportLeague) || paidSportLeague.sport !== market.sport || getLeagueStatus(paidSportLeague) === "closed")) {
     throw new LeagueMembershipRequiredError();
   }
   if (freeSportLeague && (freeSportLeague.sport !== market.sport || getLeagueStatus(freeSportLeague) === "closed")) {
