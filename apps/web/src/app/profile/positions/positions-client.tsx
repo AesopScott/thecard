@@ -12,20 +12,22 @@ import {
 import { friendLeagueNumberFromId } from "@/lib/league-store";
 import { GLOBAL_LEAGUE } from "@/lib/season-store";
 import { getLeaguesByGroup, getSportLeagueById, sportLeagueIdFromPaidLeagueId } from "@/lib/sport-leagues";
+import { useI18n } from "@/contexts/i18n-context";
 
 type Filter = "all" | "wins" | "losses" | "settled" | "sold";
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "wins", label: "Wins" },
-  { id: "losses", label: "Losses" },
-  { id: "settled", label: "Settled" },
-  { id: "sold", label: "Sold" },
+const FILTERS: { id: Filter; labelKey: "profile.filterAll" | "profile.filterWins" | "profile.filterLosses" | "profile.filterSettled" | "profile.filterSold" }[] = [
+  { id: "all", labelKey: "profile.filterAll" },
+  { id: "wins", labelKey: "profile.filterWins" },
+  { id: "losses", labelKey: "profile.filterLosses" },
+  { id: "settled", labelKey: "profile.filterSettled" },
+  { id: "sold", labelKey: "profile.filterSold" },
 ];
 
 const PAGE_SIZE = 100;
 
 export function ProfilePositionsClient() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const username = (searchParams?.get("u") ?? searchParams?.get("username") ?? "").trim().toLowerCase();
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -99,24 +101,24 @@ export function ProfilePositionsClient() {
   if (!username) {
     return (
       <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-10 text-center">
-        <h1 className="text-2xl font-black text-[var(--color-card-text)]">Position history</h1>
+        <h1 className="text-2xl font-black text-[var(--color-card-text)]">{t("profile.positionHistory")}</h1>
         <Link href="/leaderboard" className="mx-auto rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-card-text)]">
-          Go to leaderboard
+          {t("profile.goLeaderboard")}
         </Link>
       </div>
     );
   }
 
   if (loading) {
-    return <div className="mx-auto max-w-lg px-4 py-10 text-sm text-[var(--color-card-muted)]">Loading positions...</div>;
+    return <div className="mx-auto max-w-lg px-4 py-10 text-sm text-[var(--color-card-muted)]">{t("profile.loadingPositions")}</div>;
   }
 
   if (!profile) {
     return (
       <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-10 text-center">
-        <h1 className="text-2xl font-black text-[var(--color-card-text)]">Profile not found</h1>
+        <h1 className="text-2xl font-black text-[var(--color-card-text)]">{t("profile.notFound")}</h1>
         <Link href="/leaderboard" className="mx-auto rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-card-text)]">
-          Back to leaderboard
+          {t("profile.backLeaderboard")}
         </Link>
       </div>
     );
@@ -142,28 +144,28 @@ export function ProfilePositionsClient() {
     <div className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-6">
       <header className="flex flex-col gap-3">
         <Link href={`/profile?u=${profile.username}`} className="text-xs font-bold text-[var(--color-brand-primary)]">
-          Back to @{profile.username}
+          {t("profile.backToUser", { username: profile.username })}
         </Link>
         <div>
-          <h1 className="text-3xl font-black text-[var(--color-card-text)]">Position History</h1>
+          <h1 className="text-3xl font-black text-[var(--color-card-text)]">{t("profile.positionHistory")}</h1>
           <p className="mt-1 text-sm text-[var(--color-card-muted)]">
-            @{profile.username} / {positions.length}{nextCursor ? "+" : ""} closed positions
+            {t("profile.closedPositionsLine", { username: profile.username, count: `${positions.length}${nextCursor ? "+" : ""}` })}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">
-            Open positions become public here after they are sold or settled.
+            {t("profile.positionsPublicBody")}
           </p>
         </div>
       </header>
 
       <section className="grid grid-cols-2 gap-2 sm:grid-cols-6">
         {[
-          { label: "Net P/L", value: `${stats.pnl >= 0 ? "+" : ""}$${stats.pnl.toFixed(2)}`, good: stats.pnl >= 0, wide: true },
+          { label: t("profile.netPl"), value: `${stats.pnl >= 0 ? "+" : ""}$${stats.pnl.toFixed(2)}`, good: stats.pnl >= 0, wide: true },
           { label: "ROI", value: `${roi >= 0 ? "+" : ""}${roi.toFixed(1)}%`, good: roi >= 0 },
-          { label: "Win Rate", value: `${winRate.toFixed(0)}%`, neutral: true },
-          { label: "Wins", value: String(stats.wins), neutral: true },
-          { label: "Losses", value: String(stats.losses), neutral: true },
-          { label: "Avg P/L", value: `${avgPnl >= 0 ? "+" : ""}$${avgPnl.toFixed(2)}`, good: avgPnl >= 0 },
-          { label: "Volume", value: `$${stats.costBasis.toFixed(2)}`, neutral: true, wide: true },
+          { label: t("profile.winRate"), value: `${winRate.toFixed(0)}%`, neutral: true },
+          { label: t("profile.wins"), value: String(stats.wins), neutral: true },
+          { label: t("profile.losses"), value: String(stats.losses), neutral: true },
+          { label: t("profile.avgPl"), value: `${avgPnl >= 0 ? "+" : ""}$${avgPnl.toFixed(2)}`, good: avgPnl >= 0 },
+          { label: t("profile.volume"), value: `$${stats.costBasis.toFixed(2)}`, neutral: true, wide: true },
         ].map((stat) => (
           <div key={stat.label} className={`rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 ${stat.wide ? "sm:col-span-2" : ""}`}>
             <p className={`text-lg font-black ${
@@ -177,11 +179,11 @@ export function ProfilePositionsClient() {
       </section>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">Search positions</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">{t("profile.searchPositions")}</span>
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Market, sport, side, result"
+          placeholder={t("profile.searchPlaceholder")}
           className="h-11 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 text-sm font-semibold text-[var(--color-card-text)] outline-none placeholder:text-[var(--color-card-muted)] focus:border-[var(--color-brand-primary)]"
         />
       </label>
@@ -198,7 +200,7 @@ export function ProfilePositionsClient() {
                 : "border-[var(--color-card-border)] text-[var(--color-card-muted)]"
             }`}
           >
-            {item.label}
+            {t(item.labelKey)}
           </button>
         ))}
       </div>
@@ -206,10 +208,10 @@ export function ProfilePositionsClient() {
       <section className="flex flex-col gap-2">
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-sm text-[var(--color-card-muted)]">
-            No positions match this view.
+            {t("profile.noPositionsMatch")}
           </div>
         ) : (
-          filtered.map((position) => <PositionRow key={position.id} position={position} />)
+          filtered.map((position) => <PositionRow key={position.id} position={position} t={t} />)
         )}
         {nextCursor && (
           <button
@@ -218,7 +220,7 @@ export function ProfilePositionsClient() {
             disabled={loadingMore}
             className="mt-2 h-11 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] text-sm font-bold text-[var(--color-card-text)] disabled:opacity-50"
           >
-            {loadingMore ? "Loading..." : "Load more positions"}
+            {loadingMore ? t("auth.loading") : t("profile.loadMorePositions")}
           </button>
         )}
       </section>
@@ -226,14 +228,14 @@ export function ProfilePositionsClient() {
   );
 }
 
-function PositionRow({ position }: { position: SettledPositionRecord }) {
+function PositionRow({ position, t }: { position: SettledPositionRecord; t: ReturnType<typeof useI18n>["t"] }) {
   const isProfit = position.pnl >= 0;
   const won = position.pnl > 0;
   const lost = position.pnl < 0;
   const opened = new Date(position.openedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const closed = new Date(position.closedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const priceCents = Math.round(position.averagePrice * 100);
-  const resultLabel = position.outcome === "sold" ? "Sold" : won ? "Won" : lost ? "Lost" : "Push";
+  const resultLabel = position.outcome === "sold" ? t("profile.sold") : won ? t("profile.won") : lost ? t("profile.lost") : t("profile.push");
 
   return (
     <article className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
@@ -241,7 +243,7 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
         <div className="min-w-0">
           <p className="text-sm font-bold text-[var(--color-card-text)]">{position.marketTitle}</p>
           <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
-            {position.sport} / {position.side.toUpperCase()} at {priceCents}c / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
+            {position.sport} / {position.side.toUpperCase()} {t("profile.atPrice", { price: String(priceCents) })} / {position.outcome === "sold" ? t("profile.sold") : t("profile.settledOutcome", { outcome: position.outcome.toUpperCase() })}
           </p>
           {position.leagueId && (
             <p className="mt-1 truncate text-[10px] font-bold text-[var(--color-brand-primary)]">
@@ -253,16 +255,16 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
           <p className={`text-base font-black ${isProfit ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"}`}>
             {isProfit ? "+" : ""}${position.pnl.toFixed(2)}
           </p>
-          <p className="text-[10px] text-[var(--color-card-muted)]">{opened} to {closed}</p>
+          <p className="text-[10px] text-[var(--color-card-muted)]">{t("profile.dateRange", { opened, closed })}</p>
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         {[
-          { label: "Result", value: resultLabel },
-          { label: "Contracts", value: position.contracts.toFixed(1) },
-          { label: "Cost", value: `$${position.costBasis.toFixed(2)}` },
-          { label: "Paid", value: `$${position.payout.toFixed(2)}` },
+          { label: t("profile.result"), value: resultLabel },
+          { label: t("profile.contracts"), value: position.contracts.toFixed(1) },
+          { label: t("profile.cost"), value: `$${position.costBasis.toFixed(2)}` },
+          { label: t("profile.paid"), value: `$${position.payout.toFixed(2)}` },
         ].map((item) => (
           <div key={item.label} className="rounded-lg bg-[var(--color-card-bg)] px-2 py-2">
             <p className="text-xs font-black text-[var(--color-card-text)]">{item.value}</p>

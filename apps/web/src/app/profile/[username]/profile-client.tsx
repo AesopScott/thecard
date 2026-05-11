@@ -75,10 +75,10 @@ export function ProfileClient({ username }: ProfileClientProps) {
   if (!profile) {
     return (
       <div className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-10 text-center">
-        <h1 className="text-2xl font-black text-[var(--color-card-text)]">Profile not found</h1>
-        <p className="text-sm text-[var(--color-card-muted)]">@{username.toLowerCase()} is not claimed yet.</p>
+        <h1 className="text-2xl font-black text-[var(--color-card-text)]">{t("profile.notFound")}</h1>
+        <p className="text-sm text-[var(--color-card-muted)]">{t("profile.notClaimed", { username: username.toLowerCase() })}</p>
         <Link href="/leaderboard" className="mx-auto rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-card-text)]">
-          Back to leaderboard
+          {t("profile.backLeaderboard")}
         </Link>
       </div>
     );
@@ -105,7 +105,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
                 <h1 className="truncate text-2xl font-black text-[var(--color-card-text)]">@{profile.username}</h1>
                 {profile.emailVerified && (
                   <span className="rounded-full border border-[var(--color-brand-primary)]/30 px-2 py-0.5 text-[10px] font-bold text-[var(--color-brand-primary)]">
-                    Verified
+                    {t("account.verified")}
                   </span>
                 )}
               </div>
@@ -119,7 +119,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
               )}
             </div>
             <p className="mt-1 text-sm text-[var(--color-card-muted)]">
-              {profile.teamName ? `${profile.teamName} forecaster` : "Independent forecaster"}
+              {profile.teamName ? t("profile.teamForecaster", { team: profile.teamName }) : t("profile.independentForecaster")}
             </p>
             {profile.countryName && (
               <p className="mt-1 text-xs font-bold text-[var(--color-brand-primary)]">
@@ -132,9 +132,9 @@ export function ProfileClient({ username }: ProfileClientProps) {
 
       <section className="grid grid-cols-3 gap-3">
         {[
-          { label: "Calibration", value: profile.resolvedCount >= 5 ? String(score) : "-" },
+          { label: t("leaderboard.calibrationTab"), value: profile.resolvedCount >= 5 ? String(score) : "-" },
           { label: "Brier", value: avgBrier },
-          { label: "Resolved", value: String(profile.resolvedCount) },
+          { label: t("profile.resolved"), value: String(profile.resolvedCount) },
         ].map(({ label, value }) => (
           <div
             key={label}
@@ -149,9 +149,9 @@ export function ProfileClient({ username }: ProfileClientProps) {
       {isOwnProfile && <ThemePicker />}
 
       <section className="grid gap-4 lg:grid-cols-3 lg:items-start">
-        <LeagueBetHistory bets={betHistory} />
-        <LeagueBankrolls leagues={leagueSummaries} />
-        <PositionHistory positions={settledPositions} username={profile.username} />
+        <LeagueBetHistory bets={betHistory} t={t} />
+        <LeagueBankrolls leagues={leagueSummaries} t={t} />
+        <PositionHistory positions={settledPositions} username={profile.username} t={t} />
       </section>
     </div>
   );
@@ -204,7 +204,7 @@ function leagueDisplayName(leagueId: string): string {
   return getLeaguesByGroup().flatMap((group) => group.leagues).find((league) => league.id === leagueId)?.name ?? leagueId;
 }
 
-function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
+function LeagueBankrolls({ leagues, t }: { leagues: PublicLeagueSummary[]; t: ReturnType<typeof useI18n>["t"] }) {
   const totals = leagues.reduce(
     (acc, league) => ({
       bankroll: acc.bankroll + league.currentBankroll,
@@ -218,30 +218,30 @@ function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">League Bankrolls</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("profile.leagueBankrolls")}</p>
           <p className="mt-1 text-xs text-[var(--color-card-muted)]">
-            Bankroll is tracked separately inside each league.
+            {t("profile.bankrollBody")}
           </p>
         </div>
         {leagues.length > 0 && (
           <div className="shrink-0 text-right">
             <p className="text-sm font-black text-[var(--color-card-text)]">{leagues.length}</p>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">leagues</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">{t("profile.leagues")}</p>
           </div>
         )}
       </div>
 
       {leagues.length === 0 ? (
         <p className="mt-3 text-sm leading-relaxed text-[var(--color-card-muted)]">
-          This player has not joined a league yet.
+          {t("profile.noLeaguesJoined")}
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-2">
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: "Total shown", value: `$${totals.bankroll.toLocaleString()}` },
-              { label: "Net P/L", value: `${totals.pnl >= 0 ? "+" : ""}$${totals.pnl.toLocaleString()}` },
-              { label: "Bets", value: totals.bets.toLocaleString() },
+              { label: t("profile.totalShown"), value: `$${totals.bankroll.toLocaleString()}` },
+              { label: t("profile.netPl"), value: `${totals.pnl >= 0 ? "+" : ""}$${totals.pnl.toLocaleString()}` },
+              { label: t("profile.bets"), value: totals.bets.toLocaleString() },
             ].map((stat) => (
               <div key={stat.label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-2 text-center">
                 <p className="text-sm font-black text-[var(--color-card-text)]">{stat.value}</p>
@@ -272,8 +272,8 @@ function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
                   </div>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-card-muted)]">
-                  <span>{league.betCount.toLocaleString()} bets</span>
-                  <span>${league.startingBankroll.toLocaleString()} starting bankroll</span>
+                  <span>{t("profile.betCount", { count: league.betCount.toLocaleString() })}</span>
+                  <span>{t("profile.startingBankroll", { amount: `$${league.startingBankroll.toLocaleString()}` })}</span>
                 </div>
               </div>
             );
@@ -284,7 +284,7 @@ function LeagueBankrolls({ leagues }: { leagues: PublicLeagueSummary[] }) {
   );
 }
 
-function LeagueBetHistory({ bets }: { bets: PublicBetRecord[] }) {
+function LeagueBetHistory({ bets, t }: { bets: PublicBetRecord[]; t: ReturnType<typeof useI18n>["t"] }) {
   const betsByLeague = bets.reduce<Record<string, PublicBetRecord[]>>((acc, bet) => {
     acc[bet.leagueId] = [...(acc[bet.leagueId] ?? []), bet];
     return acc;
@@ -295,20 +295,20 @@ function LeagueBetHistory({ bets }: { bets: PublicBetRecord[] }) {
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Every Bet By League</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("profile.everyBetByLeague")}</p>
           <p className="mt-1 text-xs text-[var(--color-card-muted)]">
-            Each bet is logged to one league ledger.
+            {t("profile.betLedgerBody")}
           </p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-sm font-black text-[var(--color-card-text)]">{bets.length}</p>
-          <p className="text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">bets</p>
+          <p className="text-[10px] uppercase tracking-wider text-[var(--color-card-muted)]">{t("profile.bets")}</p>
         </div>
       </div>
 
       {bets.length === 0 ? (
         <p className="mt-3 text-sm leading-relaxed text-[var(--color-card-muted)]">
-          Bet ledger entries will appear here after this player places league-specific bets.
+          {t("profile.noBetLedger")}
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-3">
@@ -320,7 +320,7 @@ function LeagueBetHistory({ bets }: { bets: PublicBetRecord[] }) {
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueDisplayName(leagueId)}</p>
-                    <p className="text-[10px] text-[var(--color-card-muted)]">{leagueBets.length} bets / ${totalAmount.toFixed(2)} staked</p>
+                    <p className="text-[10px] text-[var(--color-card-muted)]">{t("profile.leagueBetsStaked", { count: String(leagueBets.length), amount: `$${totalAmount.toFixed(2)}` })}</p>
                   </div>
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
@@ -350,7 +350,7 @@ function LeagueBetHistory({ bets }: { bets: PublicBetRecord[] }) {
   );
 }
 
-function PositionHistory({ positions, username }: { positions: SettledPositionRecord[]; username: string }) {
+function PositionHistory({ positions, username, t }: { positions: SettledPositionRecord[]; username: string; t: ReturnType<typeof useI18n>["t"] }) {
   const latestPositions = positions.slice(0, 3);
   const stats = positions.reduce(
     (acc, position) => ({
@@ -368,22 +368,22 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position History</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("profile.positionHistory")}</p>
         <Link href={`/profile/positions?u=${username}`} className="text-xs font-semibold text-[var(--color-card-muted)] hover:text-[var(--color-brand-primary)]">
-          View all
+          {t("profile.viewAll")}
         </Link>
       </div>
 
       {positions.length === 0 ? (
         <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
-          Closed position history will appear here after this player sells a position or a market settles.
+          {t("profile.noClosedPositions")}
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-2">
             {[
               {
-                label: "Net P/L",
+                label: t("profile.netPl"),
                 value: `${stats.pnl >= 0 ? "+" : ""}$${stats.pnl.toFixed(2)}`,
                 tone: stats.pnl >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]",
               },
@@ -393,12 +393,12 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
                 tone: roi >= 0 ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]",
               },
               {
-                label: "Win Rate",
+                label: t("profile.winRate"),
                 value: `${winRate.toFixed(0)}%`,
                 tone: "text-[var(--color-card-text)]",
               },
               {
-                label: "Volume",
+                label: t("profile.volume"),
                 value: `$${stats.costBasis.toFixed(2)}`,
                 tone: "text-[var(--color-card-text)]",
               },
@@ -411,8 +411,8 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
           </div>
 
           <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
-            <span>Latest positions</span>
-            <span>{positions.length} closed / {stats.wins}W / {stats.losses}L</span>
+            <span>{t("profile.latestPositions")}</span>
+            <span>{t("profile.closedRecord", { count: String(positions.length), wins: String(stats.wins), losses: String(stats.losses) })}</span>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -429,7 +429,7 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
                         {position.marketTitle}
                       </p>
                       <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
-                        {position.side.toUpperCase()} / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
+                        {position.side.toUpperCase()} / {position.outcome === "sold" ? t("profile.sold") : t("profile.settledOutcome", { outcome: position.outcome.toUpperCase() })}
                       </p>
                       {position.leagueId && (
                         <p className="mt-1 truncate text-[10px] font-bold text-[var(--color-brand-primary)]">
@@ -442,13 +442,13 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
                         {isProfit ? "+" : ""}${position.pnl.toFixed(2)}
                       </p>
                       <p className="text-[10px] text-[var(--color-card-muted)]">
-                        ${position.payout.toFixed(2)} paid
+                        {t("profile.paidAmount", { amount: `$${position.payout.toFixed(2)}` })}
                       </p>
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-[10px] text-[var(--color-card-muted)]">
-                    <span>{position.contracts.toFixed(1)} contracts / avg {Math.round(position.averagePrice * 100)}c</span>
-                    <span>cost ${position.costBasis.toFixed(2)}</span>
+                    <span>{t("profile.contractAvg", { contracts: position.contracts.toFixed(1), price: String(Math.round(position.averagePrice * 100)) })}</span>
+                    <span>{t("profile.costAmount", { amount: `$${position.costBasis.toFixed(2)}` })}</span>
                   </div>
                 </div>
               );
