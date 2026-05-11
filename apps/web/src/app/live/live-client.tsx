@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
@@ -290,9 +291,10 @@ function RiskSelector({ value, onChange, disabled }: { value: LiveRiskMode; onCh
 
 function BetButton({ side, cents, disabled, onPick }: { side: LivePickSide; cents: number; disabled: boolean; onPick: () => void }) {
   const isYes = side === "yes";
+  const { t } = useI18n();
   return (
     <button onClick={onPick} disabled={disabled} className={`flex-1 rounded-lg border py-2.5 text-sm font-black transition-all disabled:cursor-not-allowed disabled:opacity-40 ${isYes ? "border-[var(--color-card-yes)] bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)] hover:bg-[var(--color-card-yes)] hover:text-white" : "border-[var(--color-card-no)] bg-[var(--color-card-no-dim)] text-[var(--color-card-no)] hover:bg-[var(--color-card-no)] hover:text-white"}`}>
-      {isYes ? "YES" : "NO"} - {cents}c
+      {isYes ? t("live.yes") : t("live.no")} - {cents}c
     </button>
   );
 }
@@ -400,6 +402,7 @@ function ActiveTicket({
   onLock: () => void;
   onClear: () => void;
 }) {
+  const { t } = useI18n();
   const preview = scoreLiveRun(picks, undefined, boostMarketId, riskMode);
   const bustRisk = picks.length === 0 ? "low" : riskMode === "aggressive" ? "high" : picks.length >= 4 ? "medium" : "low";
 
@@ -407,7 +410,7 @@ function ActiveTicket({
     return (
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live ticket locked</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.locked")}</p>
           <p className="text-sm font-black text-[var(--color-card-text)]">{savedRun.score} pts</p>
         </div>
         <p className="mt-2 text-xs text-[var(--color-card-muted)]">{savedRun.correct}/{savedRun.picks.length} settled. Next live ticket in {timeUntilMidnight()}.</p>
@@ -418,17 +421,17 @@ function ActiveTicket({
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Active ticket</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.activeTicket")}</p>
         <p className="text-xs font-bold text-[var(--color-card-muted)]">{picks.length}/{MAX_PICKS}</p>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
         <StatPill label="Preview" value={preview.score} />
         <StatPill label="Streak" value={preview.streak} />
-        <StatPill label="Bust risk" value={bustRisk} />
+        <StatPill label={t("live.bustRisk")} value={bustRisk} />
       </div>
       <div className="mt-3 flex flex-col gap-2">
         {picks.length === 0 ? (
-          <p className="text-sm text-[var(--color-card-muted)]">Add live calls or star markets in watchlist mode.</p>
+          <p className="text-sm text-[var(--color-card-muted)]">{t("live.addCalls")}</p>
         ) : picks.map((pick) => (
           <div key={pick.marketId} className="rounded-lg bg-[var(--color-card-bg)] px-3 py-2">
             <div className="flex items-center justify-between gap-2">
@@ -437,23 +440,23 @@ function ActiveTicket({
             </div>
             <div className="mt-2 flex items-center gap-2">
               <span className="rounded-md bg-[var(--color-card-surface)] px-2 py-1 text-[10px] font-black uppercase text-[var(--color-card-muted)]">{statusForPick(pick, boostMarketId)}</span>
-              <button onClick={() => onBoost(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{boostMarketId === pick.marketId ? "Boosted" : "Boost"}</button>
-              <button onClick={() => onSwap(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-card-muted)]">Late swap</button>
+              <button onClick={() => onBoost(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-brand-primary)]">{boostMarketId === pick.marketId ? t("live.boosted") : t("live.boost")}</button>
+              <button onClick={() => onSwap(pick.marketId)} className="text-[10px] font-black uppercase text-[var(--color-card-muted)]">{t("live.lateSwap")}</button>
             </div>
           </div>
         ))}
       </div>
       {cashOut && picks.length > 0 && (
         <button onClick={onCashOut} className="mt-3 w-full rounded-lg border border-[var(--color-card-yes)] bg-[var(--color-card-yes-dim)] py-3 text-xs font-black uppercase text-[var(--color-card-yes)]">
-          Cash out moment: hold ticket
+          {t("live.cashOut")}
         </button>
       )}
       <div className="mt-3 flex gap-2">
         <button onClick={onLock} disabled={picks.length === 0 || saving} className="flex-1 rounded-lg bg-[var(--color-brand-primary)] px-3 py-3 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50">
-          {saving ? "Locking..." : "Lock Ticket"}
+          {saving ? t("live.locking") : t("live.lockTicket")}
         </button>
         <button onClick={onClear} disabled={picks.length === 0 || saving} className="rounded-lg border border-[var(--color-card-border)] px-3 py-3 text-xs font-bold text-[var(--color-card-muted)] disabled:opacity-50">
-          Clear
+          {t("live.clearTicket")}
         </button>
       </div>
       {error && <p className="mt-3 rounded-lg border border-[var(--color-card-no)]/30 px-3 py-2 text-xs text-[var(--color-card-no)]">{error}</p>}
@@ -462,6 +465,7 @@ function ActiveTicket({
 }
 
 function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLeaderboardEntry[]; userId: string | null; loading: boolean; error: string | null }) {
+  const { t } = useI18n();
   const [filter, setFilter] = useState<BoardFilter>("today");
   const filtered = entries.filter((entry) => {
     if (filter === "friends") return userId ? entry.uid === userId : false;
@@ -472,8 +476,8 @@ function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLea
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
       <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-4 py-3">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live Board</p>
-        <span className="text-xs font-bold text-[var(--color-card-muted)]">{entries.length} reads</span>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.board")}</p>
+        <span className="text-xs font-bold text-[var(--color-card-muted)]">{entries.length} {t("live.reads")}</span>
       </div>
       <div className="flex gap-2 overflow-x-auto border-b border-[var(--color-card-border)] px-4 py-3">
         {(["today", "slate", "friends", "verified", "boosted", "perfect"] as BoardFilter[]).map((item) => (
@@ -482,18 +486,18 @@ function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLea
       </div>
       {loading ? (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm font-black text-[var(--color-card-text)]">Loading live board</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Verified tickets only.</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{t("live.loadingBoard")}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("live.verifiedOnly")}</p>
         </div>
       ) : error ? (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm font-black text-[var(--color-card-text)]">Could not load live board</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{t("live.couldNotLoadBoard")}</p>
           <p className="mt-1 text-xs text-[var(--color-card-muted)]">{error}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="px-4 py-8 text-center">
-          <p className="text-sm font-black text-[var(--color-card-text)]">No live tickets yet</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{filter === "today" || filter === "verified" ? "Be the first verified ticket on today's board." : "No entries match this filter yet."}</p>
+          <p className="text-sm font-black text-[var(--color-card-text)]">{t("live.noTickets")}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{filter === "today" || filter === "verified" ? t("live.firstTicket") : t("live.noFilterMatches")}</p>
         </div>
       ) : filtered.slice(0, 8).map((entry, index) => {
         const isYou = userId === entry.uid;
@@ -558,6 +562,7 @@ function LiveResults({ run, leaderboard, userId, leaderboardLoading, leaderboard
 
 export function LiveClient() {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const [selectedId, setSelectedId] = useState("kc-sf");
   const [marketYes, setMarketYes] = useState(MICRO_MARKETS.map((market) => market.baseYes));
   const [picks, setPicks] = useState<LivePick[]>([]);
@@ -703,20 +708,20 @@ export function LiveClient() {
     <div className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-6 pb-24">
       <header className="grid gap-3 md:grid-cols-[1fr_320px]">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-[var(--color-card-text)]">Live</h1>
-          <p className="mt-1 text-sm text-[var(--color-card-muted)]">Build a live ticket, watch odds move, and lock one verified slate per day.</p>
+          <h1 className="text-3xl font-black tracking-tight text-[var(--color-card-text)]">{t("live.title")}</h1>
+          <p className="mt-1 text-sm text-[var(--color-card-muted)]">{t("live.subtitle")}</p>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <StatPill label="History" value={history.length} />
-          <StatPill label="Swap" value={swapUsed ? "used" : "ready"} />
-          <StatPill label="Watchlist" value={watchlist.length} />
+          <StatPill label={t("live.history")} value={history.length} />
+          <StatPill label={t("live.swap")} value={swapUsed ? "used" : "ready"} />
+          <StatPill label={t("live.watchlist")} value={watchlist.length} />
         </div>
       </header>
 
       <ExplainBetting
-        buttonLabel="Explain Live betting"
-        title="Live is about reading moving markets during the game."
-        summary="You are not picking a whole slate before kickoff. You are reacting to live game state, changing prices, and short windows where a market may be mispriced."
+        buttonLabel={t("live.explainButton")}
+        title={t("live.explainTitle")}
+        summary={t("live.explainSummary")}
         sections={LIVE_EXPLANATION}
       />
 
@@ -728,9 +733,9 @@ export function LiveClient() {
 
       {!user && (
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-center">
-          <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to lock a Live Ticket</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">One verified ticket per day. Watchlist mode is open.</p>
-          <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">Sign in</button>
+          <p className="text-sm font-bold text-[var(--color-card-text)]">{t("live.signInTitle")}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("live.signInBody")}</p>
+          <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">{t("account.signIn")}</button>
         </div>
       )}
       {user && verificationRequired && <EmailVerificationNotice compact />}
@@ -748,15 +753,15 @@ export function LiveClient() {
                 <Scoreboard game={selected} momentum={momentum} />
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Risk slider</p>
-                    <p className="text-xs text-[var(--color-card-muted)]">Choose before lock</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.riskSlider")}</p>
+                    <p className="text-xs text-[var(--color-card-muted)]">{t("live.chooseBeforeLock")}</p>
                   </div>
                   <div className="mt-3"><RiskSelector value={riskMode} onChange={setRiskMode} disabled={picks.length > 0} /></div>
                 </div>
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Smart next pick</p>
-                  <p className="mt-2 text-sm text-[var(--color-card-text)]">{smartNext ? smartNext.title : "Ticket is full."}</p>
-                  <p className="mt-1 text-xs text-[var(--color-card-muted)]">Based on your watchlist and open ticket risk.</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.smartNext")}</p>
+                  <p className="mt-2 text-sm text-[var(--color-card-text)]">{smartNext ? smartNext.title : t("live.ticketFull")}</p>
+                  <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("live.smartNextHelp")}</p>
                 </div>
                 <div className="flex flex-col gap-3">
                   {MICRO_MARKETS.map((market, index) => (
@@ -767,7 +772,7 @@ export function LiveClient() {
               <aside className="flex flex-col gap-4">
                 <ActiveTicket picks={picks} savedRun={savedRun} boostMarketId={boostMarketId} riskMode={riskMode} cashOut={cashOut} saving={saving} error={saveError} onBoost={(id) => setBoostMarketId((current) => current === id ? null : id)} onSwap={lateSwap} onCashOut={() => setCashOut(false)} onLock={lockLiveTicket} onClear={() => { setPicks([]); setBoostMarketId(null); }} />
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Sweat room prompts</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.sweatPrompts")}</p>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {["hold", "bad beat", "lock it", "need one more"].map((line) => (
                       <button key={line} onClick={() => setChatPrompt(line)} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-bold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]">{line}</button>

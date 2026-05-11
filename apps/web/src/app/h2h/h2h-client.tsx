@@ -6,6 +6,7 @@ import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
+import { ScoutFloaters } from "@/components/scout-mascot";
 import { useAuth } from "@/contexts/auth-context";
 import { DAILY_MARKETS, getDailyOutcomes, getOpponentPicks, type DailyMarket } from "@/lib/daily-markets";
 import {
@@ -816,6 +817,7 @@ export function H2HClient() {
   if (phase === "intro") {
     return (
       <>
+        <ScoutFloaters page="h2h" />
         <IntroScreen savedRun={savedRun} history={history} challengeScore={challengeScore} onStart={() => startGame("ranked")} onGhost={() => startGame("ghost")} onViewResults={() => {
           if (!savedRun) return;
           setActiveRun(savedRun);
@@ -844,43 +846,54 @@ export function H2HClient() {
 
   if (phase === "picking") {
     return (
-      <PickingScreen
-        picks={picks}
-        qIdx={qIdx}
-        confidenceMarketId={confidenceMarketId}
-        mode={mode}
-        timer={timer}
-        feedback={feedback}
-        onPick={handlePick}
-        onConfidence={(id) => setConfidenceMarketId((current) => current === id ? null : id)}
-        onJump={setQIdx}
-        onTrashTalk={setTrashTalk}
-        onBack={() => setPhase("intro")}
-        onSubmit={submitPicks}
-        submitting={saving}
-        error={saveError}
-      />
+      <>
+        <ScoutFloaters page="h2h" />
+        <PickingScreen
+          picks={picks}
+          qIdx={qIdx}
+          confidenceMarketId={confidenceMarketId}
+          mode={mode}
+          timer={timer}
+          feedback={feedback}
+          onPick={handlePick}
+          onConfidence={(id) => setConfidenceMarketId((current) => current === id ? null : id)}
+          onJump={setQIdx}
+          onTrashTalk={setTrashTalk}
+          onBack={() => setPhase("intro")}
+          onSubmit={submitPicks}
+          submitting={saving}
+          error={saveError}
+        />
+      </>
     );
   }
 
   if (phase === "locked") {
     const run = activeRun ?? buildLocalRun(picks.filter((pick): pick is H2HPick => pick !== null), confidenceMarketId);
-    return <LockedScreen picks={run.picks} opponentPicks={run.opponentPicks} trashTalk={trashTalk} onReveal={() => setPhase("results")} />;
+    return (
+      <>
+        <ScoutFloaters page="h2h" />
+        <LockedScreen picks={run.picks} opponentPicks={run.opponentPicks} trashTalk={trashTalk} onReveal={() => setPhase("results")} />
+      </>
+    );
   }
 
   const run = activeRun ?? savedRun ?? buildLocalRun(picks.filter((pick): pick is H2HPick => pick !== null), confidenceMarketId);
   return (
-    <ResultsScreen
-      run={run}
-      leaderboard={leaderboard}
-      leaderboardLoading={leaderboardLoading}
-      leaderboardError={leaderboardError}
-      userId={user?.uid ?? null}
-      mode={mode}
-      shareStatus={shareStatus}
-      onShare={shareResult}
-      onChallenge={copyChallenge}
-      onRematch={() => startGame("ghost")}
-    />
+    <>
+      <ScoutFloaters page="h2h" />
+      <ResultsScreen
+        run={run}
+        leaderboard={leaderboard}
+        leaderboardLoading={leaderboardLoading}
+        leaderboardError={leaderboardError}
+        userId={user?.uid ?? null}
+        mode={mode}
+        shareStatus={shareStatus}
+        onShare={shareResult}
+        onChallenge={copyChallenge}
+        onRematch={() => startGame("ghost")}
+      />
+    </>
   );
 }

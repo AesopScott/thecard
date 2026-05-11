@@ -13,6 +13,7 @@ import { SettlementPanel } from "@/components/settlement-panel";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import {
   getStoredCardWatchlist,
   readLocalCardWatchlist,
@@ -201,6 +202,7 @@ function settlePreview(picks: TicketPick[]) {
 
 export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps) {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [sport, setSport] = useState<SportFilter>("all");
   const [sort, setSort] = useState<SortMode>("hot");
@@ -342,22 +344,22 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-6">
           <div className="flex flex-wrap items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[var(--color-brand-primary)]" />
-            <span className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live board</span>
-            {bestBet && <span className="rounded-md bg-[var(--color-brand-primary)] px-2 py-1 text-[10px] font-black uppercase text-white">Best bet: {sportLabel(bestBet.sport)}</span>}
+            <span className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.liveBoard")}</span>
+            {bestBet && <span className="rounded-md bg-[var(--color-brand-primary)] px-2 py-1 text-[10px] font-black uppercase text-white">{t("card.bestBet")}: {sportLabel(bestBet.sport)}</span>}
           </div>
-          <h1 className="mt-3 text-5xl font-display font-black tracking-tight text-[var(--color-card-text)]">Tonight&apos;s Card</h1>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">Curated mock markets with conviction tiers, model edges, movement, tickets, and fast paths into every mode.</p>
+          <h1 className="mt-3 text-5xl font-display font-black tracking-tight text-[var(--color-card-text)]">{t("card.title")}</h1>
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">{t("card.subtitle")}</p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Markets" value={markets.length} />
-            <Stat label="Avg YES" value={`${avgYes}c`} />
-            <Stat label="Closing" value={closingSoon} />
-            <Stat label="Projected" value={projectedScore(ticketPicks, risk)} />
+            <Stat label={t("card.markets")} value={markets.length} />
+            <Stat label={t("card.avgYes")} value={`${avgYes}c`} />
+            <Stat label={t("card.closing")} value={closingSoon} />
+            <Stat label={t("card.projected")} value={projectedScore(ticketPicks, risk)} />
           </div>
         </div>
         <div className="flex flex-col gap-3">
           <SeasonBanner variant="compact" />
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Bridge modes</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.bridgeModes")}</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {(["/blitz", "/live", "/h2h", "/forecast"] as const).map((href) => (
                 <Link key={href} href={href} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-2 text-center text-xs font-black text-[var(--color-card-text)] transition-colors hover:border-[var(--color-brand-primary)]/50">{href.slice(1).toUpperCase()}</Link>
@@ -368,9 +370,9 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       </header>
 
       <ExplainBetting
-        buttonLabel="Explain The Card betting"
-        title="The Card turns tonight's slate into a free-to-play prediction ticket."
-        summary="Prices are probability signals, not real-money odds. You use them to decide whether YES or NO is mispriced, then build a daily card around the reads you like most."
+        buttonLabel={t("card.explainButton")}
+        title={t("card.explainTitle")}
+        summary={t("card.explainSummary")}
         sections={CARD_EXPLANATION}
       />
 
@@ -383,8 +385,8 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Featured heat</p>
-            <span className="text-xs font-bold text-[var(--color-text-muted)]">Top 3 activity signals</span>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.featuredHeat")}</p>
+            <span className="text-xs font-bold text-[var(--color-text-muted)]">{t("card.topSignals")}</span>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {featured.map((market) => (
@@ -407,7 +409,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search teams, props, sports" className="min-h-11 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 text-sm font-semibold text-[var(--color-card-text)] outline-none transition-colors focus:border-[var(--color-brand-primary)]" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("card.searchPlaceholder")} className="min-h-11 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 text-sm font-semibold text-[var(--color-card-text)] outline-none transition-colors focus:border-[var(--color-brand-primary)]" />
             <div className="grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
               {sports.slice(0, 8).map((item) => (
                 <button key={item} onClick={() => setSport(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${sport === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{sportLabel(item)}</button>
@@ -431,13 +433,13 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-black uppercase tracking-widest text-[var(--color-card-text)]">Market Feed</h2>
-            <span className="text-right text-xs font-bold text-[var(--color-text-muted)]">{watchlistStatus ?? `${filteredMarkets.length} shown`}</span>
+            <h2 className="text-sm font-black uppercase tracking-widest text-[var(--color-card-text)]">{t("card.marketFeed")}</h2>
+            <span className="text-right text-xs font-bold text-[var(--color-text-muted)]">{watchlistStatus ?? `${filteredMarkets.length} ${t("card.shown")}`}</span>
           </div>
           {filteredMarkets.length === 0 ? (
             <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-8 text-center">
-              <p className="text-sm font-black text-[var(--color-card-text)]">No markets match this view.</p>
-              <button onClick={() => { setQuery(""); setSport("all"); setWatchOnly(false); }} className="mt-3 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-text-muted)]">Clear filters</button>
+              <p className="text-sm font-black text-[var(--color-card-text)]">{t("card.noMarkets")}</p>
+              <button onClick={() => { setQuery(""); setSport("all"); setWatchOnly(false); }} className="mt-3 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-text-muted)]">{t("card.clearFilters")}</button>
             </div>
           ) : (
             (groupByTime ? ["Early", "Main", "Late"] : ["All"]).map((group) => {
@@ -476,7 +478,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
 
         <aside className="flex flex-col gap-4">
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Compare to community</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.compareCommunity")}</p>
             <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">Your selected card leans {ticketPicks.length === 0 ? "empty" : ticketPicks.filter((pick) => pick.side === "yes").length >= ticketPicks.length / 2 ? "YES-heavy" : "NO-heavy"} versus an average market YES price of {avgYes}c.</p>
           </div>
           <PositionsPanel />
@@ -524,18 +526,19 @@ function DevelopmentMockDataRibbon() {
 }
 
 function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLock, onShare, onClear }: { ticketPicks: TicketPick[]; risk: RiskProfile; lockedCard: LockedCard | null; history: LockedCard[]; shareStatus: string | null; onLock: () => void; onShare: () => void; onClear: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">My Card</p>
-        <p className="text-xs font-bold text-[var(--color-text-muted)]">{ticketPicks.length} picks</p>
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.myCard")}</p>
+        <p className="text-xs font-bold text-[var(--color-text-muted)]">{ticketPicks.length} {t("card.picks")}</p>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <Stat label="Preview" value={projectedScore(ticketPicks, risk)} />
-        <Stat label="Risk" value={risk} />
+        <Stat label={t("card.preview")} value={projectedScore(ticketPicks, risk)} />
+        <Stat label={t("card.risk")} value={risk} />
       </div>
       <div className="mt-3 flex flex-col gap-2">
-        {ticketPicks.length === 0 ? <p className="text-sm text-[var(--color-text-muted)]">Add picks from the feed to preview your card.</p> : ticketPicks.map((pick) => (
+        {ticketPicks.length === 0 ? <p className="text-sm text-[var(--color-text-muted)]">{t("card.emptyTicket")}</p> : ticketPicks.map((pick) => (
           <div key={pick.marketId} className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2">
             <div className="flex items-center justify-between gap-2">
               <p className="min-w-0 truncate text-xs font-bold text-[var(--color-card-text)]">{pick.title}</p>
@@ -547,14 +550,14 @@ function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLo
       </div>
       {lockedCard && <p className="mt-3 rounded-lg bg-[var(--color-brand-primary)]/10 px-3 py-2 text-xs font-bold text-[var(--color-card-text)]">Locked today for {lockedCard.projectedScore} projected points. Saved to profile artifact locally.</p>}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <button onClick={onLock} className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white">Lock</button>
-        <button onClick={onShare} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">Share</button>
-        <button onClick={onClear} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">Clear</button>
+        <button onClick={onLock} className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white">{t("card.lock")}</button>
+        <button onClick={onShare} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">{t("card.share")}</button>
+        <button onClick={onClear} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">{t("card.clear")}</button>
       </div>
       {shareStatus && <p className="mt-2 text-center text-xs font-bold text-[var(--color-success)]">{shareStatus}</p>}
       <div className="mt-4">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Card history</p>
-        {history.length === 0 ? <p className="mt-2 text-xs text-[var(--color-text-muted)]">Locked cards will archive here.</p> : history.slice(0, 3).map((item) => (
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.history")}</p>
+        {history.length === 0 ? <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t("card.historyEmpty")}</p> : history.slice(0, 3).map((item) => (
           <div key={item.date} className="mt-2 flex items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-xs">
             <span className="font-bold text-[var(--color-card-text)]">{item.date}</span>
             <span className="text-[var(--color-text-muted)]">{item.projectedScore} pts</span>

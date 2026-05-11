@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scout Motion Test Lab</title>
+  <style>
+    :root {
+      --bg: #14070b;
+      --panel: rgba(17, 16, 23, 0.88);
+      --line: rgba(255, 255, 255, 0.14);
+      --text: #fff7f7;
+      --muted: #b6aeb8;
+      --red: #ef3f3f;
+      --gold: #f8c44f;
+      --blue: #7de7ff;
+      --green: #42d37d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 18% 12%, rgba(239, 63, 63, 0.32), transparent 28rem),
+        radial-gradient(circle at 86% 8%, rgba(125, 231, 255, 0.16), transparent 25rem),
+        linear-gradient(135deg, #26080d, var(--bg) 52%, #07070b);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 30px;
+    }
+
+    header {
+      max-width: 1180px;
+      margin: 0 auto 24px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .eyebrow {
+      color: var(--red);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(42px, 7vw, 78px);
+      line-height: 0.92;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .intro {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .controls {
+      max-width: 1180px;
+      margin: 0 auto 22px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(10, 9, 14, 0.78);
+      padding: 12px;
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+      backdrop-filter: blur(14px);
+    }
+
+    .controls span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      padding: 9px 13px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    button:hover,
+    button.active {
+      transform: translateY(-1px);
+      border-color: rgba(248, 196, 79, 0.76);
+      background: rgba(248, 196, 79, 0.12);
+    }
+
+    .grid {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      min-height: 430px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 80% 12%, rgba(239, 63, 63, 0.18), transparent 18rem),
+        linear-gradient(155deg, rgba(255, 255, 255, 0.08), transparent 35%),
+        var(--panel);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 12px;
+      padding: 18px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+    }
+
+    .meta h2 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .meta p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .pill {
+      border: 1px solid rgba(248, 196, 79, 0.5);
+      border-radius: 999px;
+      color: var(--gold);
+      padding: 6px 9px;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .stage {
+      position: relative;
+      min-height: 300px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .floor {
+      position: absolute;
+      left: 50%;
+      bottom: 24px;
+      width: 230px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.24);
+      filter: blur(6px);
+      transform: translateX(-50%);
+      animation: floorPulse 2.8s ease-in-out infinite;
+    }
+
+    .sprite {
+      --x: 0%;
+      --y: 0%;
+      --scale: 1;
+      position: relative;
+      width: 250px;
+      height: 250px;
+      overflow: hidden;
+      transform-origin: 50% 82%;
+      animation: idle 2.8s ease-in-out infinite;
+      filter: drop-shadow(0 22px 24px rgba(0, 0, 0, 0.34));
+    }
+
+    .sprite img {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      left: var(--x);
+      top: var(--y);
+      max-width: none;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    .football { --x: 0; --y: 0; }
+    .basketball { --x: -250px; --y: 0; }
+    .hockey { --x: 0; --y: -250px; }
+    .soccer { --x: -250px; --y: -250px; }
+    .baseball { --x: 0; --y: 0; }
+    .fight { --x: -250px; --y: 0; }
+    .trophy { --x: 0; --y: -250px; }
+    .celebrate { --x: -250px; --y: -250px; }
+
+    .effect {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .effect::before,
+    .effect::after {
+      content: "";
+      position: absolute;
+      opacity: 0;
+    }
+
+    [data-reaction="win"] .sprite { animation: win 900ms ease-in-out infinite; }
+    [data-reaction="sweat"] .sprite { animation: sweat 720ms ease-in-out infinite; }
+    [data-reaction="lock"] .sprite { animation: lock 1.1s ease-in-out infinite; }
+    [data-reaction="badbeat"] .sprite { animation: badbeat 1.2s ease-in-out infinite; }
+    [data-reaction="wave"] .sprite { animation: wave 1.2s ease-in-out infinite; }
+
+    [data-reaction="win"] .effect::before {
+      opacity: 1;
+      left: 50%;
+      top: 18%;
+      width: 190px;
+      height: 190px;
+      transform: translateX(-50%);
+      background:
+        radial-gradient(circle, var(--gold) 0 3px, transparent 4px) 10px 20px / 42px 42px,
+        radial-gradient(circle, var(--red) 0 3px, transparent 4px) 28px 34px / 48px 48px,
+        radial-gradient(circle, var(--blue) 0 3px, transparent 4px) 18px 4px / 54px 54px;
+      animation: confetti 900ms ease-in-out infinite;
+    }
+
+    [data-reaction="sweat"] .effect::before {
+      opacity: 1;
+      right: 25%;
+      top: 28%;
+      width: 14px;
+      height: 22px;
+      border-radius: 999px 999px 999px 2px;
+      background: var(--blue);
+      transform: rotate(28deg);
+      box-shadow: 18px 30px 0 -3px rgba(125, 231, 255, 0.75);
+      animation: drip 720ms ease-in-out infinite;
+    }
+
+    [data-reaction="lock"] .effect::before {
+      opacity: 1;
+      left: 50%;
+      top: 52%;
+      transform: translate(-50%, -50%) rotate(-10deg);
+      content: "LOCKED";
+      border: 5px solid var(--red);
+      color: var(--red);
+      background: rgba(255, 247, 247, 0.88);
+      border-radius: 10px;
+      padding: 8px 13px;
+      font-size: 24px;
+      font-weight: 1000;
+      letter-spacing: 0.08em;
+      animation: stamp 1.1s ease-in-out infinite;
+    }
+
+    [data-reaction="badbeat"] .effect::before {
+      opacity: 1;
+      left: 50%;
+      top: 18%;
+      transform: translateX(-50%);
+      content: "!";
+      color: var(--red);
+      font-size: 76px;
+      font-weight: 1000;
+      text-shadow: 0 10px 18px rgba(0, 0, 0, 0.34);
+      animation: warning 1.2s ease-in-out infinite;
+    }
+
+    .notes {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    @keyframes idle {
+      0%, 100% { transform: translateY(0) rotate(-1deg) scale(1); }
+      50% { transform: translateY(-13px) rotate(1deg) scale(1.015); }
+    }
+
+    @keyframes wave {
+      0%, 100% { transform: translateY(0) rotate(-4deg); }
+      25% { transform: translateY(-10px) rotate(5deg); }
+      50% { transform: translateY(-4px) rotate(-5deg); }
+      75% { transform: translateY(-12px) rotate(6deg); }
+    }
+
+    @keyframes win {
+      0%, 100% { transform: translateY(-4px) rotate(-8deg) scale(1.04); }
+      50% { transform: translateY(-34px) rotate(8deg) scale(1.12); }
+    }
+
+    @keyframes sweat {
+      0%, 100% { transform: translateX(-6px) rotate(-3deg); }
+      25% { transform: translateX(7px) rotate(3deg); }
+      50% { transform: translateX(-4px) rotate(-2deg); }
+      75% { transform: translateX(6px) rotate(2deg); }
+    }
+
+    @keyframes lock {
+      0%, 100% { transform: translateY(0) scale(1) rotate(-1deg); }
+      50% { transform: translateY(-8px) scale(1.08) rotate(1deg); }
+    }
+
+    @keyframes badbeat {
+      0%, 100% { transform: translateY(16px) rotate(-8deg) scale(0.96); filter: grayscale(0.1) drop-shadow(0 22px 24px rgba(0, 0, 0, 0.34)); }
+      50% { transform: translateY(24px) rotate(8deg) scale(0.94); filter: grayscale(0.45) drop-shadow(0 22px 24px rgba(0, 0, 0, 0.34)); }
+    }
+
+    @keyframes floorPulse {
+      0%, 100% { transform: translateX(-50%) scaleX(0.9); opacity: 0.32; }
+      50% { transform: translateX(-50%) scaleX(1.1); opacity: 0.2; }
+    }
+
+    @keyframes confetti {
+      0% { transform: translateX(-50%) translateY(-20px) scale(0.8); opacity: 0.15; }
+      40% { opacity: 1; }
+      100% { transform: translateX(-50%) translateY(34px) scale(1.1); opacity: 0; }
+    }
+
+    @keyframes drip {
+      0%, 100% { transform: translateY(-10px) rotate(28deg); opacity: 0; }
+      35% { opacity: 1; }
+      75% { transform: translateY(26px) rotate(28deg); opacity: 0; }
+    }
+
+    @keyframes stamp {
+      0%, 100% { transform: translate(-50%, -50%) rotate(-10deg) scale(0.84); opacity: 0; }
+      28%, 72% { transform: translate(-50%, -50%) rotate(-10deg) scale(1); opacity: 1; }
+    }
+
+    @keyframes warning {
+      0%, 100% { transform: translateX(-50%) translateY(10px) scale(0.8); opacity: 0; }
+      32%, 76% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 820px) {
+      body { padding: 18px; }
+      .grid { grid-template-columns: 1fr; }
+      .controls { position: relative; top: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">The Card mascot motion test</div>
+    <h1>Not final animation yet</h1>
+      <p class="intro">This page now uses the actual transparent source PNG sheets. These are only whole-character motion tests, not true character animation. Real animation needs either pose-frame sheets or a rigged Rive character so the arms, legs, eyes, mouth, and props can move independently.</p>
+  </header>
+
+  <div class="controls">
+    <span>Reaction</span>
+    <button class="active" data-reaction="idle">Idle</button>
+    <button data-reaction="wave">Wave</button>
+    <button data-reaction="win">Win</button>
+    <button data-reaction="sweat">Sweat</button>
+    <button data-reaction="lock">Lock</button>
+    <button data-reaction="badbeat">Bad Beat</button>
+  </div>
+
+  <main class="grid" id="lab" data-reaction="idle">
+    <section class="card">
+      <div class="meta">
+        <div><h2>Football Scout</h2><p>Best for Card, Blitz, and NFL market hype.</p></div>
+        <div class="pill">Run</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite football"><img src="images.png" alt="Football Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">Transparency is coming from images.png. For real animation, this needs a 6-8 frame run/wave sheet.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Basketball Scout</h2><p>Good for dribble energy, live swings, and fast streaks.</p></div>
+        <div class="pill">Dribble</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite basketball"><img src="images.png" alt="Basketball Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">This should become a dribble frame sheet: ball down, ball mid, ball up, foot plant.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Hockey Scout</h2><p>Strong for action states, close-call sweats, and late-game pressure.</p></div>
+        <div class="pill">Shot</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite hockey"><img src="images.png" alt="Hockey Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">This needs stick wind-up, contact, follow-through, and puck travel frames.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Soccer Scout</h2><p>Good for World Cup, streaks, and celebratory mascot moments.</p></div>
+        <div class="pill">Kick</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite soccer"><img src="images.png" alt="Soccer Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">This needs leg backswing, kick contact, follow-through, and celebration frames.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Baseball Scout</h2><p>Action sheet two: baseball swing pose.</p></div>
+        <div class="pill">Bat</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite baseball"><img src="images2.png" alt="Baseball Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">Good for MLB cards and action prompts. Needs swing frames for real animation.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Fight Scout</h2><p>Action sheet two: H2H/fight pose.</p></div>
+        <div class="pill">Duel</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite fight"><img src="images2.png" alt="Fight Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">Good for H2H rivalry surfaces and challenge states.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Trophy Scout</h2><p>Action sheet two: reward state.</p></div>
+        <div class="pill">Prize</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite trophy"><img src="images2.png" alt="Trophy Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">Good for wins, Perfect 10, leaderboard, and prize math moments.</p>
+    </section>
+
+    <section class="card">
+      <div class="meta">
+        <div><h2>Celebrate Scout</h2><p>Action sheet two: confetti celebration.</p></div>
+        <div class="pill">Win</div>
+      </div>
+      <div class="stage">
+        <div class="floor"></div>
+        <div class="sprite celebrate"><img src="images2.png" alt="Celebration Scout"></div>
+        <div class="effect"></div>
+      </div>
+      <p class="notes">Good for positive feedback and card lock celebrations.</p>
+    </section>
+  </main>
+
+  <script>
+    const lab = document.querySelector("#lab");
+    const buttons = [...document.querySelectorAll("button[data-reaction]")];
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        buttons.forEach((item) => item.classList.remove("active"));
+        button.classList.add("active");
+        lab.dataset.reaction = button.dataset.reaction;
+      });
+    });
+  </script>
+</body>
+</html>

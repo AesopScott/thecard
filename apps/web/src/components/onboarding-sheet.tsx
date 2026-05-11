@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { EmailVerificationNotice } from "./email-verification-notice";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { checkUsernameAvailable, setUserCountry, setUsername as persistUsername, uploadAvatar } from "@/lib/user-store";
@@ -27,14 +28,15 @@ async function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> 
   }
 }
 
-function validateUsername(value: string): string | null {
-  if (value.length < 3) return "At least 3 characters.";
-  if (!USERNAME_RE.test(value)) return "Letters, numbers, underscores only. Must start with a letter.";
+function validateUsername(value: string, t: ReturnType<typeof useI18n>["t"]): string | null {
+  if (value.length < 3) return t("onboarding.username.min");
+  if (!USERNAME_RE.test(value)) return t("onboarding.username.invalid");
   return null;
 }
 
 export function OnboardingSheet() {
   const { user, needsOnboarding, username: existingUsername, countryCode: existingCountryCode, verificationRequired, refreshUser, completeOnboarding } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const teamPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -121,18 +123,18 @@ export function OnboardingSheet() {
   async function handleClaimUsername() {
     if (!user) return;
     const trimmed = username.trim().toLowerCase();
-    const err = validateUsername(trimmed);
+    const err = validateUsername(trimmed, t);
     if (err) { setUsernameError(err); return; }
     setSavingUsername(true);
     setUsernameError(null);
     try {
       const available = await checkUsernameAvailable(trimmed);
-      if (!available) { setUsernameError("That username is taken. Try another."); return; }
+      if (!available) { setUsernameError(t("onboarding.username.taken")); return; }
       await persistUsername(user.uid, trimmed);
       await refreshUser();
       setStep("country");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
+      const msg = e instanceof Error ? e.message : t("onboarding.genericError");
       console.error("Username claim error:", msg);
       setUsernameError(msg);
     } finally {
@@ -144,7 +146,7 @@ export function OnboardingSheet() {
     if (!user) return;
     const country = COUNTRY_OPTIONS.find((option) => option.code === countryCode);
     if (!country) {
-      setCountryError("Choose your country.");
+      setCountryError(t("onboarding.country.chooseError"));
       return;
     }
     setSavingCountry(true);
@@ -158,7 +160,7 @@ export function OnboardingSheet() {
       }
       setStep("photo");
     } catch {
-      setCountryError("Could not save country. Try again.");
+      setCountryError(t("onboarding.country.saveError"));
     } finally {
       setSavingCountry(false);
     }
@@ -178,9 +180,9 @@ export function OnboardingSheet() {
       setUploadingAvatar(true);
       setAvatarError(null);
       try {
-        await withTimeout(uploadAvatar(user.uid, avatarFile), "Upload timed out. Try a smaller image or skip for now.");
+        await withTimeout(uploadAvatar(user.uid, avatarFile), t("onboarding.photo.timeout"));
       } catch (e) {
-        setAvatarError(e instanceof Error ? e.message : "Could not upload photo. Try a smaller image or skip for now.");
+        setAvatarError(e instanceof Error ? e.message : t("onboarding.photo.error"));
         return;
       }
       finally { setUploadingAvatar(false); }
@@ -197,8 +199,8 @@ export function OnboardingSheet() {
 
   async function handleCreateTeam() {
     if (!user) return;
-    if (!teamName.trim()) { setTeamError("Team name is required."); return; }
-    if (!teamPhotoFile) { setTeamError("A team photo is required."); return; }
+    if (!teamName.trim()) { setTeamError(t("onboarding.team.nameRequired")); return; }
+    if (!teamPhotoFile) { setTeamError(t("onboarding.team.photoRequired")); return; }
     setTeamBusy(true);
     setTeamError(null);
     try {
@@ -207,7 +209,7 @@ export function OnboardingSheet() {
       await refreshUser();
       setStep("done");
     } catch {
-      setTeamError("Could not create team. Try again.");
+      setTeamError(t("onboarding.team.createError"));
     } finally {
       setTeamBusy(false);
     }
@@ -223,7 +225,7 @@ export function OnboardingSheet() {
       await refreshUser();
       setStep("done");
     } catch (e) {
-      setTeamError(e instanceof Error ? e.message : "Invalid code.");
+      setTeamError(e instanceof Error ? e.message : t("onboarding.team.invalidCode"));
     } finally {
       setTeamBusy(false);
     }
@@ -257,14 +259,14 @@ export function OnboardingSheet() {
             {step === "username" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Welcome to The Card</p>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Pick your username</h2>
-                  <p className="text-sm text-[var(--color-card-muted)]">This is how you&apos;ll appear on the leaderboard.</p>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("onboarding.welcome")}</p>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">{t("onboarding.pickUsername")}</h2>
+                  <p className="text-sm text-[var(--color-card-muted)]">{t("onboarding.usernameHelp")}</p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <input
                     type="text"
-                    placeholder="e.g. sharpscott"
+                    placeholder={t("onboarding.usernamePlaceholder")}
                     value={username}
                     onChange={(e) => { setUsernameValue(e.target.value); setUsernameError(null); }}
                     onKeyDown={(e) => e.key === "Enter" && handleClaimUsername()}
@@ -277,7 +279,7 @@ export function OnboardingSheet() {
                   />
                   {usernameError && <p className="text-xs text-[var(--color-danger)]">{usernameError}</p>}
                   <p className="text-[10px] text-[var(--color-card-muted)]">
-                    3-20 characters - letters, numbers, underscores - cannot be changed later
+                    {t("onboarding.usernameRules")}
                   </p>
                 </div>
                 <button
@@ -285,7 +287,7 @@ export function OnboardingSheet() {
                   disabled={savingUsername || username.trim().length < 3}
                   className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
-                  {savingUsername ? "Checking..." : "Claim Username ->"}
+                  {savingUsername ? t("onboarding.checking") : t("onboarding.claimUsername")}
                 </button>
               </div>
             )}
@@ -293,9 +295,9 @@ export function OnboardingSheet() {
             {step === "country" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 2 of 4</p>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Choose your country</h2>
-                  <p className="text-sm text-[var(--color-card-muted)]">This helps leaderboards feel local and gives us the right foundation for future eligibility rules.</p>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("onboarding.step2")}</p>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">{t("onboarding.chooseCountry")}</h2>
+                  <p className="text-sm text-[var(--color-card-muted)]">{t("onboarding.countryHelp")}</p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <select
@@ -309,7 +311,7 @@ export function OnboardingSheet() {
                   </select>
                   {countryError && <p className="text-xs text-[var(--color-danger)]">{countryError}</p>}
                   <p className="text-[10px] text-[var(--color-card-muted)]">
-                    For now this is self-reported profile country, not legal eligibility verification.
+                    {t("onboarding.countryNote")}
                   </p>
                 </div>
                 <button
@@ -317,7 +319,7 @@ export function OnboardingSheet() {
                   disabled={savingCountry}
                   className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
-                  {savingCountry ? "Saving..." : "Continue ->"}
+                  {savingCountry ? t("onboarding.saving") : t("onboarding.continue")}
                 </button>
               </div>
             )}
@@ -325,10 +327,10 @@ export function OnboardingSheet() {
             {step === "photo" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 3 of 4</p>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Add a profile photo</h2>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("onboarding.step3")}</p>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">{t("onboarding.addPhoto")}</h2>
                   <p className="text-sm text-[var(--color-card-muted)]">
-                    {googlePhoto ? "We pulled your Google photo. Upload a different one or keep it." : "Put a face to your username on the leaderboard."}
+                    {googlePhoto ? t("onboarding.googlePhoto") : t("onboarding.photoHelp")}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -342,15 +344,15 @@ export function OnboardingSheet() {
                       <span className="w-full h-full flex items-center justify-center bg-[var(--color-card-accent)] text-white text-2xl font-black">{initial}</span>
                     )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-white text-xs font-bold">Change</span>
+                      <span className="text-white text-xs font-bold">{t("onboarding.change")}</span>
                     </div>
                   </button>
                   <div className="flex flex-col gap-1.5">
                     <button onClick={() => avatarInputRef.current?.click()} className="text-sm font-bold text-[var(--color-brand-primary)] hover:underline text-left">
-                      Upload photo
+                      {t("onboarding.uploadPhoto")}
                     </button>
                     <p className="text-xs text-[var(--color-card-muted)]">
-                      {avatarFile ? avatarFile.name : googlePhoto ? "Using your Google photo" : "No photo set"}
+                      {avatarFile ? avatarFile.name : googlePhoto ? t("onboarding.usingGooglePhoto") : t("onboarding.noPhoto")}
                     </p>
                   </div>
                 </div>
@@ -361,10 +363,10 @@ export function OnboardingSheet() {
                   disabled={uploadingAvatar}
                   className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
-                  {uploadingAvatar ? "Uploading..." : "Continue ->"}
+                  {uploadingAvatar ? t("onboarding.uploading") : t("onboarding.continue")}
                 </button>
                 <button onClick={() => handlePhotoStep(true)} disabled={uploadingAvatar} className="text-center text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors">
-                  Skip for now
+                  {t("onboarding.skipNow")}
                 </button>
               </div>
             )}
@@ -372,20 +374,20 @@ export function OnboardingSheet() {
             {step === "team" && teamMode === "choose" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 4 of 4</p>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Join or create a team</h2>
-                  <p className="text-sm text-[var(--color-card-muted)]">Compete as a group on a shared leaderboard.</p>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("onboarding.step4")}</p>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">{t("onboarding.joinCreateTeam")}</h2>
+                  <p className="text-sm text-[var(--color-card-muted)]">{t("onboarding.teamHelp")}</p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <button onClick={() => setTeamMode("create")} className="w-full rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] px-4 py-3.5 text-sm font-bold text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)] transition-colors text-left">
-                    Create a team
+                    {t("onboarding.createTeam")}
                   </button>
                   <button onClick={() => setTeamMode("join")} className="w-full rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] px-4 py-3.5 text-sm font-bold text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)] transition-colors text-left">
-                    Join with invite code
+                    {t("onboarding.joinInvite")}
                   </button>
                 </div>
                 <button onClick={() => setStep("done")} className="text-center text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors">
-                  Skip - play solo
+                  {t("onboarding.skipSolo")}
                 </button>
               </div>
             )}
@@ -393,14 +395,14 @@ export function OnboardingSheet() {
             {step === "team" && teamMode === "create" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => { setTeamMode("choose"); setTeamError(null); }} className="text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors self-start mb-1">Back</button>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Create a team</h2>
-                  <p className="text-sm text-[var(--color-card-muted)]">A team photo is required - it shows on the leaderboard.</p>
+                  <button onClick={() => { setTeamMode("choose"); setTeamError(null); }} className="text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors self-start mb-1">{t("onboarding.back")}</button>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">{t("onboarding.createTeam")}</h2>
+                  <p className="text-sm text-[var(--color-card-muted)]">{t("onboarding.teamPhotoHelp")}</p>
                 </div>
                 <div className="flex flex-col gap-3">
                   <input
                     type="text"
-                    placeholder="Team name"
+                    placeholder={t("onboarding.teamName")}
                     value={teamName}
                     onChange={(e) => { setTeamName(e.target.value); setTeamError(null); }}
                     maxLength={40}
@@ -414,12 +416,12 @@ export function OnboardingSheet() {
                       <Image src={teamPhotoPreview} alt="Team" width={40} height={40} className="w-10 h-10 rounded-lg object-cover shrink-0" unoptimized />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-[var(--color-card-accent)]/20 flex items-center justify-center shrink-0">
-                        <span className="text-lg">Photo</span>
+                        <span className="text-lg">{t("onboarding.photo")}</span>
                       </div>
                     )}
                     <div className="text-left">
-                      <p className="text-sm font-bold text-[var(--color-card-text)]">{teamPhotoFile ? teamPhotoFile.name : "Upload team photo"}</p>
-                      <p className="text-[10px] text-[var(--color-brand-primary)] font-semibold">Required</p>
+                      <p className="text-sm font-bold text-[var(--color-card-text)]">{teamPhotoFile ? teamPhotoFile.name : t("onboarding.uploadTeamPhoto")}</p>
+                      <p className="text-[10px] text-[var(--color-brand-primary)] font-semibold">{t("onboarding.required")}</p>
                     </div>
                   </button>
                   <input ref={teamPhotoInputRef} type="file" accept="image/*" className="hidden" onChange={handleTeamPhotoChange} />
@@ -430,7 +432,7 @@ export function OnboardingSheet() {
                   disabled={teamBusy || !teamName.trim() || !teamPhotoFile}
                   className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
-                  {teamBusy ? "Creating..." : "Create Team ->"}
+                  {teamBusy ? t("onboarding.creating") : t("onboarding.createTeamButton")}
                 </button>
               </div>
             )}
@@ -438,14 +440,14 @@ export function OnboardingSheet() {
             {step === "team" && teamMode === "join" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => { setTeamMode("choose"); setTeamError(null); }} className="text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors self-start mb-1">Back</button>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Join a team</h2>
-                  <p className="text-sm text-[var(--color-card-muted)]">Enter the invite code your team captain shared.</p>
+                  <button onClick={() => { setTeamMode("choose"); setTeamError(null); }} className="text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors self-start mb-1">{t("onboarding.back")}</button>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">{t("onboarding.joinTeam")}</h2>
+                  <p className="text-sm text-[var(--color-card-muted)]">{t("onboarding.joinHelp")}</p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <input
                     type="text"
-                    placeholder="e.g. ABC123"
+                    placeholder={t("onboarding.invitePlaceholder")}
                     value={inviteCode}
                     onChange={(e) => { setInviteCode(e.target.value.toUpperCase()); setTeamError(null); }}
                     maxLength={6}
@@ -458,7 +460,7 @@ export function OnboardingSheet() {
                   disabled={teamBusy || inviteCode.trim().length < 4}
                   className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98] disabled:opacity-40"
                 >
-                  {teamBusy ? "Joining..." : "Join Team ->"}
+                  {teamBusy ? t("onboarding.joining") : t("onboarding.joinTeamButton")}
                 </button>
               </div>
             )}
@@ -466,17 +468,17 @@ export function OnboardingSheet() {
             {step === "done" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">You are in</p>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">@{finalUsername} - ready.</h2>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("onboarding.youAreIn")}</p>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">@{finalUsername} - {t("onboarding.ready")}</h2>
                   <p className="text-sm text-[var(--color-card-muted)]">
-                    {joinedTeam ? `You're on ${joinedTeam.name}. Make your first prediction to unlock your calibration score.` : "Make your first prediction to unlock your calibration score and appear on the leaderboard."}
+                    {joinedTeam ? t("onboarding.doneWithTeam").replace("{team}", joinedTeam.name) : t("onboarding.doneSolo")}
                   </p>
                 </div>
                 {joinedTeam?.inviteCode && (
                   <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] p-4 flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Team invite</p>
-                      <p className="mt-1 text-xs text-[var(--color-card-muted)]">Share this code with your team.</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("onboarding.teamInvite")}</p>
+                      <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("onboarding.shareCode")}</p>
                     </div>
                     <span className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 font-mono text-sm font-black text-[var(--color-card-text)]">
                       {joinedTeam.inviteCode}
@@ -484,16 +486,16 @@ export function OnboardingSheet() {
                   </div>
                 )}
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] p-4 flex flex-col gap-2">
-                  <p className="text-xs font-bold text-[var(--color-card-text)]">How calibration scoring works</p>
+                  <p className="text-xs font-bold text-[var(--color-card-text)]">{t("onboarding.calibrationTitle")}</p>
                   <ul className="text-xs text-[var(--color-card-muted)] space-y-1.5">
-                    <li>Set a probability, not just YES or NO</li>
-                    <li>Markets resolve when the event settles</li>
-                    <li>Your Brier score measures accuracy at stated confidence</li>
-                    <li>5 resolved predictions unlocks your leaderboard rank</li>
+                    <li>{t("onboarding.calibration1")}</li>
+                    <li>{t("onboarding.calibration2")}</li>
+                    <li>{t("onboarding.calibration3")}</li>
+                    <li>{t("onboarding.calibration4")}</li>
                   </ul>
                 </div>
                 <button onClick={handleStartPredicting} className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98]">
-                  Make My First Prediction
+                  {t("onboarding.firstPrediction")}
                 </button>
               </div>
             )}

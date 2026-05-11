@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
+import { ScoutFloaters } from "@/components/scout-mascot";
 import type { DailyMarket } from "@/lib/daily-markets";
 
 const SECS = 15;
@@ -951,6 +952,7 @@ export function BlitzClient() {
   if (phase === "intro") {
     return (
       <>
+        <ScoutFloaters page="blitz" />
         <IntroScreen
           saved={saved}
           history={history}
@@ -988,15 +990,18 @@ export function BlitzClient() {
   if (phase === "playing") {
     const markets = practice ? PRACTICE_MARKETS : DAILY_MARKETS;
     return (
-      <PlayingScreen
-        market={markets[qIdx]!}
-        qIdx={qIdx}
-        total={markets.length}
-        timeLeft={timeLeft}
-        flash={flash}
-        feedback={feedback}
-        onPick={(choice) => finishQuestion(choice)}
-      />
+      <>
+        <ScoutFloaters page="blitz" />
+        <PlayingScreen
+          market={markets[qIdx]!}
+          qIdx={qIdx}
+          total={markets.length}
+          timeLeft={timeLeft}
+          flash={flash}
+          feedback={feedback}
+          onPick={(choice) => finishQuestion(choice)}
+        />
+      </>
     );
   }
 
@@ -1016,6 +1021,7 @@ export function BlitzClient() {
 
   return (
     <>
+      <ScoutFloaters page="blitz" />
       <ResultsScreen
         picks={finalPicks}
         times={finalTimes}

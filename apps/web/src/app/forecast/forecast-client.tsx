@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
+import { ScoutFloaters } from "@/components/scout-mascot";
 import {
   addForecast,
   clearForecasts,
@@ -204,6 +205,7 @@ export function ForecastClient() {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 pb-28">
+      <ScoutFloaters page="forecast" />
       <section className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
           <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Forecast Lab</p>
