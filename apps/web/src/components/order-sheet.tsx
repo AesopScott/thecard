@@ -16,7 +16,6 @@ import {
   SEASON_BANKROLL_EVENT,
   STARTING_BANKROLL,
   getUserSeasonMemberships,
-  joinUserSeasonLeague,
 } from "@/lib/season-store";
 import {
   getLeagueStatus,
@@ -168,27 +167,6 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
     }
   }
 
-  async function handleJoinLeague() {
-    if (!user || verificationRequired) return;
-    setOrderError(null);
-    try {
-      const membership = await joinUserSeasonLeague(user.uid);
-      setLeagueOptions((current) => [
-        {
-          id: GLOBAL_LEAGUE.id,
-          name: `${GLOBAL_LEAGUE.name} League`,
-          meta: "Paid season league",
-          bankroll: membership.currentBankroll,
-        },
-        ...current.filter((league) => league.id !== GLOBAL_LEAGUE.id),
-      ]);
-      setSelectedLeagueId(GLOBAL_LEAGUE.id);
-      window.dispatchEvent(new Event(SEASON_BANKROLL_EVENT));
-    } catch {
-      setOrderError(t("shared.joinLeagueFailed"));
-    }
-  }
-
   function handleClose() {
     setSheetState("input");
     setOrderError(null);
@@ -224,11 +202,6 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
                       <div className="rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 px-4 py-3">
                         <p className="text-sm font-black text-[var(--color-card-text)]">{t("shared.leagueRequired")}</p>
                         <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">{orderError}</p>
-                        {user && !verificationRequired && (
-                          <button type="button" onClick={handleJoinLeague} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white">
-                            {t("shared.joinGlobalLeague")}
-                          </button>
-                        )}
                       </div>
                     )}
 

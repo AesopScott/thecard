@@ -501,7 +501,7 @@ function leagueName(leagueId: string): string {
 }
 
 function leagueMeta(leagueId: string, t: ReturnType<typeof useI18n>["t"]): string {
-  if (leagueId === GLOBAL_LEAGUE.id) return t("leagues.paidSeasonMeta");
+  if (leagueId === GLOBAL_LEAGUE.id) return t("leagues.globalAggregateMeta");
   const paidLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
   const paidLeague = paidLeagueId ? getSportLeagueById(paidLeagueId) : null;
   if (paidLeague) return `Paid ${leagueTypeBadge(paidLeague.type, paidLeague.half)} - ${paidLeague.sport.toUpperCase()}`;
@@ -542,7 +542,7 @@ function YourLeagues({
                 <p className="truncate text-sm font-black text-[var(--color-card-text)]">{leagueName(membership.leagueId)}</p>
                 <p className="text-[10px] text-[var(--color-text-muted)]">{leagueMeta(membership.leagueId, t)}</p>
               </div>
-              <BankrollSummary membership={membership} />
+              {membership.leagueId === GLOBAL_LEAGUE.id ? <GlobalAggregateStatus /> : <BankrollSummary membership={membership} />}
             </div>
           </div>
         ))}
