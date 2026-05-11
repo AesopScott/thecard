@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
+import { PaneTitle } from "@/components/pane-title";
 import { DAILY_MARKETS, getDailyOutcomes } from "@/lib/daily-markets";
 import {
   blitzDateId,
@@ -318,8 +319,8 @@ function IntroScreen({
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="flex min-h-[320px] flex-col justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
           <div className="flex flex-col gap-3">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{dailyTheme()}</p>
-            <h1 className="text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">{t("blitz.title")}</h1>
+            <PaneTitle en="Today's curated Blitz theme frames the five fast markets you are about to pick." es="El tema diario de Blitz presenta los cinco mercados rapidos que vas a elegir.">{dailyTheme()}</PaneTitle>
+            <h1 className="text-4xl font-display font-black tracking-tight text-[var(--color-text-primary)] sm:text-5xl">{t("blitz.title")}</h1>
             <p className="max-w-lg text-base leading-relaxed text-[var(--color-text-secondary)]">
               {t("blitz.intro")}
             </p>
@@ -336,7 +337,7 @@ function IntroScreen({
           {saved && metrics ? (
             <div className="flex h-full flex-col justify-between gap-5 text-center">
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">{t("blitz.alreadyPlayed")}</p>
+                <PaneTitle className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]" en="You already locked today's scored Blitz run, so this panel shows your saved result." es="Ya bloqueaste tu Blitz puntuado de hoy; este panel muestra tu resultado guardado.">{t("blitz.alreadyPlayed")}</PaneTitle>
                 <p className="mt-3 text-6xl font-display font-black text-[var(--color-brand-primary)]">{metrics.score}</p>
                 <p className="text-sm text-[var(--color-text-secondary)]">
                   {metrics.correct}/{DAILY_MARKETS.length} correct - {metrics.badge}
@@ -352,7 +353,7 @@ function IntroScreen({
           ) : (
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.powerPick")}</p>
+                <PaneTitle en="Optional double-down pick for extra score with extra risk." es="Pick opcional para duplicar puntos con mas riesgo.">{t("blitz.powerPick")}</PaneTitle>
                 <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t("blitz.powerHelp")}</p>
               </div>
               <div className="flex flex-col gap-2">
@@ -397,7 +398,7 @@ function IntroScreen({
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.todaysSlate")}</p>
+            <PaneTitle en="Preview the five markets in today's timed Blitz round." es="Vista previa de los cinco mercados de la ronda Blitz cronometrada de hoy.">{t("blitz.todaysSlate")}</PaneTitle>
             <p className="text-xs font-bold text-[var(--color-text-muted)]">{t("blitz.scoutNow")}</p>
           </div>
           <div className="grid gap-3">
@@ -416,7 +417,7 @@ function IntroScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.history")}</p>
+          <PaneTitle en="Your recent Blitz runs, scores, streaks, and rank movement." es="Tus rondas recientes de Blitz, puntajes, rachas y movimiento de ranking.">{t("blitz.history")}</PaneTitle>
           {history.length === 0 ? (
             <p className="mt-4 text-sm text-[var(--color-text-muted)]">{t("blitz.historyEmpty")}</p>
           ) : (
@@ -570,7 +571,7 @@ function ResultsScreen({
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 pb-24">
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{practice ? t("blitz.warmupResults") : t("blitz.results")}</p>
+          <PaneTitle en="Round summary with score, speed, streak, and perfect-run status." es="Resumen de la ronda con puntaje, velocidad, racha y estado de ronda perfecta.">{practice ? t("blitz.warmupResults") : t("blitz.results")}</PaneTitle>
           <div className="mt-2 flex flex-wrap items-end gap-3">
             <span className="text-7xl font-display font-black text-[var(--color-text-primary)]">{metrics.score}</span>
             <span className="pb-2 text-xl text-[var(--color-text-muted)]">{t("blitz.pointsAbbrev")}</span>
@@ -592,7 +593,7 @@ function ResultsScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.recapCard")}</p>
+          <PaneTitle en="A compact shareable recap of your Blitz result." es="Resumen compacto y compartible de tu resultado de Blitz.">{t("blitz.recapCard")}</PaneTitle>
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4">
             <p className="text-sm font-black text-[var(--color-text-primary)]">{dailyTheme()} Blitz</p>
             <p className="mt-3 text-4xl font-display font-black text-[var(--color-brand-primary)]">{metrics.score} {t("blitz.pointsAbbrev")}</p>
@@ -655,7 +656,7 @@ function ResultsScreen({
         <div className="flex flex-col gap-4">
           <BlitzLeaderboard entries={leaderboard} userId={userId} currentEntry={practice ? null : currentEntry} loading={leaderboardLoading} error={leaderboardError} t={t} />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.nextMove")}</p>
+            <PaneTitle en="Choose what to do after the round: warm up, challenge H2H, or open The Card." es="Elige que hacer despues de la ronda: practicar, retar en H2H o abrir The Card.">{t("blitz.nextMove")}</PaneTitle>
             <div className="mt-4 flex flex-col gap-2">
               {practice ? (
                 <button onClick={onPracticeAgain} className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-sm font-black text-white transition-all hover:bg-red-500">
@@ -705,7 +706,7 @@ function BlitzLeaderboard({
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden">
       <div className="border-b border-[var(--color-border)] px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.board")}</p>
+          <PaneTitle en="Ranks Blitz runs with filters for today, week, friends, and perfect runs." es="Clasifica rondas Blitz con filtros de hoy, semana, amigos y rondas perfectas.">{t("blitz.board")}</PaneTitle>
           <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">{t("blitz.allBoards")}</Link>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
@@ -748,7 +749,9 @@ function BlitzLeaderboard({
       })}
       {!loading && !error && showCurrentEntry && currentEntry && (
         <div className="border-t border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10">
-          <div className="px-4 pt-3 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.yourRank")}</div>
+          <div className="px-4 pt-3">
+            <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Shows your saved Blitz row in the leaderboard context." es="Muestra tu fila guardada de Blitz dentro del contexto del ranking.">{t("blitz.yourRank")}</PaneTitle>
+          </div>
           <BlitzLeaderboardRow entry={currentEntry} rankLabel={entries.length >= 25 ? "25+" : String(entries.length + 1)} isYou t={t} />
         </div>
       )}

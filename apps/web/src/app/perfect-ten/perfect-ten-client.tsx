@@ -19,6 +19,7 @@ import { exchange } from "@/lib/exchange";
 import { useAuth } from "@/contexts/auth-context";
 import { useI18n } from "@/contexts/i18n-context";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { PaneTitle } from "@/components/pane-title";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import type { Market, Odds, PerfectTenPick, Sport } from "@thecard/types";
 
@@ -341,10 +342,10 @@ export function PerfectTenClient() {
           </Link>
           <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
             <div>
-              <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
+              <PaneTitle className="mb-1 text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="The weekly Perfect 10 pool grows until someone hits all ten picks." es="El pozo semanal de Perfect 10 crece hasta que alguien acierta los diez picks.">
                 Perfect 10 / {CURRENT_CONTEST.weekLabel}
-              </p>
-              <h1 className="text-5xl font-display font-black tracking-tight text-[var(--color-brand-primary)]">
+              </PaneTitle>
+              <h1 className="text-4xl font-display font-black tracking-tight text-[var(--color-brand-primary)] sm:text-5xl">
                 {formatDollars(CURRENT_CONTEST.jackpotAmount)}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
@@ -354,13 +355,13 @@ export function PerfectTenClient() {
             <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">
+                  <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]" en="Shows lock timing or pick status for this week's contest." es="Muestra el horario de bloqueo o el estado de picks del concurso semanal.">
                     {locked ? t("p10.picks") : t("p10.locksIn")}
-                  </p>
+                  </PaneTitle>
                   <p className="mt-1 text-xl font-black text-[var(--color-card-text)]">{locked ? t("p10.locked") : countdown}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">{t("p10.dailyPar")}</p>
+                  <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]" en="The score benchmark for this week's market difficulty." es="La referencia de puntaje segun la dificultad de mercado de esta semana.">{t("p10.dailyPar")}</PaneTitle>
                   <p className="mt-1 text-xl font-black text-[var(--color-brand-primary)]">{par.label}</p>
                 </div>
               </div>
@@ -409,7 +410,7 @@ export function PerfectTenClient() {
 
             <section className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
               <div className="border-b border-[var(--color-card-border)] px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.pickBoard")}</p>
+                <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Choose one side from each market to build a ten-leg Perfect 10 ticket." es="Elige un lado de cada mercado para armar un boleto Perfect 10 de diez selecciones.">{t("p10.pickBoard")}</PaneTitle>
                 <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("p10.pickBoardBody")}</p>
               </div>
               <div className="divide-y divide-[var(--color-card-border)]">
@@ -450,7 +451,7 @@ export function PerfectTenClient() {
         </div>
 
         <section className="mt-8 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.howItWorks")}</p>
+          <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Explains the weekly pool, lock timing, and why all ten picks must hit." es="Explica el pozo semanal, el horario de bloqueo y por que deben acertar los diez picks.">{t("p10.howItWorks")}</PaneTitle>
           <div className="mt-2 grid gap-2 text-xs leading-relaxed text-[var(--color-text-muted)] md:grid-cols-3">
             <p>{t("p10.how1")}</p>
             <p>{t("p10.how2")}</p>
@@ -490,7 +491,7 @@ function DemoControls({
 
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.mockOptions")}</p>
+      <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Try sample ticket styles to see how chalk, balance, and longshots change the odds." es="Prueba estilos de boleto para ver como favoritos, balance y longshots cambian las probabilidades.">{t("p10.mockOptions")}</PaneTitle>
       <div className="mt-3 grid grid-cols-3 gap-1">
         {(["balanced", "chalk", "longshot"] as const).map((option) => (
           <button
@@ -522,7 +523,7 @@ function DemoControls({
 function LineupBalance({ balance, t }: { balance: ReturnType<typeof balanceFor>; t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.lineupBalance")}</p>
+      <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Shows how your ten picks split across anchors, leans, and sweatier calls." es="Muestra como tus diez picks se dividen entre anclas, leans y selecciones de mayor tension.">{t("p10.lineupBalance")}</PaneTitle>
       <div className="mt-3 grid grid-cols-4 gap-2 text-center">
         <MiniMetric label="YES" value={String(balance.yesCount)} />
         <MiniMetric label="NO" value={String(balance.noCount)} />
@@ -538,7 +539,7 @@ function ProgressCard({ pickedCount, total, submitted, t }: { pickedCount: numbe
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.survivalMeter")}</p>
+        <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Tracks how many picks are filled and whether the ticket is locked." es="Sigue cuantos picks estan completos y si el boleto esta bloqueado.">{t("p10.survivalMeter")}</PaneTitle>
         {submitted && <span className="text-xs font-black text-[var(--color-card-yes)]">{t("p10.lockedIn")}</span>}
       </div>
       <p className="mt-2 text-3xl font-display font-black text-[var(--color-card-text)]">{pickedCount}/{total}</p>
@@ -571,7 +572,7 @@ function TicketBuilder({
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.ticketBuilder")}</p>
+          <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Your selected ten-leg ticket with prices, sides, estimated odds, and submit controls." es="Tu boleto de diez selecciones con precios, lados, probabilidades estimadas y controles para enviarlo.">{t("p10.ticketBuilder")}</PaneTitle>
           <h2 className="mt-1 text-xl font-display font-black text-[var(--color-card-text)]">{t("p10.ticketTitle")}</h2>
         </div>
         <Link href="/card" className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-bold text-[var(--color-card-text)]">
@@ -687,7 +688,7 @@ function SweatMode({
 
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.sweatMode")}</p>
+      <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Follow the ticket after lock and see which legs are still alive." es="Sigue el boleto despues del bloqueo y ve que selecciones siguen vivas.">{t("p10.sweatMode")}</PaneTitle>
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
           <p className="text-4xl font-display font-black text-[var(--color-card-text)]">{hits}/{resolved.length}</p>
@@ -737,7 +738,7 @@ function PerfectPathRecap({
 
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.pathRecap")}</p>
+      <PaneTitle className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]" en="Recaps the perfect path, the bad beat, or where the ticket broke." es="Resume el camino perfecto, el golpe doloroso o donde se rompio el boleto.">{t("p10.pathRecap")}</PaneTitle>
       <h2 className="mt-2 text-2xl font-display font-black text-[var(--color-card-text)]">
         {recapScenario === "perfect" ? t("p10.jackpotPath") : recapScenario === "badBeat" ? t("p10.badBeatTitle") : t("p10.brokenTicket", { count: String(hits) })}
       </h2>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { forwardRef, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useI18n } from "@/contexts/i18n-context";
@@ -386,9 +386,30 @@ function buildEvents(today: Date): CalendarEvent[] {
   ).sort((a, b) => a.parsedDate.getTime() - b.parsedDate.getTime());
 }
 
+function isWorldCupEvent(event: CalendarEvent) {
+  return event.sport.sport === "FIFA World Cup";
+}
+
+function slateLinksFor(event: CalendarEvent) {
+  if (isWorldCupEvent(event)) {
+    return {
+      card: "/world-cup#free-card",
+      forecast: "/world-cup#leaderboards",
+      live: "/world-cup#live-bets",
+    };
+  }
+
+  return {
+    card: "/card",
+    forecast: "/forecast",
+    live: "/live",
+  };
+}
+
 export default function SportsCalendarPage() {
   const { t } = useI18n();
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const drawerRef = useRef<HTMLElement | null>(null);
   const today = useMemo(() => new Date(), []);
   const sportMap = useMemo(() => Object.fromEntries(SPORTS.map((s) => [s.sport, s])), []);
   const events = useMemo(() => buildEvents(today), [today]);
@@ -405,6 +426,14 @@ export default function SportsCalendarPage() {
     );
   }
   const drawerEvent = selectedEvent ?? featured;
+  const featuredLinks = slateLinksFor(featured);
+
+  function openSlateDetails(event: CalendarEvent) {
+    setSelectedEvent(event);
+    window.requestAnimationFrame(() => {
+      drawerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] pt-8 pb-32">
@@ -430,16 +459,16 @@ export default function SportsCalendarPage() {
                 <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">
                   {t("calendar.featuredSlate")}
                 </p>
-                <h1 className="mt-2 text-4xl font-display font-black text-white sm:text-5xl">
+                <h1 className="mt-2 text-3xl font-display font-black text-white sm:text-5xl">
                   {featured.sport.sport}: {featured.label}
                 </h1>
                 <p className="mt-3 max-w-xl text-sm text-white/72">
                   {t("calendar.featuredBody", { date: featured.date, count: String(featured.marketCount) })}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <SlateLink href="/card" label={t("calendar.openCard")} />
-                  <SlateLink href="/forecast" label={t("calendar.forecastBoard")} />
-                  <SlateLink href="/live" label={t("calendar.liveMarkets")} />
+                  <SlateLink href={featuredLinks.card} label={t("calendar.openCard")} />
+                  <SlateLink href={featuredLinks.forecast} label={t("calendar.forecastBoard")} />
+                  <SlateLink href={featuredLinks.live} label={t("calendar.liveMarkets")} />
                 </div>
               </div>
               <div className="self-end rounded-lg border border-white/15 bg-black/45 p-4 backdrop-blur">
@@ -448,7 +477,7 @@ export default function SportsCalendarPage() {
                 <p className="mt-1 text-xs text-white/60">{t(featured.mood)} / {featured.sport.season}</p>
                 <button
                   type="button"
-                  onClick={() => setSelectedEvent(featured)}
+                  onClick={() => openSlateDetails(featured)}
                   className="mt-4 w-full rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-sm font-black text-white transition hover:brightness-110"
                 >
                   {t("calendar.viewDetails")}
@@ -492,7 +521,7 @@ export default function SportsCalendarPage() {
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
             <UpcomingLocks events={upcoming} onSelectEvent={setSelectedEvent} t={t} />
-            <TodayDrawer event={drawerEvent} t={t} />
+            <TodayDrawer ref={drawerRef} event={drawerEvent} t={t} />
           </aside>
         </div>
       </div>
@@ -560,9 +589,16 @@ function UpcomingLocks({
   );
 }
 
-function TodayDrawer({ event, t }: { event: CalendarEvent; t: ReturnType<typeof useI18n>["t"] }) {
+const TodayDrawer = forwardRef<HTMLElement, { event: CalendarEvent; t: ReturnType<typeof useI18n>["t"] }>(
+function TodayDrawer({ event, t }, ref) {
+  const eventLinks = slateLinksFor(event);
+
   return (
-    <section className="rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-card-surface)] p-4 shadow-[0_0_35px_rgba(239,68,68,0.08)]">
+    <section
+      ref={ref}
+      id="slate-details"
+      className="scroll-mt-6 rounded-xl border border-[var(--color-brand-primary)]/40 bg-[var(--color-card-surface)] p-4 shadow-[0_0_35px_rgba(239,68,68,0.08)]"
+    >
       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("calendar.dateDrawer")}</p>
       <h2 className="mt-2 text-xl font-display font-black text-[var(--color-card-text)]">{event.sport.sport}</h2>
       <p className="mt-1 text-sm font-bold text-[var(--color-text-secondary)]">{event.label}</p>
@@ -582,21 +618,22 @@ function TodayDrawer({ event, t }: { event: CalendarEvent; t: ReturnType<typeof 
       )}
 
       <div className="mt-4 grid gap-2">
-        <Link href="/card" className="rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-center text-sm font-black text-white">
+        <Link href={eventLinks.card} className="rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-center text-sm font-black text-white">
           {t("calendar.buildCard")}
         </Link>
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/forecast" className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-center text-xs font-bold text-[var(--color-card-text)]">
+          <Link href={eventLinks.forecast} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-center text-xs font-bold text-[var(--color-card-text)]">
             {t("calendar.forecast")}
           </Link>
-          <Link href="/live" className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-center text-xs font-bold text-[var(--color-card-text)]">
+          <Link href={eventLinks.live} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-center text-xs font-bold text-[var(--color-card-text)]">
             {t("calendar.live")}
           </Link>
         </div>
       </div>
     </section>
   );
-}
+});
+TodayDrawer.displayName = "TodayDrawer";
 
 function DrawerStat({ label, value }: { label: string; value: string }) {
   return (
@@ -648,6 +685,15 @@ function SportCard({
           <MiniStat label={t("calendar.next")} value={`${daysAway}d`} />
           <MiniStat label={t("calendar.dates")} value={String(sport.keyDates.length)} />
         </div>
+
+        {sport.sport === "FIFA World Cup" && (
+          <Link
+            href="/world-cup"
+            className="mt-3 block rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-center text-xs font-black text-white transition hover:brightness-110"
+          >
+            {t("calendar.worldCupCampaign")}
+          </Link>
+        )}
       </div>
 
       <div className="divide-y divide-[var(--color-card-border)]">

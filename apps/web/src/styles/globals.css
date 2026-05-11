@@ -246,6 +246,7 @@ html {
   color: var(--color-text-primary);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -262,6 +263,7 @@ body {
     linear-gradient(135deg, rgba(255, 60, 60, 0.32), transparent 38%),
     radial-gradient(circle at 86% 8%, rgba(255, 60, 60, 0.24), transparent 28%),
     var(--color-surface-0);
+  overflow-x: hidden;
 }
 
 /* Smooth transitions */
@@ -278,6 +280,18 @@ input,
 select,
 textarea {
   font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  h1,
+  h2,
+  h3,
+  p,
+  a,
+  button,
+  span {
+    overflow-wrap: anywhere;
+  }
 }
 
 /* Global keyframe animations */

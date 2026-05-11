@@ -7,6 +7,7 @@ import { ExplainBetting } from "@/components/explain-betting";
 import { MarketCard } from "@/components/market-card";
 import { JackpotBanner } from "@/components/jackpot-banner";
 import { PositionsPanel } from "@/components/positions-panel";
+import { PaneTitle } from "@/components/pane-title";
 import { UpcomingSportsCard } from "@/components/upcoming-sports-card";
 import { SeasonBanner } from "@/components/season-banner";
 import { SettlementPanel } from "@/components/settlement-panel";
@@ -346,10 +347,10 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-6">
           <div className="flex flex-wrap items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[var(--color-brand-primary)]" />
-            <span className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.liveBoard")}</span>
+            <PaneTitle en="The current mock market board with the top live signal surfaced first." es="El tablero simulado actual con la senal en vivo mas fuerte destacada primero.">{t("card.liveBoard")}</PaneTitle>
             {bestBet && <span className="rounded-md bg-[var(--color-brand-primary)] px-2 py-1 text-[10px] font-black uppercase text-white">{t("card.bestBet")}: {sportLabel(bestBet.sport)}</span>}
           </div>
-          <h1 className="mt-3 text-5xl font-display font-black tracking-tight text-[var(--color-card-text)]">{t("card.title")}</h1>
+          <h1 className="mt-3 text-4xl font-display font-black tracking-tight text-[var(--color-card-text)] sm:text-5xl">{t("card.title")}</h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">{t("card.subtitle")}</p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label={t("card.markets")} value={markets.length} />
@@ -361,7 +362,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
         <div className="flex flex-col gap-3">
           <SeasonBanner variant="compact" />
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.bridgeModes")}</p>
+            <PaneTitle en="Jump from The Card into faster game modes using the same market ideas." es="Salta de The Card a modos de juego mas rapidos usando las mismas ideas de mercado.">{t("card.bridgeModes")}</PaneTitle>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {(["/blitz", "/live", "/h2h", "/forecast"] as const).map((href) => (
                 <Link key={href} href={href} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-2 text-center text-xs font-black text-[var(--color-card-text)] transition-colors hover:border-[var(--color-brand-primary)]/50">{href.slice(1).toUpperCase()}</Link>
@@ -387,7 +388,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.featuredHeat")}</p>
+            <PaneTitle en="Highlights the strongest mock signals before you build your ticket." es="Muestra las senales simuladas mas fuertes antes de armar tu boleto.">{t("card.featuredHeat")}</PaneTitle>
             <span className="text-xs font-bold text-[var(--color-text-muted)]">{t("card.topSignals")}</span>
           </div>
           <div className="grid gap-3 md:grid-cols-3">
@@ -435,7 +436,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between px-1">
-            <h2 className="text-sm font-black uppercase tracking-widest text-[var(--color-card-text)]">{t("card.marketFeed")}</h2>
+            <PaneTitle className="text-sm font-black uppercase tracking-widest text-[var(--color-card-text)]" en="Browse markets, filter the board, and add YES or NO picks to your card." es="Explora mercados, filtra el tablero y agrega selecciones SI o NO a tu tarjeta.">{t("card.marketFeed")}</PaneTitle>
             <span className="text-right text-xs font-bold text-[var(--color-text-muted)]">{watchlistStatus ?? `${filteredMarkets.length} ${t("card.shown")}`}</span>
           </div>
           {filteredMarkets.length === 0 ? (
@@ -481,7 +482,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
 
         <aside className="flex flex-col gap-4">
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.compareCommunity")}</p>
+            <PaneTitle en="Shows whether your selected card leans with or against the crowd." es="Muestra si tu tarjeta va con la multitud o contra ella.">{t("card.compareCommunity")}</PaneTitle>
             <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">{t("card.communityLean", { lean: ticketPicks.length === 0 ? t("card.leanEmpty") : ticketPicks.filter((pick) => pick.side === "yes").length >= ticketPicks.length / 2 ? t("card.leanYesHeavy") : t("card.leanNoHeavy"), avg: String(avgYes) })}</p>
           </div>
           <PositionsPanel />
@@ -534,7 +535,7 @@ function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLo
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.myCard")}</p>
+        <PaneTitle en="Your active ticket: selected picks, projected score, lock, share, and clear actions." es="Tu boleto activo: selecciones, puntaje proyectado, bloqueo, compartir y borrar.">{t("card.myCard")}</PaneTitle>
         <p className="text-xs font-bold text-[var(--color-text-muted)]">{ticketPicks.length} {t("card.picks")}</p>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -560,7 +561,7 @@ function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLo
       </div>
       {shareStatus && <p className="mt-2 text-center text-xs font-bold text-[var(--color-success)]">{shareStatus}</p>}
       <div className="mt-4">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.history")}</p>
+        <PaneTitle en="Recently locked cards saved locally for review." es="Tarjetas bloqueadas recientemente guardadas en este dispositivo para revisarlas.">{t("card.history")}</PaneTitle>
         {history.length === 0 ? <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t("card.historyEmpty")}</p> : history.slice(0, 3).map((item) => (
           <div key={item.date} className="mt-2 flex items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-xs">
             <span className="font-bold text-[var(--color-card-text)]">{item.date}</span>
@@ -580,7 +581,7 @@ function ExplanationDrawer({ market, odds, risk, fadeMode, onClose }: { market: 
     <div className="fixed inset-x-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[80] mx-auto max-h-[calc(100dvh-8rem)] max-w-lg overflow-y-auto rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.pickExplanation")}</p>
+          <PaneTitle en="Breaks down the model, market price, and why the selected side fits the risk setting." es="Resume el modelo, el precio del mercado y por que ese lado encaja con el riesgo elegido.">{t("card.pickExplanation")}</PaneTitle>
           <h3 className="mt-2 text-xl font-display font-black text-[var(--color-card-text)]">{market.title}</h3>
         </div>
         <button onClick={onClose} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">{t("shared.close")}</button>
@@ -604,7 +605,7 @@ function PostSettleReview({ lockedCard }: { lockedCard: LockedCard }) {
   const hits = lockedCard.settled.filter((item) => item.hit).length;
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("card.postSettleReview")}</p>
+      <PaneTitle en="Mock settlement preview showing how the locked card would have performed." es="Vista simulada de liquidacion que muestra como habria rendido la tarjeta bloqueada.">{t("card.postSettleReview")}</PaneTitle>
       <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{t("card.previewSettlement", { hits: String(hits), total: String(lockedCard.picks.length), signal: lockedCard.settled[0]?.signal ?? t("h2h.none") })}</p>
     </section>
   );

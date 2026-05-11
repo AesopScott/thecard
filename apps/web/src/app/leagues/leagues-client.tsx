@@ -683,7 +683,7 @@ export function LeaguesClient() {
           <Link href="/card" className="mb-4 inline-block text-sm text-[var(--color-brand-primary)] hover:underline">
             {t("leagues.back")}
           </Link>
-          <h1 className="mb-2 font-display text-4xl font-black">{t("leagues.title")}</h1>
+          <h1 className="mb-2 font-display text-3xl font-black sm:text-4xl">{t("leagues.title")}</h1>
           <p className="text-sm leading-relaxed text-[var(--color-text-muted)]">
             {t("leagues.subtitle")}
           </p>

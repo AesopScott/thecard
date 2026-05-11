@@ -67,6 +67,7 @@ const FOOTER_LINKS = [
   { href: "/blitz", label: "Blitz" },
   { href: "/h2h", label: "Head-to-Head" },
   { href: "/forecast", label: "Forecast" },
+  { href: "/world-cup", label: "World Cup" },
   { href: "/perfect-ten", label: "Perfect 10" },
   { href: "/leagues", label: "Leagues" },
   { href: "/sports-calendar", label: "Sports Calendar" },

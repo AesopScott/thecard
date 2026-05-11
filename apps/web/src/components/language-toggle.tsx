@@ -17,7 +17,7 @@ export function LanguageToggle({ fixed = false }: LanguageToggleProps) {
       aria-label={t("language.toggleLabel")}
       title={t("language.toggleLabel")}
       onClick={() => setLocale(nextLocale)}
-      className={`${fixed ? "fixed right-16 top-4 z-50" : ""} h-8 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 text-xs font-black text-[var(--color-card-muted)] shadow-sm transition-colors hover:text-[var(--color-card-text)]`}
+      className={`${fixed ? "fixed left-4 top-4 z-50 sm:left-auto sm:right-16" : ""} h-8 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 text-xs font-black text-[var(--color-card-muted)] shadow-sm transition-colors hover:text-[var(--color-card-text)]`}
     >
       {nextLabel}
     </button>

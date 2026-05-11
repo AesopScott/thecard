@@ -63,7 +63,7 @@ export function SupportClient() {
 
         <header className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
           <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("support.title")}</p>
-          <h1 className="mt-2 font-display text-4xl font-black text-[var(--color-card-text)]">{t("support.heading")}</h1>
+          <h1 className="mt-2 font-display text-3xl font-black text-[var(--color-card-text)] sm:text-4xl">{t("support.heading")}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-card-muted)]">
             {t("support.intro")}
           </p>

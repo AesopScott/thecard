@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { PaneTitle } from "@/components/pane-title";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { ScoutFloaters } from "@/components/scout-mascot";
 import { useAuth } from "@/contexts/auth-context";
@@ -203,7 +204,7 @@ function IntroScreen({
     return (
       <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 pb-24">
         <section className={`rounded-xl border p-6 text-center ${youWin ? "border-[var(--color-success)] bg-[var(--color-success-dim)]" : "border-[var(--color-danger)] bg-[var(--color-danger-dim)]"}`}>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">{t("h2h.alreadyPlayed")}</p>
+          <PaneTitle className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]" en="You already played today's ranked H2H match, so this shows the saved result." es="Ya jugaste el H2H clasificado de hoy; aqui se muestra el resultado guardado.">{t("h2h.alreadyPlayed")}</PaneTitle>
           <h1 className="mt-2 text-4xl font-display font-black tracking-tight">{savedRun.result === "tie-win" ? t("h2h.tieBreakWin") : youWin ? t("h2h.youWin") : t("h2h.opponentWins", { name: OPPONENT.name })}</h1>
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             {t("h2h.scoreLine", { yourScore: String(savedRun.yourScore), opponentScore: String(savedRun.opponentScore), name: OPPONENT.name })}
@@ -233,8 +234,8 @@ function IntroScreen({
     <div className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-8 pb-24">
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{dailyRoomName()}</p>
-          <h1 className="mt-2 text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">{t("h2h.title")}</h1>
+          <PaneTitle en="The daily H2H room sets the theme and opponent context for today's match." es="La sala diaria de H2H define el tema y el contexto del rival para el duelo de hoy.">{dailyRoomName()}</PaneTitle>
+          <h1 className="mt-2 text-4xl font-display font-black tracking-tight text-[var(--color-text-primary)] sm:text-5xl">{t("h2h.title")}</h1>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-[var(--color-text-secondary)]">
             {t("h2h.intro")}
           </p>
@@ -252,7 +253,7 @@ function IntroScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.rivalProfile")}</p>
+          <PaneTitle en="Scouting card for the opponent's record, habits, and strongest angles." es="Ficha del rival con su record, habitos y mejores angulos.">{t("h2h.rivalProfile")}</PaneTitle>
           <div className="mt-4 flex items-center justify-between">
             <div>
               <p className="text-3xl font-display font-black text-[var(--color-text-primary)]">{OPPONENT.name}</p>
@@ -284,7 +285,7 @@ function IntroScreen({
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.tale")}</p>
+          <PaneTitle en="Compares your market reads against the rival before you lock picks." es="Compara tus lecturas de mercado contra las del rival antes de bloquear picks.">{t("h2h.tale")}</PaneTitle>
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <StatPill label="You" value={ratingFor(history)} />
             <StatPill label="Edge" value={history.length > 0 ? winStreak(history) : "First match"} />
@@ -315,7 +316,7 @@ function IntroScreen({
             {t("h2h.openRooms")}
           </Link>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.rivalryHistory")}</p>
+            <PaneTitle en="Recent head-to-head matchups, streaks, and bragging-rights context." es="Duelos recientes cara a cara, rachas y contexto de rivalidad.">{t("h2h.rivalryHistory")}</PaneTitle>
             {history.length === 0 ? (
               <p className="mt-2 text-sm text-[var(--color-text-muted)]">{t("h2h.historyEmpty")}</p>
             ) : (
@@ -441,7 +442,7 @@ function LockedScreen({ picks, opponentPicks, trashTalk, onReveal, t }: { picks:
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-8">
       <div>
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.lockstepReveal")}</p>
+        <PaneTitle en="Reveals both sides market by market so you can see where the match swings." es="Revela ambos lados mercado por mercado para ver donde cambia el duelo.">{t("h2h.lockstepReveal")}</PaneTitle>
         <h1 className="text-3xl font-display font-black tracking-tight">{t("h2h.picksLockedPrivately")}</h1>
         {trashTalk && <p className="mt-2 text-sm font-bold text-[var(--color-text-secondary)]">{trashTalk}</p>}
       </div>
@@ -505,7 +506,7 @@ function ResultsScreen({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-8 pb-24">
       <section className={`rounded-xl border p-6 text-center ${youWin ? "border-[var(--color-success)] bg-[var(--color-success-dim)]" : "border-[var(--color-danger)] bg-[var(--color-danger-dim)]"}`}>
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">{mode === "ghost" ? t("h2h.ghostResult") : t("h2h.rankedResult")}</p>
+        <PaneTitle className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]" en="Final match state for ranked or ghost play, including whether it counts today." es="Estado final del duelo clasificado o fantasma, incluido si cuenta para hoy.">{mode === "ghost" ? t("h2h.ghostResult") : t("h2h.rankedResult")}</PaneTitle>
         <h1 className="mt-2 text-4xl font-display font-black tracking-tight">{run.result === "tie-win" ? t("h2h.tieBreakWin") : youWin ? t("h2h.youWin") : t("h2h.opponentWins", { name: OPPONENT.name })}</h1>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
           {t("h2h.scoreLineWithCorrect", { yourScore: String(run.yourScore), opponentScore: String(run.opponentScore), name: OPPONENT.name, correct: String(run.yourCorrect), total: String(DAILY_MARKETS.length) })}
@@ -514,7 +515,7 @@ function ResultsScreen({
 
       <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.matchRecap")}</p>
+          <PaneTitle en="Scoreboard recap of your picks, the rival's picks, and the winning margin." es="Resumen del marcador con tus picks, los del rival y el margen ganador.">{t("h2h.matchRecap")}</PaneTitle>
           <div className="mt-4 rounded-xl bg-[var(--color-surface-2)] p-5">
             <p className="text-sm font-black text-[var(--color-text-primary)]">{dailyRoomName()}</p>
             <p className="mt-2 text-4xl font-display font-black text-[var(--color-brand-primary)]">{run.yourScore}-{run.opponentScore}</p>
@@ -531,7 +532,7 @@ function ResultsScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.pickSwing")}</p>
+          <PaneTitle en="Shows which picks created the biggest point swing in the match." es="Muestra que picks generaron el mayor cambio de puntos en el duelo.">{t("h2h.pickSwing")}</PaneTitle>
           <div className="mt-4 flex h-28 items-end gap-2">
             {run.swing.map((value, index) => {
               const height = 36 + Math.min(54, Math.abs(value) * 18);
@@ -611,7 +612,7 @@ function H2HLeaderboard({ entries, userId, loading, error, t }: { entries: H2HLe
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)]">
       <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.board")}</p>
+        <PaneTitle en="Ranks H2H players by wins, streaks, upset calls, and verified results." es="Clasifica jugadores H2H por victorias, rachas, aciertos sorpresa y resultados verificados.">{t("h2h.board")}</PaneTitle>
         <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">{t("h2h.allBoards")}</Link>
       </div>
       <div className="flex gap-2 overflow-x-auto border-b border-[var(--color-border)] px-4 py-3">

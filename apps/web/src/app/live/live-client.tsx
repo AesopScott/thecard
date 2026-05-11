@@ -7,6 +7,7 @@ import { useI18n } from "@/contexts/i18n-context";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { PaneTitle } from "@/components/pane-title";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { ScoutFloaters } from "@/components/scout-mascot";
 import {
@@ -363,7 +364,7 @@ function LiveTimeline({ items, picks }: { items: TimelineItem[]; picks: LivePick
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.sweatTimeline")}</p>
+        <PaneTitle en="Live feed of ticket actions and game context during the slate." es="Flujo en vivo de acciones del boleto y contexto de los partidos durante la cartelera.">{t("live.sweatTimeline")}</PaneTitle>
         <LivePulse />
       </div>
       <div className="mt-3 flex flex-col gap-3">
@@ -416,7 +417,7 @@ function ActiveTicket({
     return (
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.locked")}</p>
+          <PaneTitle en="Shows the saved run and when a new ticket opens." es="Muestra la jugada guardada y cuando se abre un boleto nuevo.">{t("live.locked")}</PaneTitle>
           <p className="text-sm font-black text-[var(--color-card-text)]">{savedRun.score} pts</p>
         </div>
         <p className="mt-2 text-xs text-[var(--color-card-muted)]">{savedRun.correct}/{savedRun.picks.length} settled. Next live ticket in {timeUntilMidnight()}.</p>
@@ -427,7 +428,7 @@ function ActiveTicket({
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.activeTicket")}</p>
+        <PaneTitle en="Your current live picks, boost, late swap, and lock controls." es="Tus picks en vivo, impulso, cambio tardio y controles para bloquear.">{t("live.activeTicket")}</PaneTitle>
         <p className="text-xs font-bold text-[var(--color-card-muted)]">{picks.length}/{MAX_PICKS}</p>
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -482,7 +483,7 @@ function LiveLeaderboard({ entries, userId, loading, error }: { entries: LiveLea
   return (
     <div className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
       <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-4 py-3">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.board")}</p>
+        <PaneTitle en="Ranks verified live tickets for this slate." es="Clasifica boletos en vivo verificados para esta cartelera.">{t("live.board")}</PaneTitle>
         <span className="text-xs font-bold text-[var(--color-card-muted)]">{entries.length} {t("live.reads")}</span>
       </div>
       <div className="flex gap-2 overflow-x-auto border-b border-[var(--color-card-border)] px-4 py-3">
@@ -529,7 +530,7 @@ function LiveResults({ run, leaderboard, userId, leaderboardLoading, leaderboard
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.ticketShareCard")}</p>
+        <PaneTitle en="Your completed live result formatted for sharing." es="Tu resultado en vivo terminado, formateado para compartir.">{t("live.ticketShareCard")}</PaneTitle>
         <div className="mt-3 rounded-xl bg-[var(--color-card-bg)] p-5">
           <p className="text-sm font-black text-[var(--color-card-text)]">{t("live.liveTicket")}</p>
           <p className="mt-2 text-6xl font-black text-[var(--color-brand-primary)]">{run.score}</p>
@@ -761,13 +762,13 @@ export function LiveClient() {
                 <Scoreboard game={selected} momentum={momentum} />
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.riskSlider")}</p>
+                    <PaneTitle en="Choose the score and risk profile before locking the first live pick." es="Elige el perfil de puntaje y riesgo antes de bloquear el primer pick en vivo.">{t("live.riskSlider")}</PaneTitle>
                     <p className="text-xs text-[var(--color-card-muted)]">{t("live.chooseBeforeLock")}</p>
                   </div>
                   <div className="mt-3"><RiskSelector value={riskMode} onChange={setRiskMode} disabled={picks.length > 0} /></div>
                 </div>
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.smartNext")}</p>
+                  <PaneTitle en="Suggests the next market based on watchlist and ticket room." es="Sugiere el siguiente mercado segun tu lista de seguimiento y el espacio del boleto.">{t("live.smartNext")}</PaneTitle>
                   <p className="mt-2 text-sm text-[var(--color-card-text)]">{smartNext ? smartNext.title : t("live.ticketFull")}</p>
                   <p className="mt-1 text-xs text-[var(--color-card-muted)]">{t("live.smartNextHelp")}</p>
                 </div>
@@ -780,7 +781,7 @@ export function LiveClient() {
               <aside className="flex flex-col gap-4">
                 <ActiveTicket picks={picks} savedRun={savedRun} boostMarketId={boostMarketId} riskMode={riskMode} cashOut={cashOut} saving={saving} error={saveError} onBoost={(id) => setBoostMarketId((current) => current === id ? null : id)} onSwap={lateSwap} onCashOut={() => setCashOut(false)} onLock={lockLiveTicket} onClear={() => { setPicks([]); setBoostMarketId(null); }} />
                 <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-                  <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("live.sweatPrompts")}</p>
+                  <PaneTitle en="Quick reaction lines for the live sweat room." es="Frases rapidas de reaccion para la sala en vivo.">{t("live.sweatPrompts")}</PaneTitle>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {["hold", "bad beat", "lock it", "need one more"].map((line) => (
                       <button key={line} onClick={() => setChatPrompt(line)} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-bold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)]">{line}</button>

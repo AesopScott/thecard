@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
+import { PaneTitle } from "@/components/pane-title";
 import { ScoutFloaters } from "@/components/scout-mascot";
 import { useI18n } from "@/contexts/i18n-context";
 import {
@@ -210,8 +211,8 @@ export function ForecastClient() {
       <ScoutFloaters page="forecast" />
       <section className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.lab")}</p>
-          <h1 className="mt-3 text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">
+          <PaneTitle en="Forecast is the probability-training mode for pricing outcomes before they settle." es="Forecast es el modo de practica para estimar probabilidades antes de que se resuelvan.">{t("forecast.lab")}</PaneTitle>
+          <h1 className="mt-3 text-4xl font-display font-black tracking-tight text-[var(--color-text-primary)] sm:text-5xl">
             {t("forecast.title")}
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
@@ -226,9 +227,9 @@ export function ForecastClient() {
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.calibrationRead")}</p>
+          <PaneTitle en="Your average Brier score and where your probability skill is improving." es="Tu promedio Brier y donde esta mejorando tu habilidad para calcular probabilidades.">{t("forecast.calibrationRead")}</PaneTitle>
           <div className="mt-4 rounded-xl bg-[var(--color-surface-2)] p-4">
-            <p className="text-5xl font-display font-black text-[var(--color-text-primary)]">
+            <p className="text-4xl font-display font-black text-[var(--color-text-primary)] sm:text-5xl">
               {avgBrier === null ? "--" : avgBrier.toFixed(3)}
             </p>
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("forecast.brierHelp")}</p>
@@ -265,7 +266,7 @@ export function ForecastClient() {
       <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.dailyBoard")}</p>
+            <PaneTitle en="Pick exact YES probabilities and lock forecasts for the mock slate." es="Elige probabilidades exactas de SI y bloquea pronosticos para la cartelera simulada.">{t("forecast.dailyBoard")}</PaneTitle>
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1 sm:grid-cols-6">
               {(["all", "NFL", "NBA", "MLB", "NHL", "UFC"] as SportFilter[]).map((item) => (
                 <button
@@ -299,7 +300,7 @@ export function ForecastClient() {
           <CalibrationBuckets forecasts={resolved} t={t} />
           <ForecastHistory forecasts={Object.values(forecasts).filter(Boolean) as LocalForecast[]} t={t} />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.nextReps")}</p>
+            <PaneTitle en="Fast links to practice the same reads in other game modes." es="Enlaces rapidos para practicar las mismas lecturas en otros modos de juego.">{t("forecast.nextReps")}</PaneTitle>
             <div className="mt-4 flex flex-col gap-2">
               <Link href="/blitz" className="rounded-xl bg-[var(--color-brand-primary)] py-3 text-center text-sm font-black text-white transition-all hover:bg-red-500">
                 {t("forecast.playBlitz")}
@@ -409,7 +410,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 function CalibrationBuckets({ forecasts, t }: { forecasts: LocalForecast[]; t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.calibrationMap")}</p>
+      <PaneTitle en="Groups resolved forecasts by confidence bucket to show overconfidence or underconfidence." es="Agrupa pronosticos resueltos por nivel de confianza para mostrar exceso o falta de confianza.">{t("forecast.calibrationMap")}</PaneTitle>
       <div className="mt-4 flex flex-col gap-2">
         {CALIBRATION_BUCKETS.map((bucket) => {
           const rows = forecasts.filter((forecast) => forecast.probability >= bucket.min && forecast.probability <= bucket.max);
@@ -435,7 +436,7 @@ function ForecastHistory({ forecasts, t }: { forecasts: LocalForecast[]; t: Retu
   const sorted = [...forecasts].sort((a, b) => b.createdAt - a.createdAt);
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.log")}</p>
+      <PaneTitle en="A history of your saved forecasts and resolved scores." es="Historial de tus pronosticos guardados y puntajes resueltos.">{t("forecast.log")}</PaneTitle>
       {sorted.length === 0 ? (
         <p className="mt-4 text-sm text-[var(--color-text-muted)]">{t("forecast.logEmpty")}</p>
       ) : (
