@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { clsx } from "clsx";
 
 type ScoutSport = "football" | "basketball" | "hockey" | "soccer";
@@ -16,6 +16,7 @@ type ScoutMascotProps = ScoutVariant & {
   motion?: ScoutMotion;
   className?: string;
   label?: string;
+  style?: React.CSSProperties;
 };
 
 const SPORTS_OFFSET: Record<ScoutSport, string> = {
@@ -59,42 +60,49 @@ const PAGE_FLOATERS: Record<ScoutPage, Array<ScoutVariant & { className: string;
   ],
 };
 
-const PAGE_HIDEOUTS: Record<ScoutPage, string[]> = {
+type ScoutHideout = {
+  left?: string;
+  right?: string;
+  top: string;
+};
+
+const PAGE_HIDEOUTS: Record<ScoutPage, ScoutHideout[]> = {
   home: [
-    "left-[2%] top-[19rem] sm:left-[5%] sm:top-[17rem] lg:left-[calc(50%-43rem)] lg:top-[18rem]",
-    "right-[4%] top-[64rem] sm:right-[7%] sm:top-[55rem] xl:right-[calc(50%-42rem)] xl:top-[50rem]",
-    "right-[6%] top-[31rem] sm:right-[10%] sm:top-[29rem] lg:right-[calc(50%-44rem)]",
-    "left-[7%] top-[82rem] sm:left-[12%] sm:top-[72rem] xl:left-[calc(50%-39rem)]",
+    { left: "2vw", top: "18rem" },
+    { right: "4vw", top: "31rem" },
+    { left: "7vw", top: "72rem" },
+    { right: "7vw", top: "55rem" },
   ],
   card: [
-    "right-[3%] top-[15rem] sm:right-[6%] sm:top-[16rem] lg:right-[calc(50%-42rem)] lg:top-[14rem]",
-    "left-[5%] top-[58rem] sm:left-[8%] sm:top-[46rem] xl:left-[calc(50%-44rem)] xl:top-[38rem]",
-    "left-[3%] top-[28rem] sm:left-[5%] sm:top-[31rem] lg:left-[calc(50%-43rem)]",
-    "right-[7%] top-[76rem] sm:right-[9%] sm:top-[60rem] xl:right-[calc(50%-41rem)]",
+    { right: "4vw", top: "12rem" },
+    { right: "6vw", top: "31rem" },
+    { left: "4vw", top: "50rem" },
+    { right: "12vw", top: "68rem" },
+    { left: "42vw", top: "84rem" },
   ],
   blitz: [
-    "left-[4%] top-[12rem] sm:left-[7%] sm:top-[14rem] lg:left-[calc(50%-42rem)] lg:top-[12rem]",
-    "right-[5%] top-[49rem] sm:right-[8%] sm:top-[38rem] xl:right-[calc(50%-43rem)] xl:top-[33rem]",
-    "right-[4%] top-[22rem] sm:right-[7%] sm:top-[23rem] lg:right-[calc(50%-42rem)]",
-    "left-[6%] top-[70rem] sm:left-[10%] sm:top-[56rem] xl:left-[calc(50%-41rem)]",
+    { left: "4vw", top: "12rem" },
+    { right: "5vw", top: "33rem" },
+    { right: "4vw", top: "22rem" },
+    { left: "6vw", top: "56rem" },
   ],
   live: [
-    "right-[4%] top-[21rem] sm:right-[5%] sm:top-[19rem] lg:right-[calc(50%-41rem)] lg:top-[18rem]",
-    "left-[3%] top-[74rem] sm:left-[6%] sm:top-[54rem] xl:left-[calc(50%-43rem)] xl:top-[42rem]",
-    "left-[5%] top-[34rem] sm:left-[8%] sm:top-[30rem] lg:left-[calc(50%-42rem)]",
-    "right-[6%] top-[88rem] sm:right-[10%] sm:top-[67rem] xl:right-[calc(50%-40rem)]",
+    { right: "4vw", top: "19rem" },
+    { left: "3vw", top: "54rem" },
+    { left: "5vw", top: "30rem" },
+    { right: "6vw", top: "67rem" },
   ],
   h2h: [
-    "left-[6%] top-[25rem] sm:left-[8%] sm:top-[20rem] lg:left-[calc(50%-41rem)] lg:top-[18rem]",
-    "right-[3%] top-[70rem] sm:right-[7%] sm:top-[48rem] xl:right-[calc(50%-43rem)] xl:top-[36rem]",
-    "right-[5%] top-[18rem] sm:right-[8%] sm:top-[24rem] lg:right-[calc(50%-42rem)]",
-    "left-[4%] top-[83rem] sm:left-[9%] sm:top-[62rem] xl:left-[calc(50%-42rem)]",
+    { left: "6vw", top: "20rem" },
+    { right: "3vw", top: "48rem" },
+    { right: "5vw", top: "24rem" },
+    { left: "4vw", top: "62rem" },
   ],
   forecast: [
-    "right-[6%] top-[13rem] sm:right-[9%] sm:top-[15rem] lg:right-[calc(50%-43rem)] lg:top-[13rem]",
-    "left-[4%] top-[62rem] sm:left-[6%] sm:top-[43rem] xl:left-[calc(50%-42rem)] xl:top-[34rem]",
-    "left-[7%] top-[24rem] sm:left-[9%] sm:top-[26rem] lg:left-[calc(50%-44rem)]",
-    "right-[4%] top-[80rem] sm:right-[8%] sm:top-[58rem] xl:right-[calc(50%-41rem)]",
+    { right: "6vw", top: "13rem" },
+    { left: "4vw", top: "43rem" },
+    { left: "7vw", top: "26rem" },
+    { right: "4vw", top: "58rem" },
   ],
 };
 
@@ -110,6 +118,7 @@ export function ScoutMascot({
   motion = "idle",
   className,
   label,
+  style,
   } = props;
   const isAction = props.sheet === "actions";
   const source = isAction ? "/mascots/scout-actions.png" : "/mascots/scout-sports.png";
@@ -127,6 +136,7 @@ export function ScoutMascot({
         motion === "sweat" && "animate-[scout-sweat_900ms_ease-in-out_infinite]",
         className,
       )}
+      style={style}
     >
       <img
         src={source}
@@ -140,27 +150,74 @@ export function ScoutMascot({
 }
 
 export function ScoutFloaters({ page }: { page: ScoutPage }) {
+  const mascotRefs = useRef<Array<HTMLDivElement | null>>([]);
   const [hideouts, setHideouts] = useState(() => PAGE_HIDEOUTS[page].slice(0, 2));
 
-  useEffect(() => {
-    const pool = [...PAGE_HIDEOUTS[page]];
-    for (let index = pool.length - 1; index > 0; index -= 1) {
-      const swapIndex = Math.floor(Math.random() * (index + 1));
-      const current = pool[index]!;
-      pool[index] = pool[swapIndex]!;
-      pool[swapIndex] = current;
-    }
-    setHideouts(pool.slice(0, 2));
+  useLayoutEffect(() => {
+    const protectedElements = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        "nav, .rounded-xl, article, dialog, [role='dialog'], input, textarea, select, button",
+      ),
+    ).filter((element) => !element.closest("[data-scout-layer]"));
+
+    const collides = (mascot: DOMRect, settledMascots: DOMRect[]) => {
+      const mascotArea = mascot.width * mascot.height;
+      const hasBadPanelHit = protectedElements.some((element) => {
+        const rect = element.getBoundingClientRect();
+        const overlapX = Math.max(0, Math.min(mascot.right, rect.right) - Math.max(mascot.left, rect.left));
+        const overlapY = Math.max(0, Math.min(mascot.bottom, rect.bottom) - Math.max(mascot.top, rect.top));
+        return overlapX * overlapY > mascotArea * 0.12;
+      });
+      const hitsAnotherScout = settledMascots.some((rect) => {
+        const overlapX = Math.max(0, Math.min(mascot.right, rect.right) - Math.max(mascot.left, rect.left));
+        const overlapY = Math.max(0, Math.min(mascot.bottom, rect.bottom) - Math.max(mascot.top, rect.top));
+        return overlapX * overlapY > mascotArea * 0.05;
+      });
+      return hasBadPanelHit || hitsAnotherScout;
+    };
+
+    const candidates = PAGE_HIDEOUTS[page];
+    const chosen: ScoutHideout[] = [];
+    const settledRects: DOMRect[] = [];
+
+    PAGE_FLOATERS[page].forEach((_, index) => {
+      let picked = candidates[index] ?? candidates[0]!;
+      const mascot = mascotRefs.current[index];
+      if (!mascot) {
+        chosen.push(picked);
+        return;
+      }
+
+      for (const candidate of candidates) {
+        mascot.style.left = candidate.left ?? "";
+        mascot.style.right = candidate.right ?? "";
+        mascot.style.top = candidate.top;
+        const rect = mascot.getBoundingClientRect();
+        if (!collides(rect, settledRects)) {
+          picked = candidate;
+          settledRects.push(rect);
+          break;
+        }
+      }
+      chosen.push(picked);
+    });
+
+    setHideouts(chosen);
   }, [page]);
 
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute left-0 top-0 z-10 h-[150rem] w-full overflow-hidden">
+    <div aria-hidden="true" data-scout-layer className="pointer-events-none absolute left-0 top-0 z-10 h-[150rem] w-full overflow-hidden">
       {PAGE_FLOATERS[page].map((item, index) => (
-        <ScoutMascot
+        <div
           key={`${item.label}-${index}`}
-          {...item}
-          className={clsx("absolute", hideouts[index], SIZE_CLASSES[index])}
-        />
+          ref={(element) => {
+            mascotRefs.current[index] = element;
+          }}
+          className={clsx("absolute", SIZE_CLASSES[index])}
+          style={hideouts[index]}
+        >
+          <ScoutMascot {...item} className="h-full w-full" />
+        </div>
       ))}
       <style jsx global>{`
         @keyframes scout-idle {
