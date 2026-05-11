@@ -94,6 +94,17 @@ export default function LeaguePassPage() {
             Global does not use a league slot. It is the all-time record layer across free, friends, paid, and live play. As the board matures, top players can earn profile benefits, status, and special league access.
           </p>
         </section>
+
+        <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Prize model</p>
+          <h2 className="mt-2 text-2xl font-black text-[var(--color-card-text)]">Run the numbers before we promise them.</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[var(--color-card-muted)]">
+            The current planning model sends 60% of revenue to paid league prize pools, 10% to Pick 10, and 30% through to the platform.
+          </p>
+          <Link href="/prize-math" className="mt-4 inline-flex rounded-xl border border-[var(--color-card-border)] px-4 py-3 text-sm font-black text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)]">
+            Open prize math simulator
+          </Link>
+        </section>
       </div>
     </div>
   );
