@@ -165,7 +165,7 @@ export function subscribeLiveLeaderboard(
   date = liveDateId(),
   cb: (entries: LiveLeaderboardEntry[]) => void
 ): Unsubscribe {
-  cb([]);
+  cb(buildMockLiveLeaderboard());
   if (!db) return () => {};
   const q = query(
     collection(db, "liveLeaderboards", date, "entries"),
@@ -186,6 +186,15 @@ export function subscribeLiveLeaderboard(
       };
     });
     entries.sort((a, b) => b.score - a.score || b.correct - a.correct || a.completedAtMs - b.completedAtMs);
-    cb(entries);
-  }, () => cb([]));
+    cb([...entries, ...buildMockLiveLeaderboard()]);
+  }, () => cb(buildMockLiveLeaderboard()));
+}
+
+function buildMockLiveLeaderboard(): LiveLeaderboardEntry[] {
+  return [
+    { uid: "mock-live-1", displayName: "DriveReader", photoURL: null, score: 7, correct: 4, pickCount: 5, completedAtMs: Date.now() - 600000 },
+    { uid: "mock-live-2", displayName: "RedZoneRay", photoURL: null, score: 6, correct: 4, pickCount: 5, completedAtMs: Date.now() - 900000 },
+    { uid: "mock-live-3", displayName: "ClockSharp", photoURL: null, score: 5, correct: 3, pickCount: 4, completedAtMs: Date.now() - 1200000 },
+    { uid: "mock-live-4", displayName: "Momentum", photoURL: null, score: 4, correct: 3, pickCount: 5, completedAtMs: Date.now() - 1500000 },
+  ];
 }

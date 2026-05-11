@@ -432,20 +432,17 @@ function LiveLeaderboard({
           Loading live board...
         </div>
       )}
-      {!loading && entries.length === 0 && (
-        <div className="px-4 py-6 text-center">
-          <p className="text-sm font-bold text-[var(--color-card-text)]">No Live Reads locked yet</p>
-          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Lock yours to start today&apos;s board.</p>
-        </div>
-      )}
       {entries.slice(0, 8).map((entry, index) => {
         const isYou = userId === entry.uid;
+        const isPreview = entry.uid.startsWith("mock-live-");
         return (
           <div key={entry.uid} className={`grid grid-cols-[28px_1fr_48px_52px] items-center gap-2 border-b border-[var(--color-card-border)] px-4 py-3 last:border-0 ${isYou ? "bg-[var(--color-brand-primary)]/10" : ""}`}>
             <span className="text-right text-xs font-black text-[var(--color-card-muted)]">{index + 1}</span>
             <div className="min-w-0">
               <p className={`truncate text-sm font-bold ${isYou ? "text-[var(--color-brand-primary)]" : "text-[var(--color-card-text)]"}`}>{entry.displayName}{isYou ? " (you)" : ""}</p>
-              <p className="text-[10px] text-[var(--color-card-muted)]">{entry.correct}/{entry.pickCount} correct</p>
+              <p className="text-[10px] text-[var(--color-card-muted)]">
+                {isPreview ? "Preview row" : `${entry.correct}/${entry.pickCount} correct`}
+              </p>
             </div>
             <span className="text-right text-sm font-black text-[var(--color-card-text)]">{entry.score}</span>
             <span className="text-right text-xs font-bold text-[var(--color-card-muted)]">pts</span>
