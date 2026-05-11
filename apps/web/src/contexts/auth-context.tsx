@@ -15,6 +15,38 @@ import {
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
 import { upsertUserProfile, getUserOnboardingState } from "@/lib/user-store";
 
+type OnboardingState = { username: string | null; countryCode: string | null };
+
+const ONBOARDING_CACHE_PREFIX = "thecard:onboarding:";
+
+function cacheKey(uid: string) {
+  return `${ONBOARDING_CACHE_PREFIX}${uid}`;
+}
+
+function readCachedOnboardingState(uid: string): OnboardingState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(cacheKey(uid));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<OnboardingState>;
+    return {
+      username: typeof parsed.username === "string" ? parsed.username : null,
+      countryCode: typeof parsed.countryCode === "string" ? parsed.countryCode : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedOnboardingState(uid: string, state: OnboardingState) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(cacheKey(uid), JSON.stringify(state));
+}
+
+function hasCompletedOnboarding(state: OnboardingState | null): boolean {
+  return Boolean(state?.username && state.countryCode);
+}
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
@@ -55,10 +87,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await upsertUserProfile(u).catch((error) => {
           console.warn("User profile sync failed:", error);
         });
-        const onboardingState = await getUserOnboardingState(u.uid).catch(() => ({ username: null, countryCode: null }));
-        setUsername(onboardingState.username);
-        setCountryCode(onboardingState.countryCode);
-        setNeedsOnboarding(Boolean(u.emailVerified && (!onboardingState.username || !onboardingState.countryCode)));
+        const cachedState = readCachedOnboardingState(u.uid);
+        try {
+          const onboardingState = await getUserOnboardingState(u.uid);
+          writeCachedOnboardingState(u.uid, onboardingState);
+          setUsername(onboardingState.username);
+          setCountryCode(onboardingState.countryCode);
+          setNeedsOnboarding(Boolean(u.emailVerified && !hasCompletedOnboarding(onboardingState)));
+        } catch (error) {
+          console.warn("User onboarding state load failed:", error);
+          if (cachedState) {
+            setUsername(cachedState.username);
+            setCountryCode(cachedState.countryCode);
+          }
+          setNeedsOnboarding(Boolean(u.emailVerified && cachedState && !hasCompletedOnboarding(cachedState)));
+        }
       } else {
         setUsername(null);
         setCountryCode(null);
@@ -70,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function completeOnboarding() {
     setNeedsOnboarding(false);
+    if (user) writeCachedOnboardingState(user.uid, { username, countryCode });
   }
 
   async function signInWithGoogle() {
@@ -101,10 +145,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(auth.currentUser);
     setEmailVerified(auth.currentUser.emailVerified);
     if (auth.currentUser.emailVerified) {
-      const onboardingState = await getUserOnboardingState(auth.currentUser.uid).catch(() => ({ username: null, countryCode: null }));
-      setUsername(onboardingState.username);
-      setCountryCode(onboardingState.countryCode);
-      setNeedsOnboarding(!onboardingState.username || !onboardingState.countryCode);
+      const cachedState = readCachedOnboardingState(auth.currentUser.uid);
+      try {
+        const onboardingState = await getUserOnboardingState(auth.currentUser.uid);
+        writeCachedOnboardingState(auth.currentUser.uid, onboardingState);
+        setUsername(onboardingState.username);
+        setCountryCode(onboardingState.countryCode);
+        setNeedsOnboarding(!hasCompletedOnboarding(onboardingState));
+      } catch (error) {
+        console.warn("User onboarding state refresh failed:", error);
+        if (cachedState) {
+          setUsername(cachedState.username);
+          setCountryCode(cachedState.countryCode);
+        }
+        setNeedsOnboarding(Boolean(cachedState && !hasCompletedOnboarding(cachedState)));
+      }
     }
   }
 
