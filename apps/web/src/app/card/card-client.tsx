@@ -309,6 +309,8 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 pb-28">
+      <DevelopmentMockDataRibbon />
+
       <header className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-6">
           <div className="flex flex-wrap items-center gap-2">
@@ -451,6 +453,32 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
           <EmailVerificationNotice compact />
         </div>
       )}
+    </div>
+  );
+}
+
+function DevelopmentMockDataRibbon() {
+  return (
+    <div
+      aria-label="In development. All data is currently mock data."
+      className="pointer-events-none fixed left-[max(0.75rem,calc(50%-46rem))] top-20 z-20 flex h-36 w-36 origin-top-left scale-[0.72] items-center justify-center rounded-full p-2 text-center shadow-[0_24px_56px_rgba(0,0,0,0.46)] sm:scale-100"
+      style={{
+        background:
+          "conic-gradient(from 18deg, #7f1d1d, #ef4444 16%, #f8fafc 17%, #facc15 25%, #7f1d1d 36%, #ef4444 51%, #f8fafc 52%, #facc15 62%, #7f1d1d 75%, #ef4444 100%)",
+      }}
+    >
+      <div className="absolute -bottom-8 left-5 h-16 w-9 rotate-[14deg] bg-gradient-to-b from-red-500 to-red-950 shadow-[inset_0_-18px_24px_rgba(0,0,0,0.28)] [clip-path:polygon(0_0,100%_0,100%_100%,50%_74%,0_100%)]" />
+      <div className="absolute -bottom-8 right-5 h-16 w-9 -rotate-[14deg] bg-gradient-to-b from-red-600 to-red-950 shadow-[inset_0_-18px_24px_rgba(0,0,0,0.28)] [clip-path:polygon(0_0,100%_0,100%_100%,50%_74%,0_100%)]" />
+      <div className="absolute inset-2 rounded-full bg-[linear-gradient(145deg,#fff7d6,#d97706_26%,#7f1d1d_55%,#27070a)] p-[3px]">
+        <div className="h-full w-full rounded-full bg-[radial-gradient(circle_at_50%_28%,rgba(255,255,255,0.24),transparent_32%),linear-gradient(155deg,#17111a,#2a0d13_58%,#07070b)]" />
+      </div>
+      <div className="absolute inset-[1.05rem] rounded-full border border-white/12 shadow-[inset_0_0_0_1px_rgba(250,204,21,0.28),inset_0_-18px_32px_rgba(0,0,0,0.42)]" />
+      <div className="relative flex h-[6.35rem] w-[6.35rem] flex-col items-center justify-center rounded-full px-3 text-white">
+        <span className="rounded-full border border-amber-200/40 bg-amber-300/12 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.24em] text-amber-100">Preview</span>
+        <span className="mt-1.5 text-[1.38rem] font-display font-black uppercase leading-none tracking-normal">Mock</span>
+        <span className="text-[1.38rem] font-display font-black uppercase leading-none tracking-normal text-amber-100">Data</span>
+        <span className="mt-1 text-[8px] font-black uppercase leading-tight tracking-[0.18em] text-white/70">In Development</span>
+      </div>
     </div>
   );
 }
