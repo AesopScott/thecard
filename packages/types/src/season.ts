@@ -51,6 +51,8 @@ export interface SeasonLeaderboardEntry {
   readonly username?: string;
   readonly displayName: string;
   readonly photoURL?: string | null;
+  readonly countryCode?: string | null;
+  readonly countryName?: string | null;
   readonly avatarInitial: string;
   readonly bankroll: number;
   readonly betCount: number;

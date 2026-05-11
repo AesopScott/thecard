@@ -286,12 +286,16 @@ async function syncSeasonLeaderboardEntry(uid: string, membership: LeagueMembers
   const username = (profile?.username as string | undefined) ?? uid;
   const displayName = (profile?.displayName as string | null | undefined) ?? username;
   const photoURL = (profile?.photoURL as string | null | undefined) ?? null;
+  const countryCode = (profile?.countryCode as string | null | undefined) ?? null;
+  const countryName = (profile?.countryName as string | null | undefined) ?? null;
 
   await setDoc(doc(db, "seasonLeaderboards", membership.leagueId, "entries", uid), {
     uid,
     username,
     displayName,
     photoURL,
+    countryCode,
+    countryName,
     avatarInitial: avatarInitial(displayName),
     bankroll: membership.currentBankroll,
     betCount: membership.betCount,
@@ -523,6 +527,8 @@ export function subscribeToSeasonLeaderboard(
         username: (data.username as string | undefined) ?? entryDoc.id,
         displayName: (data.displayName as string | undefined) ?? (data.username as string | undefined) ?? "Anonymous",
         photoURL: (data.photoURL as string | null | undefined) ?? null,
+        countryCode: (data.countryCode as string | null | undefined) ?? null,
+        countryName: (data.countryName as string | null | undefined) ?? null,
         avatarInitial: (data.avatarInitial as string | undefined) ?? avatarInitial((data.displayName as string | undefined) ?? "Anonymous"),
         bankroll: (data.bankroll as number | undefined) ?? STARTING_BANKROLL,
         betCount: (data.betCount as number | undefined) ?? 0,
@@ -562,13 +568,15 @@ function buildSeasonPreviewEntries(): Omit<SeasonLeaderboardEntry, "rank">[] {
 export function buildSeasonLeaderboard(
   userBankroll: number,
   userBetCount: number,
-  user?: Pick<SeasonLeaderboardEntry, "uid" | "username" | "displayName" | "photoURL" | "avatarInitial" | "isYou">
+  user?: Pick<SeasonLeaderboardEntry, "uid" | "username" | "displayName" | "photoURL" | "countryCode" | "countryName" | "avatarInitial" | "isYou">
 ): SeasonLeaderboardEntry[] {
   const you = {
     displayName: user?.displayName ?? "You",
     username: user?.username,
     uid: user?.uid,
     photoURL: user?.photoURL,
+    countryCode: user?.countryCode,
+    countryName: user?.countryName,
     avatarInitial: user?.avatarInitial ?? "Y",
     bankroll: userBankroll,
     betCount: userBetCount,

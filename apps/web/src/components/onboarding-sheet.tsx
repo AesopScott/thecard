@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { EmailVerificationNotice } from "./email-verification-notice";
-import { checkUsernameAvailable, setUsername as persistUsername, uploadAvatar } from "@/lib/user-store";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
+import { checkUsernameAvailable, setUserCountry, setUsername as persistUsername, uploadAvatar } from "@/lib/user-store";
 import { createTeam, joinTeamByCode, type Team } from "@/lib/team-store";
 
-type Step = "username" | "photo" | "team" | "done";
+type Step = "username" | "country" | "photo" | "team" | "done";
 type TeamMode = "choose" | "create" | "join";
 
 const USERNAME_RE = /^[a-zA-Z][a-zA-Z0-9_]{2,19}$/;
@@ -33,7 +34,7 @@ function validateUsername(value: string): string | null {
 }
 
 export function OnboardingSheet() {
-  const { user, needsOnboarding, verificationRequired, refreshUser, completeOnboarding } = useAuth();
+  const { user, needsOnboarding, username: existingUsername, countryCode: existingCountryCode, verificationRequired, refreshUser, completeOnboarding } = useAuth();
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const teamPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -43,6 +44,9 @@ export function OnboardingSheet() {
   const [username, setUsernameValue] = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [savingUsername, setSavingUsername] = useState(false);
+  const [countryCode, setCountryCode] = useState("US");
+  const [savingCountry, setSavingCountry] = useState(false);
+  const [countryError, setCountryError] = useState<string | null>(null);
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -60,10 +64,13 @@ export function OnboardingSheet() {
 
   useEffect(() => {
     if (!needsOnboarding) return;
-    setStep("username");
+    setStep(existingUsername ? "country" : "username");
     setUsernameValue("");
     setUsernameError(null);
     setSavingUsername(false);
+    setCountryCode(existingCountryCode ?? "US");
+    setSavingCountry(false);
+    setCountryError(null);
     setAvatarFile(null);
     setAvatarPreview(null);
     setUploadingAvatar(false);
@@ -76,7 +83,7 @@ export function OnboardingSheet() {
     setTeamError(null);
     setTeamBusy(false);
     setJoinedTeam(null);
-  }, [needsOnboarding]);
+  }, [existingCountryCode, existingUsername, needsOnboarding]);
 
   if (!user || !needsOnboarding) return null;
 
@@ -109,6 +116,7 @@ export function OnboardingSheet() {
   const googlePhoto = user.photoURL;
   const displayedAvatar = avatarPreview ?? googlePhoto;
   const initial = (user.displayName?.[0] ?? user.email?.[0] ?? "?").toUpperCase();
+  const finalUsername = username.trim().toLowerCase() || existingUsername || "you";
 
   async function handleClaimUsername() {
     if (!user) return;
@@ -122,13 +130,37 @@ export function OnboardingSheet() {
       if (!available) { setUsernameError("That username is taken. Try another."); return; }
       await persistUsername(user.uid, trimmed);
       await refreshUser();
-      setStep("photo");
+      setStep("country");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
       console.error("Username claim error:", msg);
       setUsernameError(msg);
     } finally {
       setSavingUsername(false);
+    }
+  }
+
+  async function handleCountryStep() {
+    if (!user) return;
+    const country = COUNTRY_OPTIONS.find((option) => option.code === countryCode);
+    if (!country) {
+      setCountryError("Choose your country.");
+      return;
+    }
+    setSavingCountry(true);
+    setCountryError(null);
+    try {
+      await setUserCountry(user.uid, country);
+      await refreshUser();
+      if (existingUsername) {
+        completeOnboarding();
+        return;
+      }
+      setStep("photo");
+    } catch {
+      setCountryError("Could not save country. Try again.");
+    } finally {
+      setSavingCountry(false);
     }
   }
 
@@ -258,10 +290,42 @@ export function OnboardingSheet() {
               </div>
             )}
 
+            {step === "country" && (
+              <div className="flex flex-col gap-5 max-w-sm mx-auto">
+                <div className="flex flex-col gap-1">
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 2 of 4</p>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">Choose your country</h2>
+                  <p className="text-sm text-[var(--color-card-muted)]">This helps leaderboards feel local and gives us the right foundation for future eligibility rules.</p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <select
+                    value={countryCode}
+                    onChange={(event) => { setCountryCode(event.target.value); setCountryError(null); }}
+                    className="w-full rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-1)] px-4 py-3 text-sm font-bold text-[var(--color-card-text)] focus:outline-none focus:border-[var(--color-brand-primary)]"
+                  >
+                    {COUNTRY_OPTIONS.map((country) => (
+                      <option key={country.code} value={country.code}>{country.name}</option>
+                    ))}
+                  </select>
+                  {countryError && <p className="text-xs text-[var(--color-danger)]">{countryError}</p>}
+                  <p className="text-[10px] text-[var(--color-card-muted)]">
+                    For now this is self-reported profile country, not legal eligibility verification.
+                  </p>
+                </div>
+                <button
+                  onClick={handleCountryStep}
+                  disabled={savingCountry}
+                  className="w-full rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm py-3.5 hover:bg-red-500 transition-all active:scale-[0.98] disabled:opacity-40"
+                >
+                  {savingCountry ? "Saving..." : "Continue ->"}
+                </button>
+              </div>
+            )}
+
             {step === "photo" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 2 of 3</p>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 3 of 4</p>
                   <h2 className="text-xl font-black text-[var(--color-card-text)]">Add a profile photo</h2>
                   <p className="text-sm text-[var(--color-card-muted)]">
                     {googlePhoto ? "We pulled your Google photo. Upload a different one or keep it." : "Put a face to your username on the leaderboard."}
@@ -308,7 +372,7 @@ export function OnboardingSheet() {
             {step === "team" && teamMode === "choose" && (
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
-                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 3 of 3</p>
+                  <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Step 4 of 4</p>
                   <h2 className="text-xl font-black text-[var(--color-card-text)]">Join or create a team</h2>
                   <p className="text-sm text-[var(--color-card-muted)]">Compete as a group on a shared leaderboard.</p>
                 </div>
@@ -403,7 +467,7 @@ export function OnboardingSheet() {
               <div className="flex flex-col gap-5 max-w-sm mx-auto">
                 <div className="flex flex-col gap-1">
                   <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">You are in</p>
-                  <h2 className="text-xl font-black text-[var(--color-card-text)]">@{username.trim().toLowerCase()} - ready.</h2>
+                  <h2 className="text-xl font-black text-[var(--color-card-text)]">@{finalUsername} - ready.</h2>
                   <p className="text-sm text-[var(--color-card-muted)]">
                     {joinedTeam ? `You're on ${joinedTeam.name}. Make your first prediction to unlock your calibration score.` : "Make your first prediction to unlock your calibration score and appear on the leaderboard."}
                   </p>

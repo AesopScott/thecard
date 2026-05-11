@@ -30,6 +30,8 @@ export interface LeaderboardEntry {
   username: string;
   displayName: string;
   photoURL: string | null;
+  countryCode: string | null;
+  countryName: string | null;
   calibrationScore: number;
   resolvedCount: number;
   teamName: string | null;
@@ -41,6 +43,8 @@ export interface UserProfile {
   username: string;
   displayName: string;
   photoURL: string | null;
+  countryCode: string | null;
+  countryName: string | null;
   calibrationScore: number;
   resolvedCount: number;
   avgBrierScore: number | null;
@@ -102,6 +106,16 @@ export async function getUserUsername(uid: string): Promise<string | null> {
   return (snap.data()?.username as string | undefined) ?? null;
 }
 
+export async function getUserOnboardingState(uid: string): Promise<{ username: string | null; countryCode: string | null }> {
+  if (!db) return { username: null, countryCode: null };
+  const snap = await getDoc(doc(db, "users", uid));
+  const data = snap.data();
+  return {
+    username: (data?.username as string | undefined) ?? null,
+    countryCode: (data?.countryCode as string | undefined) ?? null,
+  };
+}
+
 export async function getUserProfileByUsername(username: string): Promise<UserProfile | null> {
   if (!db) return null;
   const normalized = username.toLowerCase();
@@ -119,6 +133,8 @@ export async function getUserProfileByUsername(username: string): Promise<UserPr
     username: profileUsername,
     displayName: (data.displayName as string | null) ?? profileUsername,
     photoURL: (data.photoURL as string | null) ?? null,
+    countryCode: (data.countryCode as string | null | undefined) ?? null,
+    countryName: (data.countryName as string | null | undefined) ?? null,
     calibrationScore: (data.calibrationScore as number | undefined) ?? 0,
     resolvedCount: (data.resolvedCount as number | undefined) ?? 0,
     avgBrierScore: (data.avgBrierScore as number | undefined) ?? null,
@@ -191,6 +207,16 @@ export async function setUsername(uid: string, username: string): Promise<void> 
   const normalized = username.toLowerCase();
   await setDoc(doc(db, "usernames", normalized), { uid });
   await setDoc(doc(db, "users", uid), { username: normalized, displayName: normalized }, { merge: true });
+}
+
+export async function setUserCountry(uid: string, country: { code: string; name: string }): Promise<void> {
+  if (!db) return;
+  await setDoc(doc(db, "users", uid), {
+    countryCode: country.code,
+    countryName: country.name,
+    countryUpdatedAtMs: Date.now(),
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
 }
 
 export async function upsertUserProfile(user: User): Promise<void> {
@@ -649,6 +675,8 @@ export function subscribeToLeaderboard(
           username: (data.username as string | undefined) ?? d.id,
           displayName: (data.displayName as string | null) ?? (data.username as string | undefined) ?? "Anonymous",
           photoURL: (data.photoURL as string | null) ?? null,
+          countryCode: (data.countryCode as string | null | undefined) ?? null,
+          countryName: (data.countryName as string | null | undefined) ?? null,
           calibrationScore: (data.calibrationScore as number | undefined) ?? 0,
           resolvedCount: (data.resolvedCount as number | undefined) ?? 0,
           teamName: (data.teamName as string | null) ?? null,

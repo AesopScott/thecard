@@ -13,13 +13,14 @@ import {
   reload,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/lib/firebase";
-import { upsertUserProfile, getUserUsername } from "@/lib/user-store";
+import { upsertUserProfile, getUserOnboardingState } from "@/lib/user-store";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   needsOnboarding: boolean;
   username: string | null;
+  countryCode: string | null;
   emailVerified: boolean;
   verificationRequired: boolean;
   completeOnboarding: () => void;
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(isFirebaseConfigured);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
+  const [countryCode, setCountryCode] = useState<string | null>(null);
   const [emailVerified, setEmailVerified] = useState(false);
 
   useEffect(() => {
@@ -53,11 +55,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await upsertUserProfile(u).catch((error) => {
           console.warn("User profile sync failed:", error);
         });
-        const username = await getUserUsername(u.uid).catch(() => null);
-        setUsername(username);
-        setNeedsOnboarding(Boolean(u.emailVerified && !username));
+        const onboardingState = await getUserOnboardingState(u.uid).catch(() => ({ username: null, countryCode: null }));
+        setUsername(onboardingState.username);
+        setCountryCode(onboardingState.countryCode);
+        setNeedsOnboarding(Boolean(u.emailVerified && (!onboardingState.username || !onboardingState.countryCode)));
       } else {
         setUsername(null);
+        setCountryCode(null);
         setNeedsOnboarding(false);
       }
     });
@@ -97,9 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(auth.currentUser);
     setEmailVerified(auth.currentUser.emailVerified);
     if (auth.currentUser.emailVerified) {
-      const username = await getUserUsername(auth.currentUser.uid).catch(() => null);
-      setUsername(username);
-      setNeedsOnboarding(!username);
+      const onboardingState = await getUserOnboardingState(auth.currentUser.uid).catch(() => ({ username: null, countryCode: null }));
+      setUsername(onboardingState.username);
+      setCountryCode(onboardingState.countryCode);
+      setNeedsOnboarding(!onboardingState.username || !onboardingState.countryCode);
     }
   }
 
@@ -111,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const verificationRequired = Boolean(user && !emailVerified);
 
   return (
-    <AuthContext.Provider value={{ user, loading, needsOnboarding, username, emailVerified, verificationRequired, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, refreshUser, signOut }}>
+    <AuthContext.Provider value={{ user, loading, needsOnboarding, username, countryCode, emailVerified, verificationRequired, completeOnboarding, signInWithGoogle, signUpWithEmail, signInWithEmail, sendVerificationEmail, refreshUser, signOut }}>
       {children}
     </AuthContext.Provider>
   );

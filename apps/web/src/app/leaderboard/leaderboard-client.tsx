@@ -585,6 +585,11 @@ function SeasonRow({
           <span className="truncate text-[9px] text-[var(--color-card-muted)]">
             {entry.isPreview ? "Preview row" : entry.username ? `@${entry.username}` : "unclaimed"} / {eligible ? "eligible" : `${MIN_PRIZE_BETS - entry.betCount} bets to qualify`}
           </span>
+          {entry.countryName && (
+            <span className="truncate text-[9px] font-bold text-[var(--color-brand-primary)]">
+              {entry.countryName}
+            </span>
+          )}
           <EligibilityBadges entry={entry} />
         </div>
       </div>
@@ -645,6 +650,7 @@ function ProfilePreviewDrawer({
             <div className="min-w-0">
               <p className="truncate text-lg font-black text-[var(--color-card-text)]">{entry.displayName}</p>
               <p className="text-xs text-[var(--color-card-muted)]">{isPreview ? "Preview row" : entry.username ? `@${entry.username}` : "Profile unclaimed"}</p>
+              {entry.countryName && <p className="mt-0.5 text-xs font-bold text-[var(--color-brand-primary)]">{entry.countryName}</p>}
             </div>
           </div>
           <button type="button" onClick={onClose} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-[10px] font-black text-[var(--color-card-text)]">
@@ -768,7 +774,9 @@ function CalibrationRow({ rank, entry }: { rank: number; entry: LeaderboardEntry
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-[var(--color-card-text)] truncate">{entry.displayName}</p>
-        <p className="text-[10px] text-[var(--color-card-muted)]">{entry.resolvedCount} predictions</p>
+        <p className="text-[10px] text-[var(--color-card-muted)]">
+          {entry.resolvedCount} predictions{entry.countryName ? ` / ${entry.countryName}` : ""}
+        </p>
       </div>
       <div className="flex flex-col items-end shrink-0">
         <span className="text-sm font-black" style={{ color: scoreColor }}>{score}</span>

@@ -109,6 +109,11 @@ export function ProfileClient({ username }: ProfileClientProps) {
             <p className="mt-1 text-sm text-[var(--color-card-muted)]">
               {profile.teamName ? `${profile.teamName} forecaster` : "Independent forecaster"}
             </p>
+            {profile.countryName && (
+              <p className="mt-1 text-xs font-bold text-[var(--color-brand-primary)]">
+                {profile.countryName}
+              </p>
+            )}
           </div>
         </div>
       </header>

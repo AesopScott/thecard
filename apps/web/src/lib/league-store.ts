@@ -177,6 +177,8 @@ async function syncFreeLeagueLeaderboardEntry(uid: string, membership: LeagueMem
     const username = (profile?.username as string | undefined) ?? uid;
     const displayName = (profile?.displayName as string | null | undefined) ?? username;
     const photoURL = (profile?.photoURL as string | null | undefined) ?? null;
+    const countryCode = (profile?.countryCode as string | null | undefined) ?? null;
+    const countryName = (profile?.countryName as string | null | undefined) ?? null;
     const shadowWinnings = membership.currentBankroll - membership.startingBankroll;
 
     await setDoc(doc(db, "freeLeagueLeaderboards", membership.leagueId, "entries", uid), {
@@ -184,6 +186,8 @@ async function syncFreeLeagueLeaderboardEntry(uid: string, membership: LeagueMem
       username,
       displayName,
       photoURL,
+      countryCode,
+      countryName,
       bankroll: membership.currentBankroll,
       shadowWinnings,
       betCount: membership.betCount,
