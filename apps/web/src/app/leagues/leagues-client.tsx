@@ -283,10 +283,12 @@ function PaidLeagueColumn({
   membership,
   joining,
   onJoin,
+  groups,
 }: {
   membership: LeagueMembership | null;
   joining: boolean;
   onJoin: () => void;
+  groups: ReturnType<typeof getLeaguesByGroup>;
 }) {
   return (
     <section className="flex flex-col gap-4">
@@ -317,13 +319,102 @@ function PaidLeagueColumn({
           )}
         </div>
       </div>
-      <div className="rounded-xl border border-dashed border-[var(--color-card-border)] p-4">
-        <p className="text-sm font-black text-[var(--color-card-text)]">More paid leagues</p>
-        <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-muted)]">
-          Paid private, university, and invite leagues will live here once payouts are wired.
+      {groups.map((group) => (
+        <PaidSportGroupSection
+          key={group.sport}
+          group={group}
+          membership={membership}
+          joining={joining}
+          onJoin={onJoin}
+        />
+      ))}
+    </section>
+  );
+}
+
+function PaidSportGroupSection({
+  group,
+  membership,
+  joining,
+  onJoin,
+}: {
+  group: ReturnType<typeof getLeaguesByGroup>[number];
+  membership: LeagueMembership | null;
+  joining: boolean;
+  onJoin: () => void;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div>
+      <button onClick={() => setOpen((o) => !o)} className="mb-3 flex w-full items-center justify-between">
+        <h3 className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{group.label}</h3>
+        <span className="text-xs text-[var(--color-text-muted)]">{open ? "Hide" : "Show"}</span>
+      </button>
+      {open && (
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] divide-y divide-[var(--color-card-border)]">
+          {group.leagues.map((league) => (
+            <PaidLeagueRow
+              key={league.id}
+              league={league}
+              membership={membership}
+              joining={joining}
+              onJoin={onJoin}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PaidLeagueRow({
+  league,
+  membership,
+  joining,
+  onJoin,
+}: {
+  league: SportLeague;
+  membership: LeagueMembership | null;
+  joining: boolean;
+  onJoin: () => void;
+}) {
+  const status = getLeagueStatus(league);
+  const badge = leagueTypeBadge(league.type, league.half);
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="mb-0.5 flex items-center gap-2">
+          <p className="truncate text-sm font-bold text-[var(--color-card-text)]">{league.name}</p>
+          <span className="shrink-0 rounded-full border border-[var(--color-card-border)] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-[var(--color-brand-primary)]">
+            {badge}
+          </span>
+        </div>
+        <p className="text-[10px] text-[var(--color-text-muted)]">
+          {formatLeagueDateRange(league)} - prize eligible
         </p>
       </div>
-    </section>
+
+      {membership ? (
+        <div className="flex flex-col items-end shrink-0">
+          <span className="text-xs font-black text-[var(--color-card-text)]">
+            ${membership.currentBankroll.toLocaleString()}
+          </span>
+          <span className="text-[9px] text-[var(--color-card-yes)] font-semibold">Joined</span>
+        </div>
+      ) : status === "closed" ? (
+        <span className="shrink-0 text-[10px] text-[var(--color-text-muted)]">Closed</span>
+      ) : (
+        <button
+          type="button"
+          onClick={onJoin}
+          disabled={joining}
+          className="shrink-0 rounded-lg bg-[var(--color-brand-primary)] px-3 py-1.5 text-xs font-black text-white disabled:opacity-60"
+        >
+          {joining ? "Joining..." : "Join Paid"}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -555,6 +646,7 @@ export function LeaguesClient() {
             membership={seasonMembership}
             joining={joiningSeason}
             onJoin={handleJoinSeason}
+            groups={groups}
           />
 
           <YourLeagues
