@@ -113,6 +113,7 @@ export function ProfileClient({ username }: ProfileClientProps) {
 }
 
 function PositionHistory({ positions, username }: { positions: SettledPositionRecord[]; username: string }) {
+  const latestPositions = positions.slice(0, 3);
   const stats = positions.reduce(
     (acc, position) => ({
       costBasis: acc.costBasis + position.costBasis,
@@ -131,7 +132,7 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Position History</p>
         <Link href={`/profile/positions?u=${username}`} className="text-xs font-semibold text-[var(--color-card-muted)] hover:text-[var(--color-brand-primary)]">
-          {positions.length} closed
+          View all
         </Link>
       </div>
 
@@ -173,11 +174,11 @@ function PositionHistory({ positions, username }: { positions: SettledPositionRe
 
           <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
             <span>Latest positions</span>
-            <span>{stats.wins}W / {stats.losses}L</span>
+            <span>{positions.length} closed / {stats.wins}W / {stats.losses}L</span>
           </div>
 
           <div className="flex flex-col gap-2">
-            {positions.map((position) => {
+            {latestPositions.map((position) => {
               const isProfit = position.pnl >= 0;
               return (
                 <div

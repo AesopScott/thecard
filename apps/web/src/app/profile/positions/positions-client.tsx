@@ -28,6 +28,7 @@ export function ProfilePositionsClient() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [positions, setPositions] = useState<SettledPositionRecord[]>([]);
   const [filter, setFilter] = useState<Filter>("all");
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<{ closedAtMs: number; id: string } | null>(null);
@@ -59,13 +60,23 @@ export function ProfilePositionsClient() {
 
   const filtered = useMemo(
     () => positions.filter((position) => {
+      const query = search.trim().toLowerCase();
+      if (query && ![
+        position.marketTitle,
+        position.marketId,
+        position.sport,
+        position.side,
+        position.outcome,
+      ].some((value) => value.toLowerCase().includes(query))) {
+        return false;
+      }
       if (filter === "wins") return position.pnl > 0;
       if (filter === "losses") return position.pnl < 0;
       if (filter === "settled") return position.outcome !== "sold";
       if (filter === "sold") return position.outcome === "sold";
       return true;
     }),
-    [filter, positions],
+    [filter, positions, search],
   );
 
   const stats = useMemo(
@@ -109,6 +120,8 @@ export function ProfilePositionsClient() {
   }
 
   const roi = stats.costBasis > 0 ? (stats.pnl / stats.costBasis) * 100 : 0;
+  const avgPnl = positions.length > 0 ? stats.pnl / positions.length : 0;
+  const winRate = positions.length > 0 ? (stats.wins / positions.length) * 100 : 0;
 
   async function loadMore() {
     if (!profile || !nextCursor || loadingMore) return;
@@ -130,18 +143,26 @@ export function ProfilePositionsClient() {
         </Link>
         <div>
           <h1 className="text-3xl font-black text-[var(--color-card-text)]">Position History</h1>
-          <p className="mt-1 text-sm text-[var(--color-card-muted)]">@{profile.username} / {positions.length}{nextCursor ? "+" : ""} closed positions</p>
+          <p className="mt-1 text-sm text-[var(--color-card-muted)]">
+            @{profile.username} / {positions.length}{nextCursor ? "+" : ""} closed positions
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">
+            Open positions become public here after they are sold or settled.
+          </p>
         </div>
       </header>
 
-      <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-2 sm:grid-cols-6">
         {[
-          { label: "Net P/L", value: `${stats.pnl >= 0 ? "+" : ""}$${stats.pnl.toFixed(2)}`, good: stats.pnl >= 0 },
+          { label: "Net P/L", value: `${stats.pnl >= 0 ? "+" : ""}$${stats.pnl.toFixed(2)}`, good: stats.pnl >= 0, wide: true },
           { label: "ROI", value: `${roi >= 0 ? "+" : ""}${roi.toFixed(1)}%`, good: roi >= 0 },
+          { label: "Win Rate", value: `${winRate.toFixed(0)}%`, neutral: true },
           { label: "Wins", value: String(stats.wins), neutral: true },
-          { label: "Volume", value: `$${stats.costBasis.toFixed(2)}`, neutral: true },
+          { label: "Losses", value: String(stats.losses), neutral: true },
+          { label: "Avg P/L", value: `${avgPnl >= 0 ? "+" : ""}$${avgPnl.toFixed(2)}`, good: avgPnl >= 0 },
+          { label: "Volume", value: `$${stats.costBasis.toFixed(2)}`, neutral: true, wide: true },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3">
+          <div key={stat.label} className={`rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 ${stat.wide ? "sm:col-span-2" : ""}`}>
             <p className={`text-lg font-black ${
               stat.neutral ? "text-[var(--color-card-text)]" : stat.good ? "text-[var(--color-card-yes)]" : "text-[var(--color-card-no)]"
             }`}>
@@ -151,6 +172,16 @@ export function ProfilePositionsClient() {
           </div>
         ))}
       </section>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">Search positions</span>
+        <input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Market, sport, side, result"
+          className="h-11 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 text-sm font-semibold text-[var(--color-card-text)] outline-none placeholder:text-[var(--color-card-muted)] focus:border-[var(--color-brand-primary)]"
+        />
+      </label>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {FILTERS.map((item) => (
@@ -172,7 +203,7 @@ export function ProfilePositionsClient() {
       <section className="flex flex-col gap-2">
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-sm text-[var(--color-card-muted)]">
-            No positions match this filter.
+            No positions match this view.
           </div>
         ) : (
           filtered.map((position) => <PositionRow key={position.id} position={position} />)
@@ -194,8 +225,12 @@ export function ProfilePositionsClient() {
 
 function PositionRow({ position }: { position: SettledPositionRecord }) {
   const isProfit = position.pnl >= 0;
+  const won = position.pnl > 0;
+  const lost = position.pnl < 0;
   const opened = new Date(position.openedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   const closed = new Date(position.closedAtMs).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const priceCents = Math.round(position.averagePrice * 100);
+  const resultLabel = position.outcome === "sold" ? "Sold" : won ? "Won" : lost ? "Lost" : "Push";
 
   return (
     <article className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
@@ -203,7 +238,7 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
         <div className="min-w-0">
           <p className="text-sm font-bold text-[var(--color-card-text)]">{position.marketTitle}</p>
           <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
-            {position.sport} / {position.side.toUpperCase()} / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
+            {position.sport} / {position.side.toUpperCase()} at {priceCents}c / {position.outcome === "sold" ? "Sold" : `${position.outcome.toUpperCase()} settled`}
           </p>
         </div>
         <div className="shrink-0 text-right">
@@ -216,6 +251,7 @@ function PositionRow({ position }: { position: SettledPositionRecord }) {
 
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
         {[
+          { label: "Result", value: resultLabel },
           { label: "Contracts", value: position.contracts.toFixed(1) },
           { label: "Cost", value: `$${position.costBasis.toFixed(2)}` },
           { label: "Paid", value: `$${position.payout.toFixed(2)}` },
