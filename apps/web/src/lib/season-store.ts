@@ -1,5 +1,16 @@
 import type { Season, League, LeagueMembership, SeasonLeaderboardEntry } from "@thecard/types";
-import { doc, getDoc, runTransaction, serverTimestamp, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  runTransaction,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 export const STARTING_BANKROLL = 1_000;
@@ -220,6 +231,33 @@ function cacheMembership(membership: LeagueMembership): void {
   });
 }
 
+function avatarInitial(displayName: string): string {
+  return (displayName.trim()[0] ?? "?").toUpperCase();
+}
+
+async function syncSeasonLeaderboardEntry(uid: string, membership: LeagueMembership): Promise<void> {
+  if (!db) return;
+  const userSnap = await getDoc(doc(db, "users", uid));
+  const profile = userSnap.data();
+  const username = (profile?.username as string | undefined) ?? uid;
+  const displayName = (profile?.displayName as string | null | undefined) ?? username;
+  const photoURL = (profile?.photoURL as string | null | undefined) ?? null;
+
+  await setDoc(doc(db, "seasonLeaderboards", membership.leagueId, "entries", uid), {
+    uid,
+    username,
+    displayName,
+    photoURL,
+    avatarInitial: avatarInitial(displayName),
+    bankroll: membership.currentBankroll,
+    betCount: membership.betCount,
+    isBust: membership.isBust,
+    seasonId: membership.seasonId,
+    joinedAtMs: membership.joinedAt,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
 export async function getUserSeasonMembership(uid: string, leagueId = GLOBAL_LEAGUE.id): Promise<LeagueMembership> {
   if (!db) return getMembership(leagueId);
   const ref = doc(db, "users", uid, "seasonMemberships", leagueId);
@@ -227,6 +265,7 @@ export async function getUserSeasonMembership(uid: string, leagueId = GLOBAL_LEA
   if (snap.exists()) {
     const membership = fromFirestore(leagueId, snap.data());
     cacheMembership(membership);
+    void syncSeasonLeaderboardEntry(uid, membership);
     return membership;
   }
   const membership: LeagueMembership = {
@@ -244,6 +283,7 @@ export async function getUserSeasonMembership(uid: string, leagueId = GLOBAL_LEA
     joinedAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+  await syncSeasonLeaderboardEntry(uid, membership);
   cacheMembership(membership);
   dispatchSeasonEvent();
   return membership;
@@ -298,6 +338,7 @@ export async function placeUserSeasonBet(uid: string, amount: number, leagueId =
     return next;
   });
   if (!updated) return null;
+  await syncSeasonLeaderboardEntry(uid, updated);
   cacheMembership(updated);
   dispatchSeasonEvent();
   return updated;
@@ -343,6 +384,7 @@ export async function recordUserSeasonPayout(uid: string, payout: number, league
     }
     return next;
   });
+  await syncSeasonLeaderboardEntry(uid, updated);
   cacheMembership(updated);
   dispatchSeasonEvent();
   return updated;
@@ -390,32 +432,85 @@ export async function refundUserSeasonBet(uid: string, amount: number, leagueId 
     }
     return next;
   });
+  await syncSeasonLeaderboardEntry(uid, updated);
   cacheMembership(updated);
   dispatchSeasonEvent();
   return updated;
 }
 
-// Inserts the user's real bankroll + betCount into mock standings at the correct rank
-export function buildSeasonLeaderboard(userBankroll: number, userBetCount: number): SeasonLeaderboardEntry[] {
-  const mocks: Omit<SeasonLeaderboardEntry, "rank">[] = [
-    { displayName: "SharpMike", avatarInitial: "S", bankroll: 1_847, betCount: 23 },
-    { displayName: "CalibrationKing", avatarInitial: "C", bankroll: 1_612, betCount: 31 },
-    { displayName: "NFLNerd88", avatarInitial: "N", bankroll: 1_544, betCount: 19 },
-    { displayName: "TheBookie", avatarInitial: "T", bankroll: 1_489, betCount: 27 },
-    { displayName: "GridironGuru", avatarInitial: "G", bankroll: 1_401, betCount: 14 },
-    { displayName: "OddsWizard", avatarInitial: "O", bankroll: 1_355, betCount: 22 },
-    { displayName: "SportsSage", avatarInitial: "S", bankroll: 1_288, betCount: 18 },
-    { displayName: "ProbabilityPete", avatarInitial: "P", bankroll: 1_201, betCount: 33 },
-    { displayName: "LineSharp", avatarInitial: "L", bankroll: 1_144, betCount: 11 },
-    { displayName: "MarketMaker", avatarInitial: "M", bankroll: 1_089, betCount: 29 },
-    { displayName: "EdgeFinder", avatarInitial: "E", bankroll: 1_022, betCount: 16 },
-    { displayName: "WildcardWill", avatarInitial: "W", bankroll: 978, betCount: 20 },
-    { displayName: "VarianceVic", avatarInitial: "V", bankroll: 901, betCount: 25 },
-    { displayName: "HunchPlayer", avatarInitial: "H", bankroll: 834, betCount: 38 },
-    { displayName: "LongShot", avatarInitial: "L", bankroll: 712, betCount: 42 },
-  ];
+export function subscribeToSeasonLeaderboard(
+  leagueId: string,
+  cb: (entries: SeasonLeaderboardEntry[]) => void,
+  currentUid?: string | null
+): () => void {
+  if (!db) {
+    cb([]);
+    return () => {};
+  }
+  const q = query(
+    collection(db, "seasonLeaderboards", leagueId, "entries"),
+    orderBy("bankroll", "desc"),
+    limit(100)
+  );
+  return onSnapshot(q, (snap) => {
+    const entries = snap.docs.map((entryDoc) => {
+      const data = entryDoc.data();
+      return {
+        uid: entryDoc.id,
+        username: (data.username as string | undefined) ?? entryDoc.id,
+        displayName: (data.displayName as string | undefined) ?? (data.username as string | undefined) ?? "Anonymous",
+        photoURL: (data.photoURL as string | null | undefined) ?? null,
+        avatarInitial: (data.avatarInitial as string | undefined) ?? avatarInitial((data.displayName as string | undefined) ?? "Anonymous"),
+        bankroll: (data.bankroll as number | undefined) ?? STARTING_BANKROLL,
+        betCount: (data.betCount as number | undefined) ?? 0,
+        isYou: currentUid ? entryDoc.id === currentUid : false,
+      };
+    });
+    entries.sort((a, b) => {
+      if (b.bankroll !== a.bankroll) return b.bankroll - a.bankroll;
+      if (b.betCount !== a.betCount) return b.betCount - a.betCount;
+      return a.displayName.localeCompare(b.displayName);
+    });
+    cb([...entries, ...buildSeasonPreviewEntries()].map((entry, i) => ({ ...entry, rank: i + 1 })));
+  }, () => cb(buildSeasonPreviewEntries().map((entry, i) => ({ ...entry, rank: i + 1 }))));
+}
 
-  const you = { displayName: "You", avatarInitial: "Y", bankroll: userBankroll, betCount: userBetCount, isYou: true };
-  const combined = [...mocks, you].sort((a, b) => b.bankroll - a.bankroll);
+function buildSeasonPreviewEntries(): Omit<SeasonLeaderboardEntry, "rank">[] {
+  return [
+    { uid: "mock-season-1", username: "sharpmike", displayName: "SharpMike", photoURL: "/avatars/preview-market-mike.svg", avatarInitial: "S", bankroll: 1_847, betCount: 23, isPreview: true },
+    { uid: "mock-season-2", username: "calibrationking", displayName: "CalibrationKing", photoURL: "/avatars/preview-fade-the-line.svg", avatarInitial: "C", bankroll: 1_612, betCount: 31, isPreview: true },
+    { uid: "mock-season-3", username: "nflnerd88", displayName: "NFLNerd88", photoURL: "/avatars/preview-challenger.svg", avatarInitial: "N", bankroll: 1_544, betCount: 19, isPreview: true },
+    { uid: "mock-season-4", username: "thebookie", displayName: "TheBookie", photoURL: "/avatars/preview-sunday-sharp.svg", avatarInitial: "T", bankroll: 1_489, betCount: 27, isPreview: true },
+    { uid: "mock-season-5", username: "gridironguru", displayName: "GridironGuru", photoURL: "/avatars/preview-drive-reader.svg", avatarInitial: "G", bankroll: 1_401, betCount: 14, isPreview: true },
+    { uid: "mock-season-6", username: "oddswizard", displayName: "OddsWizard", photoURL: "/avatars/preview-red-zone-ray.svg", avatarInitial: "O", bankroll: 1_355, betCount: 22, isPreview: true },
+    { uid: "mock-season-7", username: "sportssage", displayName: "SportsSage", photoURL: "/avatars/preview-clock-sharp.svg", avatarInitial: "S", bankroll: 1_288, betCount: 18, isPreview: true },
+    { uid: "mock-season-8", username: "probabilitypete", displayName: "ProbabilityPete", photoURL: "/avatars/preview-momentum.svg", avatarInitial: "P", bankroll: 1_201, betCount: 33, isPreview: true },
+    { uid: "mock-season-9", username: "linesharp", displayName: "LineSharp", photoURL: "/avatars/preview-market-mike.svg", avatarInitial: "L", bankroll: 1_144, betCount: 11, isPreview: true },
+    { uid: "mock-season-10", username: "marketmaker", displayName: "MarketMaker", photoURL: "/avatars/preview-fade-the-line.svg", avatarInitial: "M", bankroll: 1_089, betCount: 29, isPreview: true },
+    { uid: "mock-season-11", username: "edgefinder", displayName: "EdgeFinder", photoURL: "/avatars/preview-challenger.svg", avatarInitial: "E", bankroll: 1_022, betCount: 16, isPreview: true },
+    { uid: "mock-season-12", username: "wildcardwill", displayName: "WildcardWill", photoURL: "/avatars/preview-sunday-sharp.svg", avatarInitial: "W", bankroll: 978, betCount: 20, isPreview: true },
+    { uid: "mock-season-13", username: "variancevic", displayName: "VarianceVic", photoURL: "/avatars/preview-drive-reader.svg", avatarInitial: "V", bankroll: 901, betCount: 25, isPreview: true },
+    { uid: "mock-season-14", username: "hunchplayer", displayName: "HunchPlayer", photoURL: "/avatars/preview-red-zone-ray.svg", avatarInitial: "H", bankroll: 834, betCount: 38, isPreview: true },
+    { uid: "mock-season-15", username: "longshot", displayName: "LongShot", photoURL: "/avatars/preview-clock-sharp.svg", avatarInitial: "L", bankroll: 712, betCount: 42, isPreview: true },
+  ];
+}
+
+// Inserts the user's real bankroll + betCount into preview standings at the correct rank
+export function buildSeasonLeaderboard(
+  userBankroll: number,
+  userBetCount: number,
+  user?: Pick<SeasonLeaderboardEntry, "uid" | "username" | "displayName" | "photoURL" | "avatarInitial" | "isYou">
+): SeasonLeaderboardEntry[] {
+  const you = {
+    displayName: user?.displayName ?? "You",
+    username: user?.username,
+    uid: user?.uid,
+    photoURL: user?.photoURL,
+    avatarInitial: user?.avatarInitial ?? "Y",
+    bankroll: userBankroll,
+    betCount: userBetCount,
+    isYou: true,
+  };
+  const combined = [...buildSeasonPreviewEntries(), you].sort((a, b) => b.bankroll - a.bankroll);
   return combined.map((entry, i) => ({ ...entry, rank: i + 1 }));
 }

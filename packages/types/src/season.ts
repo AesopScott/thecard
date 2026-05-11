@@ -45,9 +45,13 @@ export interface LeagueMembership {
 
 export interface SeasonLeaderboardEntry {
   readonly rank: number;
+  readonly uid?: string;
+  readonly username?: string;
   readonly displayName: string;
+  readonly photoURL?: string | null;
   readonly avatarInitial: string;
   readonly bankroll: number;
   readonly betCount: number;
   readonly isYou?: boolean;
+  readonly isPreview?: boolean;
 }
