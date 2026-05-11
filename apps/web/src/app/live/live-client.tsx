@@ -8,6 +8,7 @@ import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
+import { ScoutFloaters } from "@/components/scout-mascot";
 import {
   getStoredLiveRun,
   liveDateId,
@@ -706,6 +707,7 @@ export function LiveClient() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-6 pb-24">
+      <ScoutFloaters page="live" />
       <header className="grid gap-3 md:grid-cols-[1fr_320px]">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-[var(--color-card-text)]">{t("live.title")}</h1>

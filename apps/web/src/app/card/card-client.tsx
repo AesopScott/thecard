@@ -12,6 +12,7 @@ import { SeasonBanner } from "@/components/season-banner";
 import { SettlementPanel } from "@/components/settlement-panel";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { ScoutFloaters } from "@/components/scout-mascot";
 import { useAuth } from "@/contexts/auth-context";
 import { useI18n } from "@/contexts/i18n-context";
 import {
@@ -339,6 +340,7 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 pb-28">
       <DevelopmentMockDataRibbon />
+      <ScoutFloaters page="card" />
 
       <header className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-6">
