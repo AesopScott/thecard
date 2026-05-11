@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ProfileClient } from "./[username]/profile-client";
+import { ThemePicker } from "@/components/theme-picker";
 
 export function ProfileQueryClient() {
   const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ export function ProfileQueryClient() {
         <Link href="/leaderboard" className="mx-auto rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-card-text)]">
           Go to leaderboard
         </Link>
+        <ThemePicker />
       </div>
     );
   }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { SignInSheet } from "./sign-in-sheet";
+import { ThemePicker } from "./theme-picker";
 
 export function UserButton() {
   const { user, username, emailVerified, verificationRequired, loading, signOut } = useAuth();
@@ -63,6 +64,7 @@ export function UserButton() {
             >
               {username ? "View profile" : "Finish setup"}
             </Link>
+            <ThemePicker compact />
             <button
               onClick={async () => {
                 await signOut();

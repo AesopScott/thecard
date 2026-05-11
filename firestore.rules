@@ -72,6 +72,12 @@ service cloud.firestore {
           || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'email', 'emailVerified', 'photoURL', 'updatedAt'])
         );
 
+      allow update: if isVerified()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['theme', 'themeUpdatedAtMs', 'updatedAt'])
+        && request.resource.data.theme in ['ticket', 'ice', 'mint', 'ink']
+        && request.resource.data.themeUpdatedAtMs is number;
+
       match /forecasts/{marketId} {
         allow read: if isSignedIn() && request.auth.uid == uid;
         allow write: if isVerified() && request.auth.uid == uid;
