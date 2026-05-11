@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AskTheCardAi } from "@/components/ask-the-card-ai";
 import { ExplainBetting } from "@/components/explain-betting";
 import { ScoutFloaters } from "@/components/scout-mascot";
+import { useI18n } from "@/contexts/i18n-context";
 import {
   addForecast,
   clearForecasts,
@@ -144,6 +145,7 @@ function readForecastsForQuestions() {
 }
 
 export function ForecastClient() {
+  const { t } = useI18n();
   const [forecasts, setForecasts] = useState<Record<string, LocalForecast | undefined>>({});
   const [drafts, setDrafts] = useState<Record<string, number>>(
     Object.fromEntries(QUESTIONS.map((question) => [question.id, question.crowd]))
@@ -208,39 +210,39 @@ export function ForecastClient() {
       <ScoutFloaters page="forecast" />
       <section className="grid gap-4 lg:grid-cols-[1fr_380px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Forecast Lab</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.lab")}</p>
           <h1 className="mt-3 text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">
-            Train probability, not vibes.
+            {t("forecast.title")}
           </h1>
           <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-            Set precise probabilities on today&apos;s mock sports board, compare yourself to the market, then resolve the slate and see your calibration.
+            {t("forecast.subtitle")}
           </p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Resolved" value={resolved.length} />
-            <Stat label="Pending" value={pending} />
-            <Stat label="Score" value={calibrationScore ?? "--"} />
-            <Stat label="Level" value={skillLabel(avgBrier)} />
+            <Stat label={t("forecast.resolved")} value={resolved.length} />
+            <Stat label={t("forecast.pending")} value={pending} />
+            <Stat label={t("forecast.score")} value={calibrationScore ?? "--"} />
+            <Stat label={t("forecast.level")} value={skillLabel(avgBrier)} />
           </div>
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Calibration Read</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.calibrationRead")}</p>
           <div className="mt-4 rounded-xl bg-[var(--color-surface-2)] p-4">
             <p className="text-5xl font-display font-black text-[var(--color-text-primary)]">
               {avgBrier === null ? "--" : avgBrier.toFixed(3)}
             </p>
-            <p className="mt-1 text-xs text-[var(--color-text-muted)]">Average Brier score. Lower is better.</p>
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("forecast.brierHelp")}</p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Stat label="Beat Mkt" value={`${marketBeats}/${resolved.length || 0}`} />
-            <Stat label="Best Zone" value={bestBucketLabel(resolved)} />
+            <Stat label={t("forecast.beatMarket")} value={`${marketBeats}/${resolved.length || 0}`} />
+            <Stat label={t("forecast.bestZone")} value={bestBucketLabel(resolved)} />
           </div>
           <div className="mt-4 flex gap-2">
             <button onClick={resolveAll} className="flex-1 rounded-xl bg-[var(--color-brand-primary)] py-3 text-sm font-black text-white transition-all hover:bg-red-500">
-              Resolve Mock Slate
+              {t("forecast.resolveSlate")}
             </button>
             <button onClick={reset} className="rounded-xl border border-[var(--color-border)] px-4 py-3 text-sm font-bold text-[var(--color-text-muted)] transition-all hover:border-[var(--color-brand-primary)]/50">
-              Reset
+              {t("forecast.reset")}
             </button>
           </div>
           {status && <p className="mt-3 text-xs font-semibold text-[var(--color-success)]">{status}</p>}
@@ -248,9 +250,9 @@ export function ForecastClient() {
       </section>
 
       <ExplainBetting
-        buttonLabel="Explain forecast betting"
-        title="Forecast is about probability skill, not just picking winners."
-        summary="Every question is a YES/NO market, but the important part is how confident you are. Forecast teaches you whether your confidence matches reality, then compares that read against the market."
+        buttonLabel={t("forecast.explainButton")}
+        title={t("forecast.explainTitle")}
+        summary={t("forecast.explainSummary")}
         sections={FORECAST_EXPLANATION}
       />
 
@@ -263,7 +265,7 @@ export function ForecastClient() {
       <section className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Daily Board</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.dailyBoard")}</p>
             <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1 sm:grid-cols-6">
               {(["all", "NFL", "NBA", "MLB", "NHL", "UFC"] as SportFilter[]).map((item) => (
                 <button
@@ -296,13 +298,13 @@ export function ForecastClient() {
           <CalibrationBuckets forecasts={resolved} />
           <ForecastHistory forecasts={Object.values(forecasts).filter(Boolean) as LocalForecast[]} />
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Next reps</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("forecast.nextReps")}</p>
             <div className="mt-4 flex flex-col gap-2">
               <Link href="/blitz" className="rounded-xl bg-[var(--color-brand-primary)] py-3 text-center text-sm font-black text-white transition-all hover:bg-red-500">
-                Play Blitz
+                {t("forecast.playBlitz")}
               </Link>
               <Link href="/card" className="rounded-xl border border-[var(--color-border)] py-3 text-center text-sm font-bold text-[var(--color-text-muted)] transition-all hover:border-[var(--color-brand-primary)]/50">
-                Open The Card
+                {t("forecast.openCard")}
               </Link>
             </div>
           </div>

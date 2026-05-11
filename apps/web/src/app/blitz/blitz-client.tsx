@@ -15,6 +15,7 @@ import {
   type BlitzPick,
 } from "@/lib/blitz-store";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { ScoutFloaters } from "@/components/scout-mascot";
@@ -296,6 +297,7 @@ function IntroScreen({
   onStart,
   onPractice,
   onViewResults,
+  t,
 }: {
   saved: SavedGame | null;
   history: SavedGame[];
@@ -304,6 +306,7 @@ function IntroScreen({
   onStart: () => void;
   onPractice: () => void;
   onViewResults: () => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const outcomes = getDailyOutcomes();
   const metrics = saved
@@ -316,9 +319,9 @@ function IntroScreen({
         <div className="flex min-h-[320px] flex-col justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
           <div className="flex flex-col gap-3">
             <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{dailyTheme()}</p>
-            <h1 className="text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">Blitz</h1>
+            <h1 className="text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">{t("blitz.title")}</h1>
             <p className="max-w-lg text-base leading-relaxed text-[var(--color-text-secondary)]">
-              Five markets. Fifteen seconds each. The deeper scouting lives here, outside the clock.
+              {t("blitz.intro")}
             </p>
           </div>
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -333,7 +336,7 @@ function IntroScreen({
           {saved && metrics ? (
             <div className="flex h-full flex-col justify-between gap-5 text-center">
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">Already played today</p>
+                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">{t("blitz.alreadyPlayed")}</p>
                 <p className="mt-3 text-6xl font-display font-black text-[var(--color-brand-primary)]">{metrics.score}</p>
                 <p className="text-sm text-[var(--color-text-secondary)]">
                   {metrics.correct}/{DAILY_MARKETS.length} correct - {metrics.badge}
@@ -343,14 +346,14 @@ function IntroScreen({
                 onClick={onViewResults}
                 className="w-full rounded-xl bg-[var(--color-brand-primary)] py-4 text-base font-black text-white transition-all hover:bg-red-500 active:scale-[0.98]"
               >
-                See Breakdown
+                {t("blitz.seeBreakdown")}
               </button>
             </div>
           ) : (
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Power pick</p>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">Choose one market before the clock. Correct doubles that market&apos;s points.</p>
+                <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.powerPick")}</p>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">{t("blitz.powerHelp")}</p>
               </div>
               <div className="flex flex-col gap-2">
                 {DAILY_MARKETS.map((market) => (
@@ -368,10 +371,10 @@ function IntroScreen({
                 ))}
               </div>
               <button onClick={onStart} className="w-full rounded-xl bg-[var(--color-brand-primary)] py-4 text-base font-black text-white transition-all hover:bg-red-500 active:scale-[0.98]">
-                Play Ranked
+                {t("blitz.playRanked")}
               </button>
               <button onClick={onPractice} className="w-full rounded-xl border border-[var(--color-border)] py-3 text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-                Warm-up Mode
+                {t("blitz.warmup")}
               </button>
             </div>
           )}
@@ -379,9 +382,9 @@ function IntroScreen({
       </section>
 
       <ExplainBetting
-        buttonLabel="Explain Blitz betting"
-        title="Blitz turns five markets into a timed daily score attack."
-        summary="You still answer YES or NO, but the twist is pressure: speed, streaks, the power pick, and perfect-run badges all shape the final leaderboard score."
+        buttonLabel={t("blitz.explainButton")}
+        title={t("blitz.explainTitle")}
+        summary={t("blitz.explainSummary")}
         sections={BLITZ_EXPLANATION}
       />
 
@@ -394,8 +397,8 @@ function IntroScreen({
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Today&apos;s Slate</p>
-            <p className="text-xs font-bold text-[var(--color-text-muted)]">Scout now. Speed later.</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.todaysSlate")}</p>
+            <p className="text-xs font-bold text-[var(--color-text-muted)]">{t("blitz.scoutNow")}</p>
           </div>
           <div className="grid gap-3">
             {DAILY_MARKETS.map((market) => (
@@ -413,9 +416,9 @@ function IntroScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Blitz History</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("blitz.history")}</p>
           {history.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--color-text-muted)]">Your last 14 ranked runs will appear here after you play.</p>
+            <p className="mt-4 text-sm text-[var(--color-text-muted)]">{t("blitz.historyEmpty")}</p>
           ) : (
             <div className="mt-4 flex flex-col gap-2">
               {history.slice(0, 7).map((run) => (
@@ -778,6 +781,7 @@ function BlitzLeaderboardRow({
 
 export function BlitzClient() {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const outcomes = getDailyOutcomes();
 
   const [phase, setPhase] = useState<"intro" | "playing" | "done">("intro");
@@ -960,6 +964,7 @@ export function BlitzClient() {
           onPowerMarketChange={setPowerMarketId}
           onStart={() => startGame(false)}
           onPractice={() => startGame(true)}
+          t={t}
           onViewResults={() => {
             if (!saved) return;
             setPractice(false);
@@ -972,8 +977,8 @@ export function BlitzClient() {
         <div className="mx-auto max-w-lg px-4 pb-24">
           {!user && (
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 text-center">
-              <p className="text-sm font-bold text-[var(--color-text-primary)]">Sign in to play ranked Blitz</p>
-              <p className="mt-1 text-xs text-[var(--color-text-muted)]">Warm-up mode is open. Ranked is one verified run per day.</p>
+              <p className="text-sm font-bold text-[var(--color-text-primary)]">{t("blitz.signInTitle")}</p>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("blitz.signInBody")}</p>
               <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
                 Sign in
               </button>

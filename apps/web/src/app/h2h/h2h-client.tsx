@@ -8,6 +8,7 @@ import { EmailVerificationNotice } from "@/components/email-verification-notice"
 import { SignInSheet } from "@/components/sign-in-sheet";
 import { ScoutFloaters } from "@/components/scout-mascot";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { DAILY_MARKETS, getDailyOutcomes, getOpponentPicks, type DailyMarket } from "@/lib/daily-markets";
 import {
   getStoredH2HRun,
@@ -186,6 +187,7 @@ function IntroScreen({
   onStart,
   onGhost,
   onViewResults,
+  t,
 }: {
   savedRun: H2HRun | null;
   history: H2HRun[];
@@ -193,6 +195,7 @@ function IntroScreen({
   onStart: () => void;
   onGhost: () => void;
   onViewResults: () => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   if (savedRun) {
     const youWin = savedRun.result !== "loss";
@@ -200,7 +203,7 @@ function IntroScreen({
     return (
       <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-8 pb-24">
         <section className={`rounded-xl border p-6 text-center ${youWin ? "border-[var(--color-success)] bg-[var(--color-success-dim)]" : "border-[var(--color-danger)] bg-[var(--color-danger-dim)]"}`}>
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">Already played today</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-text-muted)]">{t("h2h.alreadyPlayed")}</p>
           <h1 className="mt-2 text-4xl font-display font-black tracking-tight">{savedRun.result === "tie-win" ? "Tie-break win" : youWin ? "You win" : `${OPPONENT.name} wins`}</h1>
           <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
             You {savedRun.yourScore} - {savedRun.opponentScore} {OPPONENT.name}
@@ -213,13 +216,13 @@ function IntroScreen({
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <button onClick={onViewResults} className="rounded-xl bg-[var(--color-brand-primary)] py-4 text-base font-black text-white transition-all hover:bg-red-500 active:scale-[0.98]">
-            See Results
+            {t("h2h.seeResults")}
           </button>
           <button onClick={onGhost} className="rounded-xl border border-[var(--color-border)] py-4 text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-            Run Ghost Rematch
+            {t("h2h.ghostRematch")}
           </button>
           <Link href="/leagues" className="rounded-xl border border-[var(--color-border)] py-4 text-center text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-            League Rooms
+            {t("h2h.leagueRooms")}
           </Link>
         </div>
       </div>
@@ -231,9 +234,9 @@ function IntroScreen({
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6">
           <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{dailyRoomName()}</p>
-          <h1 className="mt-2 text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">Head-to-Head</h1>
+          <h1 className="mt-2 text-5xl font-display font-black tracking-tight text-[var(--color-text-primary)]">{t("h2h.title")}</h1>
           <p className="mt-3 max-w-xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-            Pick the same five markets as your rival. Confidence can double one correct read, upset calls earn style points, and ties go to the challenger.
+            {t("h2h.intro")}
           </p>
           {challengeScore && (
             <p className="mt-4 rounded-lg border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 py-2 text-sm font-bold text-[var(--color-text-primary)]">
@@ -249,7 +252,7 @@ function IntroScreen({
         </div>
 
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rival profile</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.rivalProfile")}</p>
           <div className="mt-4 flex items-center justify-between">
             <div>
               <p className="text-3xl font-display font-black text-[var(--color-text-primary)]">{OPPONENT.name}</p>
@@ -281,7 +284,7 @@ function IntroScreen({
 
       <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5">
-          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Tale of the tape</p>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("h2h.tale")}</p>
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             <StatPill label="You" value={ratingFor(history)} />
             <StatPill label="Edge" value={history.length > 0 ? winStreak(history) : "First match"} />
@@ -303,13 +306,13 @@ function IntroScreen({
 
         <div className="flex flex-col gap-3">
           <button onClick={onStart} className="rounded-xl bg-[var(--color-brand-primary)] py-5 text-lg font-black text-white transition-all hover:bg-red-500 active:scale-[0.98]">
-            Join Ranked Queue
+            {t("h2h.joinRanked")}
           </button>
           <button onClick={onGhost} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] py-4 text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-            Practice vs Ghost
+            {t("h2h.practiceGhost")}
           </button>
           <Link href="/leagues" className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] py-4 text-center text-sm font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-brand-primary)]/50">
-            Open League H2H Rooms
+            {t("h2h.openRooms")}
           </Link>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4">
             <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rivalry history</p>
@@ -661,6 +664,7 @@ function H2HLeaderboard({ entries, userId, loading, error }: { entries: H2HLeade
 
 export function H2HClient() {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const [phase, setPhase] = useState<"intro" | "picking" | "locked" | "results">("intro");
   const [mode, setMode] = useState<MatchMode>("ranked");
   const [picks, setPicks] = useState<Pick[]>(Array(DAILY_MARKETS.length).fill(null));
@@ -818,7 +822,7 @@ export function H2HClient() {
     return (
       <>
         <ScoutFloaters page="h2h" />
-        <IntroScreen savedRun={savedRun} history={history} challengeScore={challengeScore} onStart={() => startGame("ranked")} onGhost={() => startGame("ghost")} onViewResults={() => {
+        <IntroScreen savedRun={savedRun} history={history} challengeScore={challengeScore} t={t} onStart={() => startGame("ranked")} onGhost={() => startGame("ghost")} onViewResults={() => {
           if (!savedRun) return;
           setActiveRun(savedRun);
           setPicks(savedRun.picks);
@@ -829,8 +833,8 @@ export function H2HClient() {
         <div className="mx-auto max-w-lg px-4 pb-24">
           {!user && (
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-4 text-center">
-              <p className="text-sm font-bold text-[var(--color-text-primary)]">Sign in to play ranked Head-to-Head</p>
-              <p className="mt-1 text-xs text-[var(--color-text-muted)]">Ghost practice is open. Ranked is one verified match per day.</p>
+              <p className="text-sm font-bold text-[var(--color-text-primary)]">{t("h2h.signInTitle")}</p>
+              <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("h2h.signInBody")}</p>
               <button onClick={() => setSignInOpen(true)} className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white">
                 Sign in
               </button>
