@@ -398,9 +398,11 @@ export function PerfectTenClient() {
           </p>
         )}
 
-        <section className="mb-5 grid gap-3 lg:grid-cols-3">
-          <DemoControls demoTicket={demoTicket} recapScenario={recapScenario} onDemoTicket={setDemoTicket} onRecapScenario={setRecapScenario} t={t} />
-          <LineupBalance balance={balance} t={t} />
+        <section className="mb-5 grid gap-5 lg:grid-cols-[1fr_380px]">
+          <div className="grid gap-3 md:grid-cols-2">
+            <DemoControls demoTicket={demoTicket} recapScenario={recapScenario} onDemoTicket={setDemoTicket} onRecapScenario={setRecapScenario} t={t} />
+            <LineupBalance balance={balance} t={t} />
+          </div>
           <ProgressCard pickedCount={pickedCount} total={total} submitted={submitted} t={t} />
         </section>
 
