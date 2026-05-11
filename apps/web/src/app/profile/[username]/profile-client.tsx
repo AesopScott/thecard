@@ -14,6 +14,7 @@ import {
   type UserProfile,
 } from "@/lib/user-store";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { ThemePicker } from "@/components/theme-picker";
 import { friendLeagueNumberFromId } from "@/lib/league-store";
 import { getLeaguesByGroup, getSportLeagueById, leagueTypeBadge, sportLeagueIdFromPaidLeagueId } from "@/lib/sport-leagues";
@@ -25,6 +26,7 @@ interface ProfileClientProps {
 
 export function ProfileClient({ username }: ProfileClientProps) {
   const { username: currentUsername } = useAuth();
+  const { t } = useI18n();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [settledPositions, setSettledPositions] = useState<SettledPositionRecord[]>([]);
   const [leagueSummaries, setLeagueSummaries] = useState<PublicLeagueSummary[]>([]);
@@ -139,12 +141,12 @@ export function ProfileClient({ username }: ProfileClientProps) {
         <>
           <ThemePicker />
           <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Support</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("support.title")}</p>
             <p className="mt-1 text-sm leading-relaxed text-[var(--color-card-muted)]">
-              Account, billing, league, and bug reports go here.
+              {t("profile.supportBody")}
             </p>
             <Link href="/support" className="mt-3 inline-flex rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-card-text)] hover:border-[var(--color-brand-primary)]">
-              Open support form
+              {t("profile.openSupport")}
             </Link>
           </section>
         </>

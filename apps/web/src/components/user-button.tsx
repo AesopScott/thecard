@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { SignInSheet } from "./sign-in-sheet";
 import { ThemePicker } from "./theme-picker";
 
 export function UserButton() {
   const { user, username, emailVerified, verificationRequired, loading, signOut } = useAuth();
+  const { t } = useI18n();
   const [signInOpen, setSignInOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -20,7 +22,7 @@ export function UserButton() {
           onClick={() => setSignInOpen(true)}
           className="fixed top-4 right-4 z-50 rounded-full border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-1.5 text-xs font-semibold text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] transition-colors"
         >
-          Sign in
+          {t("account.signIn")}
         </button>
         <SignInSheet open={signInOpen} onClose={() => setSignInOpen(false)} />
       </>
@@ -36,7 +38,7 @@ export function UserButton() {
       <button
         onClick={() => setMenuOpen((v) => !v)}
         className="fixed top-4 right-4 z-30 w-8 h-8 rounded-full bg-[var(--color-card-accent)] flex items-center justify-center text-white text-xs font-black shadow-sm"
-        aria-label="Account"
+        aria-label={t("account.account")}
       >
         {initial}
       </button>
@@ -54,7 +56,7 @@ export function UserButton() {
               </p>
               <p className="text-[10px] text-[var(--color-card-muted)] truncate">{user.email}</p>
               <p className={verificationRequired ? "mt-1 text-[10px] font-bold text-[var(--color-brand-primary)]" : "mt-1 text-[10px] text-[var(--color-card-muted)]"}>
-                {emailVerified ? "Verified forecaster" : "Email verification needed"}
+                {emailVerified ? t("account.verified") : t("account.verificationNeeded")}
               </p>
             </div>
             <Link
@@ -62,14 +64,14 @@ export function UserButton() {
               onClick={() => setMenuOpen(false)}
               className="block w-full text-left px-3 py-2 text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] rounded-lg transition-colors"
             >
-              {username ? "View profile" : "Finish setup"}
+              {username ? t("account.viewProfile") : t("account.finishSetup")}
             </Link>
             <Link
               href="/support"
               onClick={() => setMenuOpen(false)}
               className="block w-full text-left px-3 py-2 text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] rounded-lg transition-colors"
             >
-              Support
+              {t("account.support")}
             </Link>
             <ThemePicker compact />
             <button
@@ -79,7 +81,7 @@ export function UserButton() {
               }}
               className="w-full text-left px-3 py-2 text-xs text-[var(--color-card-muted)] hover:text-[var(--color-card-text)] rounded-lg transition-colors"
             >
-              Sign out
+              {t("account.signOut")}
             </button>
           </div>
         </>

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { AuthCta } from "@/components/auth-cta";
 import { HomeTour } from "@/components/home-tour";
+import { useI18n } from "@/contexts/i18n-context";
 import { VERSION } from "@/lib/version";
 
 const LIVE_MARKETS = [
@@ -72,6 +75,8 @@ const FOOTER_LINKS = [
 ];
 
 export default function LandingPage() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-dvh flex flex-col bg-[var(--color-surface-0)] text-[var(--color-text-primary)] relative overflow-hidden">
       <HomeTour />
@@ -82,8 +87,8 @@ export default function LandingPage() {
         </span>
         <AuthCta
           href="/card"
-          signedOutLabel="Sign in"
-          signedInLabel="Enter ->"
+          signedOutLabel={t("account.signIn")}
+          signedInLabel={t("home.ctaCard")}
           className="text-sm font-bold px-4 py-2 rounded-lg bg-[var(--color-brand-primary)] text-white hover:bg-red-500 transition-all hover:shadow-lg hover:scale-105"
         />
       </header>
@@ -98,7 +103,7 @@ export default function LandingPage() {
               <div className="rounded-2xl border border-[var(--color-border)] bg-gradient-to-br from-[var(--color-surface-1)] to-[var(--color-surface-2)] p-5 space-y-4 relative overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none opacity-40" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.25) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
                 <div className="relative z-10">
-                  <h3 className="text-sm font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Upcoming</h3>
+                  <h3 className="text-sm font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("home.upcoming")}</h3>
                   <div className="space-y-3">
                     {UPCOMING_EVENTS.map(({ sport, matchup, date, time, icon }, i) => (
                       <div
@@ -140,7 +145,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-[var(--color-brand-primary)] animate-pulse" />
                   <span className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">
-                    Live Now
+                    {t("home.liveNow")}
                   </span>
                 </div>
 
@@ -150,7 +155,7 @@ export default function LandingPage() {
                     <span className="text-[var(--color-brand-primary)] drop-shadow-lg">Card.</span>
                   </h1>
                   <p className="text-base text-[var(--color-text-secondary)] leading-relaxed max-w-md">
-                    Sports prediction markets for fans, not traders. Real odds, live updates, compete for the jackpot.
+                    {t("home.heroBody")}
                   </p>
                 </div>
 
@@ -160,13 +165,13 @@ export default function LandingPage() {
                     className="px-6 py-3 rounded-xl bg-[var(--color-brand-primary)] text-white font-black text-sm hover:bg-red-500 transition-all hover:shadow-[0_0_32px_rgba(255,60,60,0.5)] active:scale-95 animate-bounce"
                     style={{ animation: "bounce 2s infinite" }}
                   >
-                    Tonight&apos;s Card →
+                    {t("home.ctaCard")}
                   </Link>
                   <Link
                     href="/leaderboard"
                     className="px-6 py-3 rounded-xl border-2 border-[var(--color-brand-primary)] text-[var(--color-brand-primary)] font-bold text-sm hover:bg-[var(--color-brand-primary)]/10 transition-all"
                   >
-                    Leaderboard
+                    {t("home.ctaLeaderboard")}
                   </Link>
                 </div>
               </div>
@@ -174,7 +179,7 @@ export default function LandingPage() {
 
             {/* Live Markets */}
             <section className="space-y-3">
-              <h2 className="text-lg font-display font-black tracking-tight">Tonight&apos;s Markets</h2>
+              <h2 className="text-lg font-display font-black tracking-tight">{t("home.markets")}</h2>
               <div className="space-y-2">
                 {LIVE_MARKETS.map(({ sport, question, yes, no, time, logo }, i) => (
                   <div
@@ -234,7 +239,7 @@ export default function LandingPage() {
                     $42K
                   </p>
                   <p className="text-xs text-[var(--color-text-secondary)] leading-snug mt-3">
-                    Rolling for 2 weeks. Call all ten right, you split it.
+                    {t("home.jackpotBody")}
                   </p>
                   <Link
                     href="/card"
@@ -247,7 +252,7 @@ export default function LandingPage() {
 
               {/* Top Forecaster */}
               <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5 space-y-3">
-                <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">🥇 Top Forecaster</p>
+                <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">{t("home.topForecaster")}</p>
                 <div className="space-y-2">
                   {LEADERBOARD.slice(0, 1).map(({ name, w, l, pct }) => (
                     <div key={name} className="space-y-1">
@@ -276,7 +281,7 @@ export default function LandingPage() {
       <section className="px-4 sm:px-6 lg:px-8 py-12 border-t border-[var(--color-border)] relative">
         <div className="absolute inset-0 pointer-events-none opacity-20" style={{ background: "linear-gradient(135deg, transparent 0%, rgba(255,60,60,0.15) 50%, transparent 100%)", animation: "breathe 8s ease-in-out infinite" }} />
         <div className="max-w-7xl mx-auto relative z-10">
-          <h2 className="text-2xl font-display font-black tracking-tight mb-6">One app, five ways to play</h2>
+          <h2 className="text-2xl font-display font-black tracking-tight mb-6">{t("home.surfacesHeading")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {SURFACES.map(({ emoji, href, label, desc }, i) => (
               <Link
@@ -302,7 +307,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-end justify-between mb-6">
-            <h2 className="text-2xl font-display font-black tracking-tight">The leaderboard</h2>
+            <h2 className="text-2xl font-display font-black tracking-tight">{t("home.leaderboardHeading")}</h2>
             <Link href="/leaderboard" className="text-xs font-bold text-[var(--color-brand-primary)] hover:underline">
               See all →
             </Link>
@@ -310,8 +315,8 @@ export default function LandingPage() {
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] overflow-hidden">
             <div className="grid grid-cols-4 px-4 py-2 border-b border-[var(--color-border)] text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider">
               <span>#</span>
-              <span className="col-span-2">Forecaster</span>
-              <span className="text-right">Win %</span>
+              <span className="col-span-2">{t("home.forecaster")}</span>
+              <span className="text-right">{t("home.winPercent")}</span>
             </div>
             {LEADERBOARD.map(({ rank, name, w, l, pct }, i) => (
               <div
