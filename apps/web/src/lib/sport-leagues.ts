@@ -2,6 +2,8 @@ import type { SportLeague } from "@thecard/types";
 
 const d = (y: number, m: number, day: number) => new Date(y, m, day);
 
+export const WORLD_CUP_LEAGUE_ID = "soccer-2026-world-cup";
+
 export const SPORT_LEAGUES: SportLeague[] = [
   // ── NFL ──────────────────────────────────────────────────────────────────
   {
@@ -242,6 +244,16 @@ export const SPORT_LEAGUES: SportLeague[] = [
   },
 
   // ── Soccer ───────────────────────────────────────────────────────────────
+  {
+    id: WORLD_CUP_LEAGUE_ID,
+    sport: "soccer",
+    name: "World Cup 2026",
+    description: "Free World Cup campaign league, group stage through the Final",
+    type: "sport_tournament",
+    startDate: d(2026, 5, 11),  // Jun 11
+    endDate: d(2026, 6, 19),    // Jul 19
+    memberCount: 5_104,
+  },
   {
     id: "soccer-2026-pl",
     sport: "soccer",

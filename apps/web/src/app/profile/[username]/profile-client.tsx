@@ -169,7 +169,7 @@ function leagueLabel(summary: PublicLeagueSummary): { name: string; meta: string
     }
     return {
       name: `${GLOBAL_LEAGUE.name} League`,
-      meta: `Paid season - ${ACTIVE_SEASON.name}`,
+      meta: `Aggregate leaderboard - ${ACTIVE_SEASON.name}`,
     };
   }
   const friendNumber = friendLeagueNumberFromId(summary.leagueId);
@@ -205,7 +205,9 @@ function leagueDisplayName(leagueId: string): string {
 }
 
 function LeagueBankrolls({ leagues, t }: { leagues: PublicLeagueSummary[]; t: ReturnType<typeof useI18n>["t"] }) {
-  const totals = leagues.reduce(
+  const bankrolledLeagues = leagues.filter((league) => league.leagueId !== GLOBAL_LEAGUE.id);
+  const hasGlobalLeague = leagues.some((league) => league.leagueId === GLOBAL_LEAGUE.id);
+  const totals = bankrolledLeagues.reduce(
     (acc, league) => ({
       bankroll: acc.bankroll + league.currentBankroll,
       bets: acc.bets + league.betCount,
@@ -237,6 +239,14 @@ function LeagueBankrolls({ leagues, t }: { leagues: PublicLeagueSummary[]; t: Re
         </p>
       ) : (
         <div className="mt-3 flex flex-col gap-2">
+          {hasGlobalLeague && (
+            <div className="rounded-lg border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 p-3">
+              <p className="text-sm font-black text-[var(--color-card-text)]">{GLOBAL_LEAGUE.name} League</p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--color-card-muted)]">
+                {t("profile.globalAggregateNoBankroll")}
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: t("profile.totalShown"), value: `$${totals.bankroll.toLocaleString()}` },
@@ -250,7 +260,13 @@ function LeagueBankrolls({ leagues, t }: { leagues: PublicLeagueSummary[]; t: Re
             ))}
           </div>
 
-          {leagues.map((league) => {
+          {bankrolledLeagues.length === 0 && (
+            <p className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 text-xs leading-relaxed text-[var(--color-card-muted)]">
+              {t("profile.noBankrolledLeagues")}
+            </p>
+          )}
+
+          {bankrolledLeagues.map((league) => {
             const pnl = league.currentBankroll - league.startingBankroll;
             const label = leagueLabel(league);
             return (

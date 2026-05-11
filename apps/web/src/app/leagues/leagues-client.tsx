@@ -76,6 +76,18 @@ function BankrollSummary({ membership }: { membership: LeagueMembership }) {
   );
 }
 
+function GlobalAggregateStatus() {
+  const { t } = useI18n();
+  return (
+    <div className="flex shrink-0 flex-col items-end">
+      <span className="text-xs font-black text-[var(--color-card-text)]">{t("leagues.joined")}</span>
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-[var(--color-card-muted)]">
+        {t("leagues.noBankroll")}
+      </span>
+    </div>
+  );
+}
+
 function CalendarTopCard({ mode }: { mode: "free" | "paid" }) {
   const { t } = useI18n();
   return (
@@ -364,7 +376,7 @@ function PaidLeagueColumn({
             </p>
           </div>
           {globalMembership ? (
-            <BankrollSummary membership={globalMembership} />
+            <GlobalAggregateStatus />
           ) : (
             <button
               type="button"

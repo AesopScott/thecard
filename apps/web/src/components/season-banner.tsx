@@ -54,9 +54,6 @@ export function SeasonBanner({ variant = "compact" }: SeasonBannerProps) {
   }, [user, verificationRequired]);
 
   const status = getSeasonStatus(ACTIVE_SEASON);
-  const pnl = joined ? bankroll - STARTING_BANKROLL : 0;
-  const pnlColor = pnl >= 0 ? "var(--color-card-yes)" : "var(--color-card-no)";
-  const pnlSign = pnl >= 0 ? "+" : "";
 
   async function joinGlobalLeague() {
     if (!user || verificationRequired) return;
@@ -103,13 +100,9 @@ export function SeasonBanner({ variant = "compact" }: SeasonBannerProps) {
           ) : (
             <>
               <span className="text-sm font-black text-[var(--color-card-text)]">
-                ${bankroll.toLocaleString()}
+                {joined ? t("shared.joined") : t("shared.aggregate")}
               </span>
-              {pnl !== 0 && (
-                <span className="text-[10px] font-semibold" style={{ color: pnlColor }}>
-                  {pnlSign}${Math.abs(pnl).toLocaleString()}
-                </span>
-              )}
+              <span className="text-[10px] text-[var(--color-text-muted)]">{t("shared.noBankroll")}</span>
             </>
           )}
         </div>
@@ -151,16 +144,12 @@ export function SeasonBanner({ variant = "compact" }: SeasonBannerProps) {
       <div className="grid grid-cols-3 gap-3">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider">
-            {joined ? t("shared.yourBankroll") : t("shared.leagueStatus")}
+            {t("shared.leagueStatus")}
           </span>
           <span className="text-base font-black text-[var(--color-card-text)]">
-            {joined ? `$${bankroll.toLocaleString()}` : t("shared.notJoined")}
+            {joined ? t("shared.joined") : t("shared.notJoined")}
           </span>
-          {pnl !== 0 && (
-            <span className="text-[10px] font-semibold" style={{ color: pnlColor }}>
-              {pnlSign}${Math.abs(pnl).toLocaleString()}
-            </span>
-          )}
+          {joined && <span className="text-[10px] text-[var(--color-text-muted)]">{t("shared.aggregateNoBankroll")}</span>}
           {!joined && <span className="text-[10px] text-[var(--color-text-muted)]">{t("shared.joinBeforePositions")}</span>}
         </div>
         <div className="flex flex-col gap-0.5">

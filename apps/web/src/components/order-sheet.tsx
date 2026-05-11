@@ -41,7 +41,7 @@ type SheetState = "input" | "confirming" | "success";
 type LeagueOption = { id: string; name: string; meta: string; bankroll: number };
 
 function leagueLabel(leagueId: string): Pick<LeagueOption, "name" | "meta"> {
-  if (leagueId === GLOBAL_LEAGUE.id) return { name: `${GLOBAL_LEAGUE.name} League`, meta: "Paid season league" };
+  if (leagueId === GLOBAL_LEAGUE.id) return { name: `${GLOBAL_LEAGUE.name} League`, meta: "Aggregate leaderboard - no bankroll" };
   const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(leagueId);
   const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
   if (paidSportLeague) {
@@ -83,8 +83,7 @@ export function OrderSheet({ open, market, side, odds, onClose }: OrderSheetProp
           seasonMemberships.forEach((membership) => {
             const paidSportLeagueId = sportLeagueIdFromPaidLeagueId(membership.leagueId);
             const paidSportLeague = paidSportLeagueId ? getSportLeagueById(paidSportLeagueId) : null;
-            const eligible = membership.leagueId === GLOBAL_LEAGUE.id
-              || (paidSportLeague?.sport === market.sport && getLeagueStatus(paidSportLeague) !== "closed");
+            const eligible = Boolean(paidSportLeague?.sport === market.sport && getLeagueStatus(paidSportLeague) !== "closed");
             if (!eligible) return;
             const label = leagueLabel(membership.leagueId);
             next.push({ ...label, id: membership.leagueId, bankroll: membership.currentBankroll });

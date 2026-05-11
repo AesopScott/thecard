@@ -165,9 +165,9 @@ function SeasonTab() {
     }, user?.uid);
   }, [user?.uid]);
 
-  const pnl = membership.currentBankroll - STARTING_BANKROLL;
-  const pnlColor = pnl >= 0 ? "var(--color-card-yes)" : "var(--color-card-no)";
-  const pnlSign = pnl >= 0 ? "+" : "-";
+  const aggregatePnl = membership.currentBankroll - STARTING_BANKROLL;
+  const aggregateColor = aggregatePnl >= 0 ? "var(--color-card-yes)" : "var(--color-card-no)";
+  const aggregateSign = aggregatePnl >= 0 ? "+" : "-";
   const progress = seasonProgress();
   const scopedBoard = buildScopedBoard(board, timeScope, modeScope, sportScope);
   const podium = scopedBoard.slice(0, 3);
@@ -238,15 +238,11 @@ function SeasonTab() {
       {/* Your stats row */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-0.5">
-          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.bankroll")}</span>
-          <span className="text-base font-black text-[var(--color-card-text)]">
-            ${membership.currentBankroll.toLocaleString()}
+          <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.aggregatePl")}</span>
+          <span className="text-base font-black" style={{ color: aggregateColor }}>
+            {aggregateSign}${Math.abs(aggregatePnl).toLocaleString()}
           </span>
-          {pnl !== 0 && (
-            <span className="text-[10px] font-semibold" style={{ color: pnlColor }}>
-              {pnlSign}${Math.abs(pnl).toLocaleString()}
-            </span>
-          )}
+          <span className="text-[10px] text-[var(--color-card-muted)]">{t("leaderboard.noGlobalBankroll")}</span>
         </div>
         <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-3 flex flex-col gap-0.5">
           <span className="text-[10px] text-[var(--color-card-muted)] uppercase tracking-wider">{t("leaderboard.bets")}</span>
