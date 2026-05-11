@@ -412,13 +412,32 @@ function LiveSlip({
   );
 }
 
-function LiveLeaderboard({ entries, userId }: { entries: LiveLeaderboardEntry[]; userId: string | null }) {
+function LiveLeaderboard({
+  entries,
+  userId,
+  loading,
+}: {
+  entries: LiveLeaderboardEntry[];
+  userId: string | null;
+  loading: boolean;
+}) {
   return (
     <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] overflow-hidden">
       <div className="flex items-center justify-between border-b border-[var(--color-card-border)] px-4 py-3">
         <p className="text-xs font-black text-[var(--color-brand-primary)] uppercase tracking-widest">Today&apos;s Live Board</p>
-        <span className="text-xs font-bold text-[var(--color-card-muted)]">Top reads</span>
+        <span className="text-xs font-bold text-[var(--color-card-muted)]">{entries.length} reads</span>
       </div>
+      {loading && (
+        <div className="px-4 py-6 text-center text-xs font-semibold text-[var(--color-card-muted)]">
+          Loading live board...
+        </div>
+      )}
+      {!loading && entries.length === 0 && (
+        <div className="px-4 py-6 text-center">
+          <p className="text-sm font-bold text-[var(--color-card-text)]">No Live Reads locked yet</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Lock yours to start today&apos;s board.</p>
+        </div>
+      )}
       {entries.slice(0, 8).map((entry, index) => {
         const isYou = userId === entry.uid;
         return (
@@ -441,12 +460,14 @@ function LiveResults({
   run,
   leaderboard,
   userId,
+  leaderboardLoading,
   shareStatus,
   onShare,
 }: {
   run: LiveRun;
   leaderboard: LiveLeaderboardEntry[];
   userId: string | null;
+  leaderboardLoading: boolean;
   shareStatus: string | null;
   onShare: () => void;
 }) {
@@ -476,7 +497,7 @@ function LiveResults({
           );
         })}
       </div>
-      <LiveLeaderboard entries={leaderboard} userId={userId} />
+      <LiveLeaderboard entries={leaderboard} userId={userId} loading={leaderboardLoading} />
       <button onClick={onShare} className="w-full rounded-xl bg-[var(--color-surface-2)] py-4 text-base font-black text-[var(--color-text-primary)]">
         Share Result
       </button>
@@ -493,6 +514,7 @@ export function LiveClient() {
   const [picks, setPicks] = useState<LivePick[]>([]);
   const [savedRun, setSavedRun] = useState<LiveRun | null>(null);
   const [leaderboard, setLeaderboard] = useState<LiveLeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -504,7 +526,11 @@ export function LiveClient() {
   }, []);
 
   useEffect(() => {
-    return subscribeLiveLeaderboard(liveDateId(), setLeaderboard);
+    setLeaderboardLoading(true);
+    return subscribeLiveLeaderboard(liveDateId(), (entries) => {
+      setLeaderboard(entries);
+      setLeaderboardLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -619,6 +645,7 @@ export function LiveClient() {
           run={savedRun}
           leaderboard={leaderboard}
           userId={user?.uid ?? null}
+          leaderboardLoading={leaderboardLoading}
           shareStatus={shareStatus}
           onShare={shareResult}
         />
