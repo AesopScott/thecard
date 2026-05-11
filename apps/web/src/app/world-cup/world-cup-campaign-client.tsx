@@ -25,25 +25,6 @@ const CAMPAIGN_STATS: { label: TranslationKey; value: string }[] = [
   { label: "worldCup.statModes", value: "4" },
 ];
 
-const CAMPAIGN_STEPS: TranslationKey[] = [
-  "worldCup.stepOne",
-  "worldCup.stepTwo",
-  "worldCup.stepThree",
-];
-
-const LIVE_BETS: { title: TranslationKey; detail: TranslationKey }[] = [
-  { title: "worldCup.betMomentumTitle", detail: "worldCup.betMomentumDetail" },
-  { title: "worldCup.betCardTitle", detail: "worldCup.betCardDetail" },
-  { title: "worldCup.betPerfectTitle", detail: "worldCup.betPerfectDetail" },
-  { title: "worldCup.betH2HTitle", detail: "worldCup.betH2HDetail" },
-];
-
-const SOCIAL_HOOKS: TranslationKey[] = [
-  "worldCup.hookNationalPride",
-  "worldCup.hookInfluencers",
-  "worldCup.hookSpanish",
-];
-
 const WORLD_CUP_PAYOUTS: Record<number, number> = {
   1: 500,
   2: 250,
@@ -317,63 +298,6 @@ export function WorldCupCampaignClient() {
           </div>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div id="free-card" className="scroll-mt-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("worldCup.freePlayEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--color-card-text)]">{t("worldCup.freePlayTitle")}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">{t("worldCup.freePlayBody")}</p>
-            <div className="mt-4 grid gap-2">
-              {CAMPAIGN_STEPS.map((step, index) => (
-                <div key={step} className="grid grid-cols-[32px_1fr] gap-3 rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-brand-primary)] text-xs font-black text-white">{index + 1}</span>
-                  <p className="text-sm font-semibold leading-relaxed text-[var(--color-card-text)]">{t(step)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div id="live-bets" className="scroll-mt-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("worldCup.liveBetsEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--color-card-text)]">{t("worldCup.liveBetsTitle")}</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {LIVE_BETS.map((item) => (
-                <article key={item.title} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-4">
-                  <h3 className="text-sm font-black text-[var(--color-card-text)]">{t(item.title)}</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-[var(--color-card-muted)]">{t(item.detail)}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("worldCup.calendarEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--color-card-text)]">{t("worldCup.calendarTitle")}</h2>
-            <div className="mt-4 grid gap-2 sm:grid-cols-3">
-              {[
-                ["worldCup.dateOpen", "Jun 11"],
-                ["worldCup.dateKnockout", "Jun 28"],
-                ["worldCup.dateFinal", "Jul 19"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
-                  <p className="text-xl font-black text-[var(--color-card-text)]">{value}</p>
-                  <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-[var(--color-card-muted)]">{t(label as TranslationKey)}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <aside id="distribution" className="scroll-mt-6 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("worldCup.growthEyebrow")}</p>
-            <h2 className="mt-2 text-2xl font-black text-[var(--color-card-text)]">{t("worldCup.growthTitle")}</h2>
-            <div className="mt-4 grid gap-2">
-              {SOCIAL_HOOKS.map((hook) => (
-                <p key={hook} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3 text-sm font-semibold leading-relaxed text-[var(--color-card-text)]">{t(hook)}</p>
-              ))}
-            </div>
-          </aside>
-        </section>
       </div>
       <SignInSheet open={signInOpen} onClose={() => setSignInOpen(false)} />
     </div>
