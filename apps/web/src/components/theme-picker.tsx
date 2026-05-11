@@ -9,6 +9,11 @@ const SWATCHES: Record<AppTheme, string> = {
   ice: "linear-gradient(135deg, #ff3c3c 0 38%, #eef6ff 38% 100%)",
   mint: "linear-gradient(135deg, #ff3c3c 0 38%, #e8f7ee 38% 100%)",
   ink: "linear-gradient(135deg, #ff3c3c 0 38%, #171821 38% 100%)",
+  neon: "linear-gradient(135deg, #ff3c3c 0 30%, #00f5d4 30% 65%, #7c3aed 65% 100%)",
+  royal: "linear-gradient(135deg, #ff3c3c 0 34%, #2e1065 34% 68%, #facc15 68% 100%)",
+  sunset: "linear-gradient(135deg, #ff3c3c 0 34%, #fb923c 34% 68%, #312e81 68% 100%)",
+  candy: "linear-gradient(135deg, #ff3c3c 0 34%, #f9a8d4 34% 68%, #67e8f9 68% 100%)",
+  terminal: "linear-gradient(135deg, #ff3c3c 0 34%, #052e16 34% 68%, #22c55e 68% 100%)",
 };
 
 export function ThemePicker({ compact = false }: { compact?: boolean }) {

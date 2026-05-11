@@ -3,7 +3,7 @@ import { db } from "./firebase";
 
 export const THEME_KEY = "thecard:theme:v1";
 export const DEFAULT_THEME = "default";
-export const THEMES = [DEFAULT_THEME, "ticket", "ice", "mint", "ink"] as const;
+export const THEMES = [DEFAULT_THEME, "ticket", "ice", "mint", "ink", "neon", "royal", "sunset", "candy", "terminal"] as const;
 export type AppTheme = (typeof THEMES)[number];
 
 export const THEME_LABELS: Record<AppTheme, string> = {
@@ -12,6 +12,11 @@ export const THEME_LABELS: Record<AppTheme, string> = {
   ice: "Ice Cards",
   mint: "Mint Board",
   ink: "Opaque Ink",
+  neon: "Neon Arcade",
+  royal: "Royal Book",
+  sunset: "Sunset Heat",
+  candy: "Candy Pop",
+  terminal: "Terminal Green",
 };
 
 export function isAppTheme(value: unknown): value is AppTheme {
