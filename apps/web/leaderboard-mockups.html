@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Card Leaderboard Mockups</title>
+  <style>
+    :root {
+      --bg: #12070b;
+      --panel: rgba(18, 17, 24, .92);
+      --panel2: rgba(34, 29, 38, .88);
+      --line: rgba(255,255,255,.14);
+      --text: #fff7f8;
+      --muted: #a99fa9;
+      --red: #ef4444;
+      --green: #36d178;
+      --gold: #f8c044;
+      --blue: #64d8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 30px;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(239,68,68,.32), transparent 30rem),
+        radial-gradient(circle at 88% 4%, rgba(100,216,255,.15), transparent 26rem),
+        linear-gradient(135deg, #27080e, var(--bg) 48%, #07070b);
+    }
+    header, main { max-width: 1240px; margin: 0 auto; }
+    header { display: grid; gap: 12px; margin-bottom: 24px; }
+    .eyebrow { color: var(--red); font-size: 12px; font-weight: 950; letter-spacing: .22em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(42px, 7vw, 82px); line-height: .92; text-transform: uppercase; }
+    .intro { max-width: 760px; margin: 0; color: var(--muted); line-height: 1.6; }
+    main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .mock {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(155deg, rgba(255,255,255,.08), transparent 34%), var(--panel);
+      padding: 18px;
+      min-height: 470px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0,0,0,.34);
+    }
+    h2 { margin: 0; font-size: 24px; text-transform: uppercase; }
+    .sub { margin: -6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .controls { display: grid; gap: 8px; }
+    .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .label { width: 46px; color: var(--muted); font-size: 10px; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; color: var(--muted); font-size: 10px; font-weight: 950; }
+    .chip.on { background: var(--red); border-color: var(--red); color: #fff; }
+    .story {
+      display: grid;
+      grid-template-columns: 1fr 76px;
+      gap: 14px;
+      align-items: center;
+      border: 1px solid rgba(239,68,68,.35);
+      border-radius: 14px;
+      background: rgba(239,68,68,.08);
+      padding: 14px;
+    }
+    .story h3 { margin: 0; font-size: 18px; line-height: 1.1; }
+    .story p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .scout {
+      width: 76px; height: 76px; overflow: hidden; position: relative;
+      filter: drop-shadow(0 14px 16px rgba(0,0,0,.38));
+      animation: bob 2.2s ease-in-out infinite;
+    }
+    .scout img { position: absolute; width: 200%; height: 200%; max-width: none; }
+    .football img { left: 0; top: 0; }
+    .basketball img { left: -100%; top: 0; }
+    .fight img { left: -100%; top: 0; }
+    .trophy img { left: 0; top: -100%; }
+    .celebrate img { left: -100%; top: -100%; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .card { border: 1px solid var(--line); border-radius: 12px; background: var(--panel2); padding: 12px; }
+    .card b { display: block; font-size: 16px; }
+    .card span { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .table { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .player { display: grid; grid-template-columns: 34px 1fr 82px 42px; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    .player:last-child { border-bottom: 0; }
+    .rank { color: var(--muted); font-size: 12px; font-weight: 900; }
+    .name { min-width: 0; }
+    .name b { display: block; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .name span { color: var(--muted); font-size: 10px; }
+    .money { text-align: right; font-size: 12px; font-weight: 950; }
+    .move { text-align: right; font-size: 11px; font-weight: 950; color: var(--green); }
+    .move.down { color: var(--red); }
+    .callouts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .callout { display: flex; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 14px; background: var(--panel2); padding: 12px; }
+    .callout .scout { width: 58px; height: 58px; flex: 0 0 auto; }
+    .callout b { font-size: 13px; }
+    .callout p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.35; }
+    .sticky-you { border: 1px solid rgba(239,68,68,.45); border-radius: 14px; background: rgba(239,68,68,.09); padding: 12px; display: flex; justify-content: space-between; gap: 10px; }
+    .cut { height: 8px; border-radius: 999px; background: rgba(255,255,255,.1); overflow: hidden; }
+    .cut div { height: 100%; width: 72%; background: linear-gradient(90deg, var(--red), var(--gold)); }
+    @keyframes bob { 0%,100%{ transform: translateY(0) rotate(-3deg);} 50%{ transform: translateY(-10px) rotate(3deg);} }
+    @media (max-width: 880px) { body { padding: 18px; } main { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Leaderboard feature mockups</div>
+    <h1>More ways the board can feel alive</h1>
+    <p class="intro">Examples using the new functions: time/mode/sport filters, sticky user rank, rank movement, rival callouts, prize cut line, story mode, and Scout reactions.</p>
+  </header>
+  <main>
+    <section class="mock">
+      <h2>Daily Blitz NFL</h2>
+      <p class="sub">Fast competitive view with a rival line and movement.</p>
+      <div class="controls">
+        <div class="row"><span class="label">Time</span><span class="chip on">Daily</span><span class="chip">Weekly</span><span class="chip">Season</span></div>
+        <div class="row"><span class="label">Mode</span><span class="chip">Card</span><span class="chip on">Blitz</span><span class="chip">Live</span><span class="chip">H2H</span></div>
+        <div class="row"><span class="label">Sport</span><span class="chip on">NFL</span><span class="chip">NBA</span><span class="chip">MLB</span><span class="chip">All</span></div>
+      </div>
+      <div class="story"><div><h3>SharpScott jumped four spots in Blitz.</h3><p>You are $260 behind MarketMike. One strong card can flip the chase.</p></div><div class="scout football"><img src="public/mascots/scout-sports.png"></div></div>
+      <div class="table">
+        <div class="player"><span class="rank">1</span><div class="name"><b>SharpScott</b><span>Hot streak / eligible</span></div><div class="money">$12,420</div><div class="move">+4</div></div>
+        <div class="player"><span class="rank">2</span><div class="name"><b>MarketMike</b><span>Rival target</span></div><div class="money">$12,160</div><div class="move">+1</div></div>
+        <div class="player"><span class="rank">3</span><div class="name"><b>You</b><span>Sticky user rank</span></div><div class="money">$11,900</div><div class="move down">-1</div></div>
+      </div>
+    </section>
+
+    <section class="mock">
+      <h2>Prize Cut Sweat</h2>
+      <p class="sub">The user can instantly see whether they are in or out of the payout zone.</p>
+      <div class="story"><div><h3>#10 is the line tonight.</h3><p>Cut is $9,840. You are $310 outside the projected prize zone.</p></div><div class="scout trophy"><img src="public/mascots/scout-actions.png"></div></div>
+      <div class="cards">
+        <div class="card"><b>#8</b><span>Prize safe<br>$10,180</span></div>
+        <div class="card"><b>#10</b><span>Cut line<br>$9,840</span></div>
+        <div class="card"><b>#12</b><span>You<br>$9,530</span></div>
+      </div>
+      <div class="cut"><div></div></div>
+      <div class="callouts">
+        <div class="callout"><div class="scout fight"><img src="public/mascots/scout-actions.png"></div><div><b>Rival Callout</b><p>Catch DanaPicks to enter top 10.</p></div></div>
+        <div class="callout"><div class="scout celebrate"><img src="public/mascots/scout-actions.png"></div><div><b>Scout Reaction</b><p>Celebrates when you cross the line.</p></div></div>
+      </div>
+    </section>
+
+    <section class="mock">
+      <h2>Weekly NBA Mode</h2>
+      <p class="sub">Mode/sport filters can make small leaderboards feel personal and winnable.</p>
+      <div class="controls">
+        <div class="row"><span class="label">Time</span><span class="chip">Daily</span><span class="chip on">Weekly</span><span class="chip">Season</span></div>
+        <div class="row"><span class="label">Mode</span><span class="chip on">Live</span><span class="chip">Card</span><span class="chip">Forecast</span></div>
+        <div class="row"><span class="label">Sport</span><span class="chip on">NBA</span><span class="chip">NFL</span><span class="chip">All</span></div>
+      </div>
+      <div class="table">
+        <div class="player"><span class="rank">1</span><div class="name"><b>BucketBoss</b><span>Live specialist</span></div><div class="money">$8,020</div><div class="move">+2</div></div>
+        <div class="player"><span class="rank">2</span><div class="name"><b>You</b><span>Two wins behind</span></div><div class="money">$7,740</div><div class="move">+3</div></div>
+        <div class="player"><span class="rank">3</span><div class="name"><b>FourthQ</b><span>Needs bets</span></div><div class="money">$7,620</div><div class="move down">-2</div></div>
+      </div>
+      <div class="sticky-you"><b>You: #2 weekly NBA Live</b><span class="move">+3</span></div>
+    </section>
+
+    <section class="mock">
+      <h2>Story Mode Recap</h2>
+      <p class="sub">A daily recap panel can make the leaderboard feel editorial and shareable.</p>
+      <div class="story"><div><h3>The board got messy late.</h3><p>CalibKing held #1, You climbed into #7, and the prize cut moved by $420 after the final live slate.</p></div><div class="scout celebrate"><img src="public/mascots/scout-actions.png"></div></div>
+      <div class="cards">
+        <div class="card"><b>Biggest climb</b><span>You<br>+6 spots</span></div>
+        <div class="card"><b>Worst sweat</b><span>#10 cut<br>$420 move</span></div>
+        <div class="card"><b>Top hit</b><span>Longshot<br>+780 bankroll</span></div>
+      </div>
+      <div class="callouts">
+        <div class="callout"><div class="scout basketball"><img src="public/mascots/scout-sports.png"></div><div><b>Share Card</b><p>“I climbed into prize range on The Card.”</p></div></div>
+        <div class="callout"><div class="scout trophy"><img src="public/mascots/scout-actions.png"></div><div><b>Prize Status</b><p>Inside projected payout zone.</p></div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

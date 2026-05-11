@@ -264,6 +264,28 @@ function SeasonTab() {
         ))}
       </div>
 
+      <LeaderboardScopeControls
+        timeScope={timeScope}
+        modeScope={modeScope}
+        sportScope={sportScope}
+        onTimeScope={setTimeScope}
+        onModeScope={setModeScope}
+        onSportScope={setSportScope}
+      />
+
+      <LeaderboardStoryMode
+        board={scopedBoard}
+        biggestMovers={biggestMovers}
+        youEntry={youEntry ?? null}
+        rivalEntry={rivalEntry ?? null}
+        prizeCutEntry={prizeCutEntry ?? null}
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {youEntry && <RivalCalloutCard youEntry={youEntry} rivalEntry={rivalEntry ?? null} />}
+        <PrizeCutLineCard prizeCutEntry={prizeCutEntry ?? null} youEntry={youEntry ?? null} />
+      </div>
+
       <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-col gap-0.5">
@@ -503,6 +525,215 @@ function PodiumCard({ entry }: { entry: SeasonLeaderboardEntry }) {
         {payout > 0 && <span className="text-[var(--color-card-muted)]">/ {formatMoney(payout)}</span>}
       </div>
     </Link>
+  );
+}
+
+function LeaderboardScopeControls({
+  timeScope,
+  modeScope,
+  sportScope,
+  onTimeScope,
+  onModeScope,
+  onSportScope,
+}: {
+  timeScope: TimeScope;
+  modeScope: ModeScope;
+  sportScope: SportScope;
+  onTimeScope: (scope: TimeScope) => void;
+  onModeScope: (scope: ModeScope) => void;
+  onSportScope: (scope: SportScope) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Board controls</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">Switch the leaderboard lens by time, game mode, and sport.</p>
+        </div>
+        <ScoutMascot sheet="actions" action="trophy" motion="hype" className="h-16 w-16 shrink-0 opacity-90" />
+      </div>
+      <div className="mt-4 flex flex-col gap-3">
+        <ScopeButtonRow
+          label="Time"
+          items={[
+            ["daily", "Daily"],
+            ["weekly", "Weekly"],
+            ["season", "Season"],
+          ] as const}
+          value={timeScope}
+          onChange={onTimeScope}
+        />
+        <ScopeButtonRow
+          label="Mode"
+          items={[
+            ["overall", "Overall"],
+            ["card", "Card"],
+            ["blitz", "Blitz"],
+            ["live", "Live"],
+            ["h2h", "H2H"],
+            ["forecast", "Forecast"],
+          ] as const}
+          value={modeScope}
+          onChange={onModeScope}
+        />
+        <ScopeButtonRow
+          label="Sport"
+          items={[
+            ["all", "All"],
+            ["nfl", "NFL"],
+            ["nba", "NBA"],
+            ["mlb", "MLB"],
+            ["nhl", "NHL"],
+            ["ufc", "UFC"],
+            ["soccer", "Soccer"],
+          ] as const}
+          value={sportScope}
+          onChange={onSportScope}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ScopeButtonRow<T extends string>({
+  label,
+  items,
+  value,
+  onChange,
+}: {
+  label: string;
+  items: readonly (readonly [T, string])[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-card-muted)]">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map(([item, itemLabel]) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onChange(item)}
+            className={`rounded-lg px-2.5 py-2 text-[10px] font-black transition-colors ${
+              value === item
+                ? "bg-[var(--color-brand-primary)] text-white"
+                : "border border-[var(--color-card-border)] text-[var(--color-card-muted)]"
+            }`}
+          >
+            {itemLabel}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LeaderboardStoryMode({
+  board,
+  biggestMovers,
+  youEntry,
+  rivalEntry,
+  prizeCutEntry,
+}: {
+  board: SeasonLeaderboardEntry[];
+  biggestMovers: Array<{ entry: SeasonLeaderboardEntry; delta: number }>;
+  youEntry: SeasonLeaderboardEntry | null;
+  rivalEntry: SeasonLeaderboardEntry | null;
+  prizeCutEntry: SeasonLeaderboardEntry | null;
+}) {
+  const leader = board[0] ?? null;
+  const mover = biggestMovers[0] ?? null;
+  const gapToRival = youEntry && rivalEntry ? rivalEntry.bankroll - youEntry.bankroll : null;
+  const gapToCut = youEntry && prizeCutEntry ? prizeCutEntry.bankroll - youEntry.bankroll : null;
+
+  return (
+    <div className="rounded-xl border border-[var(--color-brand-primary)]/30 bg-[var(--color-card-surface)] p-4">
+      <div className="grid gap-4 sm:grid-cols-[1fr_86px] sm:items-center">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Leaderboard story</p>
+          <h2 className="mt-1 text-xl font-black text-[var(--color-card-text)]">
+            {leader ? `${leader.displayName} owns the top spot, but the chase is live.` : "The board is waiting for its first run."}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--color-card-muted)]">
+            {mover
+              ? `${mover.entry.displayName} is today's biggest mover (${mover.delta > 0 ? "+" : ""}${mover.delta}).`
+              : "No major rank movement yet."}{" "}
+            {gapToRival !== null && gapToRival > 0
+              ? `You are ${formatMoney(gapToRival)} behind ${rivalEntry?.displayName}.`
+              : youEntry
+                ? "You are defending your current spot."
+                : "Sign in to get a personal chase line."}
+          </p>
+        </div>
+        <ScoutMascot sheet="actions" action={mover && mover.delta > 0 ? "celebrate" : "trophy"} motion={mover ? "hype" : "idle"} className="mx-auto h-24 w-24" />
+      </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <StoryStat label="Leader" value={leader ? leader.displayName : "-"} detail={leader ? formatMoney(leader.bankroll) : "No rows"} />
+        <StoryStat label="Prize cut" value={prizeCutEntry ? `#${prizeCutEntry.rank}` : "-"} detail={prizeCutEntry ? `${prizeCutEntry.displayName} / ${formatMoney(prizeCutEntry.bankroll)}` : "Top 10 pending"} />
+        <StoryStat label="Your chase" value={youEntry ? `#${youEntry.rank}` : "Sign in"} detail={gapToCut !== null ? `${gapToCut <= 0 ? "Inside" : formatMoney(gapToCut)} prize cut` : "Personalized rank"} />
+      </div>
+    </div>
+  );
+}
+
+function StoryStat({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-bg)] p-3">
+      <p className="text-[10px] font-black uppercase tracking-wider text-[var(--color-card-muted)]">{label}</p>
+      <p className="mt-1 truncate text-sm font-black text-[var(--color-card-text)]">{value}</p>
+      <p className="mt-1 truncate text-[10px] text-[var(--color-card-muted)]">{detail}</p>
+    </div>
+  );
+}
+
+function RivalCalloutCard({ youEntry, rivalEntry }: { youEntry: SeasonLeaderboardEntry; rivalEntry: SeasonLeaderboardEntry | null }) {
+  if (!rivalEntry) {
+    return (
+      <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rival callout</p>
+        <p className="mt-2 text-sm font-black text-[var(--color-card-text)]">You are setting the pace.</p>
+        <p className="mt-1 text-xs text-[var(--color-card-muted)]">No one is directly above you in this view.</p>
+      </div>
+    );
+  }
+
+  const gap = Math.max(0, rivalEntry.bankroll - youEntry.bankroll);
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-center gap-3">
+        <ScoutMascot sheet="actions" action="fight" motion="sweat" className="h-16 w-16 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Rival callout</p>
+          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">Catch {rivalEntry.displayName}</p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">{gap === 0 ? "You are tied on bankroll." : `${formatMoney(gap)} separates you from #${rivalEntry.rank}.`}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PrizeCutLineCard({ prizeCutEntry, youEntry }: { prizeCutEntry: SeasonLeaderboardEntry | null; youEntry: SeasonLeaderboardEntry | null }) {
+  const insideCut = Boolean(youEntry && youEntry.rank <= 10);
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-center gap-3">
+        <ScoutMascot sheet="actions" action={insideCut ? "celebrate" : "trophy"} motion={insideCut ? "hype" : "idle"} className="h-16 w-16 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Prize cut line</p>
+          <p className="mt-1 text-sm font-black text-[var(--color-card-text)]">
+            {prizeCutEntry ? `#10 is ${prizeCutEntry.displayName}` : "Top 10 still forming"}
+          </p>
+          <p className="mt-1 text-xs text-[var(--color-card-muted)]">
+            {insideCut
+              ? "You are currently inside the projected prize zone."
+              : prizeCutEntry
+                ? `${formatMoney(prizeCutEntry.bankroll)} is the current cut.`
+                : "Eligible users will define the payout line."}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
