@@ -17,6 +17,7 @@ import {
 } from "@/lib/perfect-ten-store";
 import { exchange } from "@/lib/exchange";
 import { useAuth } from "@/contexts/auth-context";
+import { useI18n } from "@/contexts/i18n-context";
 import { EmailVerificationNotice } from "@/components/email-verification-notice";
 import { SignInSheet } from "@/components/sign-in-sheet";
 import type { Market, Odds, PerfectTenPick, Sport } from "@thecard/types";
@@ -240,6 +241,7 @@ function balanceFor(markets: Market[], picks: Record<string, PickSide>, odds: Re
 
 export function PerfectTenClient() {
   const { user, verificationRequired } = useAuth();
+  const { t } = useI18n();
   const [markets, setMarkets] = useState<Market[]>([]);
   const [odds, setOdds] = useState<Record<string, Odds>>({});
   const [pick, setPicked] = useState<PerfectTenPick>(() => getPick(CURRENT_CONTEST.id));
@@ -335,7 +337,7 @@ export function PerfectTenClient() {
       <div className="mx-auto max-w-6xl px-4">
         <header className="mb-6">
           <Link href="/card" className="mb-4 inline-block text-sm text-[var(--color-brand-primary)] hover:underline">
-            Back to Card
+            {t("p10.back")}
           </Link>
           <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
             <div>
@@ -346,19 +348,19 @@ export function PerfectTenClient() {
                 {formatDollars(CURRENT_CONTEST.jackpotAmount)}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-text-muted)]">
-                Build all 10 legs, check whether the lineup is too chalky or too wild, then watch the ticket turn into a live sweat after lock.
+                {t("p10.heroBody")}
               </p>
             </div>
             <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">
-                    {locked ? "Picks" : "Locks in"}
+                    {locked ? t("p10.picks") : t("p10.locksIn")}
                   </p>
-                  <p className="mt-1 text-xl font-black text-[var(--color-card-text)]">{locked ? "Locked" : countdown}</p>
+                  <p className="mt-1 text-xl font-black text-[var(--color-card-text)]">{locked ? t("p10.locked") : countdown}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">Daily par</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-text-muted)]">{t("p10.dailyPar")}</p>
                   <p className="mt-1 text-xl font-black text-[var(--color-brand-primary)]">{par.label}</p>
                 </div>
               </div>
@@ -369,16 +371,16 @@ export function PerfectTenClient() {
 
         {!user && (
           <div className="mb-4 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-            <p className="text-sm font-bold text-[var(--color-card-text)]">Sign in to lock your entry</p>
+            <p className="text-sm font-bold text-[var(--color-card-text)]">{t("p10.signInTitle")}</p>
             <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-              You can preview every P-10 feature with mock tickets, but real entries are account-bound.
+              {t("p10.signInBody")}
             </p>
             <button
               type="button"
               onClick={() => setSignInOpen(true)}
               className="mt-3 rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-xs font-bold text-white"
             >
-              Sign in
+              {t("account.signIn")}
             </button>
           </div>
         )}
@@ -396,19 +398,19 @@ export function PerfectTenClient() {
         )}
 
         <section className="mb-5 grid gap-3 lg:grid-cols-3">
-          <DemoControls demoTicket={demoTicket} recapScenario={recapScenario} onDemoTicket={setDemoTicket} onRecapScenario={setRecapScenario} />
-          <LineupBalance balance={balance} />
-          <ProgressCard pickedCount={pickedCount} total={total} submitted={submitted} />
+          <DemoControls demoTicket={demoTicket} recapScenario={recapScenario} onDemoTicket={setDemoTicket} onRecapScenario={setRecapScenario} t={t} />
+          <LineupBalance balance={balance} t={t} />
+          <ProgressCard pickedCount={pickedCount} total={total} submitted={submitted} t={t} />
         </section>
 
         <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
           <main className="space-y-5">
-            <TicketBuilder markets={markets} odds={odds} picks={pick.picks} analysisPicks={analysisPicks} />
+            <TicketBuilder markets={markets} odds={odds} picks={pick.picks} analysisPicks={analysisPicks} t={t} />
 
             <section className="overflow-hidden rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)]">
               <div className="border-b border-[var(--color-card-border)] px-4 py-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Pick board</p>
-                <p className="mt-1 text-xs text-[var(--color-text-muted)]">Difficulty labels, prices, confidence, and mock model edges are shown on every leg.</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.pickBoard")}</p>
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("p10.pickBoardBody")}</p>
               </div>
               <div className="divide-y divide-[var(--color-card-border)]">
                 {markets.length === 0
@@ -437,21 +439,22 @@ export function PerfectTenClient() {
               submitted={submitted}
               verificationRequired={verificationRequired}
               onSubmit={handleSubmit}
+              t={t}
             />
           </main>
 
           <aside className="space-y-5 lg:sticky lg:top-6 lg:self-start">
-            <SweatMode markets={markets} picks={analysisPicks} odds={odds} recapScenario={recapScenario} />
-            <PerfectPathRecap markets={markets} picks={analysisPicks} recapScenario={recapScenario} />
+            <SweatMode markets={markets} picks={analysisPicks} odds={odds} recapScenario={recapScenario} t={t} />
+            <PerfectPathRecap markets={markets} picks={analysisPicks} recapScenario={recapScenario} t={t} />
           </aside>
         </div>
 
         <section className="mt-8 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">How it works</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.howItWorks")}</p>
           <div className="mt-2 grid gap-2 text-xs leading-relaxed text-[var(--color-text-muted)] md:grid-cols-3">
-            <p>Pick YES or NO on all 10 markets before they lock. If every one resolves your way, you win the jackpot.</p>
-            <p>Par score, ticket balance, and difficulty labels help explain whether today&apos;s board is easy, normal, or brutal.</p>
-            <p>After lock, Sweat Mode and the recap show the path to 10/10, the bad beat, and which pick carried the ticket.</p>
+            <p>{t("p10.how1")}</p>
+            <p>{t("p10.how2")}</p>
+            <p>{t("p10.how3")}</p>
           </div>
         </section>
 
@@ -466,15 +469,28 @@ function DemoControls({
   recapScenario,
   onDemoTicket,
   onRecapScenario,
+  t,
 }: {
   demoTicket: DemoTicket;
   recapScenario: RecapScenario;
   onDemoTicket: (value: DemoTicket) => void;
   onRecapScenario: (value: RecapScenario) => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
+  const demoLabel = (option: DemoTicket) => {
+    if (option === "chalk") return t("p10.demo.chalk");
+    if (option === "longshot") return t("p10.demo.longshot");
+    return t("p10.demo.balanced");
+  };
+  const recapLabel = (option: RecapScenario) => {
+    if (option === "badBeat") return t("p10.recap.badBeat");
+    if (option === "busted") return t("p10.recap.busted");
+    return t("p10.recap.perfect");
+  };
+
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Mock options</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.mockOptions")}</p>
       <div className="mt-3 grid grid-cols-3 gap-1">
         {(["balanced", "chalk", "longshot"] as const).map((option) => (
           <button
@@ -483,7 +499,7 @@ function DemoControls({
             onClick={() => onDemoTicket(option)}
             className={`rounded-lg border px-2 py-2 text-[10px] font-black capitalize ${demoTicket === option ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-card-border)] text-[var(--color-text-muted)]"}`}
           >
-            {option}
+            {demoLabel(option)}
           </button>
         ))}
       </div>
@@ -495,7 +511,7 @@ function DemoControls({
             onClick={() => onRecapScenario(option)}
             className={`rounded-lg border px-2 py-2 text-[10px] font-black ${recapScenario === option ? "border-[var(--color-card-yes)] bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)]" : "border-[var(--color-card-border)] text-[var(--color-text-muted)]"}`}
           >
-            {option === "badBeat" ? "Bad beat" : option}
+            {recapLabel(option)}
           </button>
         ))}
       </div>
@@ -503,27 +519,27 @@ function DemoControls({
   );
 }
 
-function LineupBalance({ balance }: { balance: ReturnType<typeof balanceFor> }) {
+function LineupBalance({ balance, t }: { balance: ReturnType<typeof balanceFor>; t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Lineup balance</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.lineupBalance")}</p>
       <div className="mt-3 grid grid-cols-4 gap-2 text-center">
         <MiniMetric label="YES" value={String(balance.yesCount)} />
         <MiniMetric label="NO" value={String(balance.noCount)} />
-        <MiniMetric label="Sports" value={String(balance.sportCount)} />
-        <MiniMetric label="Dogs" value={String(balance.longshotCount)} />
+        <MiniMetric label={t("p10.sports")} value={String(balance.sportCount)} />
+        <MiniMetric label={t("p10.dogs")} value={String(balance.longshotCount)} />
       </div>
       <p className="mt-3 text-xs leading-relaxed text-[var(--color-text-muted)]">{balance.warnings[0]}</p>
     </section>
   );
 }
 
-function ProgressCard({ pickedCount, total, submitted }: { pickedCount: number; total: number; submitted: boolean }) {
+function ProgressCard({ pickedCount, total, submitted, t }: { pickedCount: number; total: number; submitted: boolean; t: ReturnType<typeof useI18n>["t"] }) {
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Survival meter</p>
-        {submitted && <span className="text-xs font-black text-[var(--color-card-yes)]">Locked in</span>}
+        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.survivalMeter")}</p>
+        {submitted && <span className="text-xs font-black text-[var(--color-card-yes)]">{t("p10.lockedIn")}</span>}
       </div>
       <p className="mt-2 text-3xl font-display font-black text-[var(--color-card-text)]">{pickedCount}/{total}</p>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--color-card-border)]">
@@ -543,21 +559,23 @@ function TicketBuilder({
   odds,
   picks,
   analysisPicks,
+  t,
 }: {
   markets: Market[];
   odds: Record<string, Odds>;
   picks: Record<string, PickSide>;
   analysisPicks: Record<string, PickSide>;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Perfect ticket builder</p>
-          <h2 className="mt-1 text-xl font-display font-black text-[var(--color-card-text)]">10 locked slots, no hiding places.</h2>
+          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.ticketBuilder")}</p>
+          <h2 className="mt-1 text-xl font-display font-black text-[var(--color-card-text)]">{t("p10.ticketTitle")}</h2>
         </div>
         <Link href="/card" className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-bold text-[var(--color-card-text)]">
-          Open Card
+          {t("p10.openCard")}
         </Link>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -569,11 +587,11 @@ function TicketBuilder({
           return (
             <div key={marketId} className={`rounded-lg border p-3 ${slotTone(index, !!savedPick)}`}>
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest">Leg {index + 1}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">{t("p10.leg", { number: String(index + 1) })}</span>
                 <span className="text-xs font-black">{savedPick ?? demoPick ?? "--"}</span>
               </div>
-              <p className="mt-2 line-clamp-2 min-h-8 text-xs font-semibold">{market?.title ?? "Loading market"}</p>
-              <p className="mt-2 text-[10px] text-[var(--color-text-muted)]">{price ? `${price}c / ${MARKET_META[marketId]?.confidence ?? "Lean"}` : "Choose side"}</p>
+              <p className="mt-2 line-clamp-2 min-h-8 text-xs font-semibold">{market?.title ?? t("p10.loadingMarket")}</p>
+              <p className="mt-2 text-[10px] text-[var(--color-text-muted)]">{price ? `${price}c / ${MARKET_META[marketId]?.confidence ?? "Lean"}` : t("p10.chooseSide")}</p>
             </div>
           );
         })}
@@ -654,11 +672,13 @@ function SweatMode({
   picks,
   odds,
   recapScenario,
+  t,
 }: {
   markets: Market[];
   picks: Record<string, PickSide>;
   odds: Record<string, Odds>;
   recapScenario: RecapScenario;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const misses = RECAP_MISSES[recapScenario];
   const resolved = markets.slice(0, recapScenario === "busted" ? 7 : 6);
@@ -667,14 +687,14 @@ function SweatMode({
 
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Sweat mode</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.sweatMode")}</p>
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
           <p className="text-4xl font-display font-black text-[var(--color-card-text)]">{hits}/{resolved.length}</p>
-          <p className="text-xs text-[var(--color-text-muted)]">{live} legs still live in this mock sweat.</p>
+          <p className="text-xs text-[var(--color-text-muted)]">{t("p10.liveLegs", { count: String(live) })}</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${misses.size ? "bg-red-500/15 text-red-300" : "bg-[var(--color-card-yes-dim)] text-[var(--color-card-yes)]"}`}>
-          {misses.size ? "At risk" : "Perfect live"}
+          {misses.size ? t("p10.atRisk") : t("p10.perfectLive")}
         </span>
       </div>
       <div className="mt-4 space-y-2">
@@ -689,7 +709,7 @@ function SweatMode({
                 <p className="text-[10px] text-[var(--color-text-muted)]">{side?.toUpperCase()} / {priceForSide(odds[market.id], side) ?? "--"}c</p>
               </div>
               <span className={`shrink-0 text-[10px] font-black uppercase ${!isResolved ? "text-[var(--color-text-muted)]" : missed ? "text-red-300" : "text-[var(--color-card-yes)]"}`}>
-                {!isResolved ? "Live" : missed ? "Miss" : "Hit"}
+                {!isResolved ? t("p10.live") : missed ? t("p10.miss") : t("p10.hit")}
               </span>
             </div>
           );
@@ -703,10 +723,12 @@ function PerfectPathRecap({
   markets,
   picks,
   recapScenario,
+  t,
 }: {
   markets: Market[];
   picks: Record<string, PickSide>;
   recapScenario: RecapScenario;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   const misses = RECAP_MISSES[recapScenario];
   const hits = Math.max(0, markets.length - misses.size);
@@ -715,14 +737,14 @@ function PerfectPathRecap({
 
   return (
     <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Perfect path recap</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{t("p10.pathRecap")}</p>
       <h2 className="mt-2 text-2xl font-display font-black text-[var(--color-card-text)]">
-        {recapScenario === "perfect" ? "10/10 jackpot path" : recapScenario === "badBeat" ? "9/10 bad beat" : `${hits}/10 broken ticket`}
+        {recapScenario === "perfect" ? t("p10.jackpotPath") : recapScenario === "badBeat" ? t("p10.badBeatTitle") : t("p10.brokenTicket", { count: String(hits) })}
       </h2>
       <div className="mt-4 space-y-3">
-        <RecapRow label="Best pick" value={bestHit?.title ?? "Longshot leg pending"} detail={bestHit ? MARKET_META[bestHit.id]?.recapNote : "Pick a demo ticket to preview rare-hit language."} />
-        <RecapRow label="Missed pick" value={missedMarket?.title ?? "None"} detail={missedMarket ? MARKET_META[missedMarket.id]?.recapNote : "Clean board. Every leg stayed on the perfect path."} />
-        <RecapRow label="Next adjustment" value={recapScenario === "busted" ? "Reduce correlation" : "Keep the anchor/fade mix"} detail={recapScenario === "perfect" ? "This ticket balanced favorites with enough unpopular sides to matter." : "The recap tells users what broke instead of just showing a score."} />
+        <RecapRow label={t("p10.bestPick")} value={bestHit?.title ?? t("p10.longshotPending")} detail={bestHit ? MARKET_META[bestHit.id]?.recapNote : t("p10.rareHitPreview")} />
+        <RecapRow label={t("p10.missedPick")} value={missedMarket?.title ?? t("p10.none")} detail={missedMarket ? MARKET_META[missedMarket.id]?.recapNote : t("p10.cleanBoard")} />
+        <RecapRow label={t("p10.nextAdjustment")} value={recapScenario === "busted" ? t("p10.reduceCorrelation") : t("p10.keepMix")} detail={recapScenario === "perfect" ? t("p10.perfectDetail") : t("p10.recapDetail")} />
       </div>
     </section>
   );
@@ -736,6 +758,7 @@ function SubmitPanel({
   submitted,
   verificationRequired,
   onSubmit,
+  t,
 }: {
   allPicked: boolean;
   pickedCount: number;
@@ -744,6 +767,7 @@ function SubmitPanel({
   submitted: boolean;
   verificationRequired: boolean;
   onSubmit: () => void;
+  t: ReturnType<typeof useI18n>["t"];
 }) {
   return (
     <AnimatePresence mode="wait">
@@ -754,13 +778,13 @@ function SubmitPanel({
           animate={{ opacity: 1, y: 0 }}
           className="rounded-xl border border-[var(--color-card-yes)]/30 bg-[var(--color-card-yes-dim)] p-4 text-center"
         >
-          <p className="text-sm font-bold text-[var(--color-card-yes)]">Your Perfect 10 picks are locked in.</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Sweat Mode takes over after the markets begin resolving.</p>
+          <p className="text-sm font-bold text-[var(--color-card-yes)]">{t("p10.submitted")}</p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("p10.sweatAfter")}</p>
         </motion.div>
       ) : locked ? (
         <motion.div key="locked" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4 text-center">
-          <p className="text-sm font-semibold text-[var(--color-text-muted)]">Picks are locked for this week.</p>
-          <p className="mt-1 text-xs text-[var(--color-text-muted)]">Come back next week for a fresh contest.</p>
+          <p className="text-sm font-semibold text-[var(--color-text-muted)]">{t("p10.weekLocked")}</p>
+          <p className="mt-1 text-xs text-[var(--color-text-muted)]">{t("p10.nextWeek")}</p>
         </motion.div>
       ) : (
         <motion.div key="submit" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -774,9 +798,9 @@ function SubmitPanel({
               color: allPicked ? "#fff" : "var(--color-text-muted)",
             }}
           >
-            {allPicked ? "Lock in my Perfect 10 picks" : `Pick ${total - pickedCount} more to submit`}
+            {allPicked ? t("p10.lockPicks") : t("p10.pickMore", { count: String(total - pickedCount) })}
           </button>
-          <p className="mt-2 text-center text-[10px] text-[var(--color-text-muted)]">One entry per week / Free / No purchase required</p>
+          <p className="mt-2 text-center text-[10px] text-[var(--color-text-muted)]">{t("p10.entryNote")}</p>
         </motion.div>
       )}
     </AnimatePresence>
