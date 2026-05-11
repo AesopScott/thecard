@@ -8,11 +8,16 @@ import { PositionsPanel } from "@/components/positions-panel";
 import { UpcomingSportsCard } from "@/components/upcoming-sports-card";
 import { SeasonBanner } from "@/components/season-banner";
 import { SettlementPanel } from "@/components/settlement-panel";
+import { SignInSheet } from "@/components/sign-in-sheet";
+import { EmailVerificationNotice } from "@/components/email-verification-notice";
+import { useAuth } from "@/contexts/auth-context";
 import type { HostTake } from "@/lib/editorial";
 import type { Market, Odds, Sport } from "@thecard/types";
 
 type SortMode = "hot" | "closing" | "longshot";
 type SportFilter = "all" | Sport;
+type RiskProfile = "conservative" | "balanced" | "aggressive";
+type TicketSide = "yes" | "no";
 
 interface CardClientProps {
   markets: Market[];
@@ -20,20 +25,61 @@ interface CardClientProps {
   hostTakes: Record<string, HostTake>;
 }
 
+interface TicketPick {
+  marketId: string;
+  title: string;
+  sport: Sport;
+  side: TicketSide;
+  price: number;
+  conviction: string;
+}
+
+interface LockedCard {
+  date: string;
+  picks: TicketPick[];
+  risk: RiskProfile;
+  projectedScore: number;
+  bestBetId: string | null;
+  settled: Array<{ marketId: string; hit: boolean; signal: string }>;
+}
+
 const WATCHLIST_KEY = "thecard:watchlist:v1";
+const TICKET_KEY = "thecard:my-card-ticket:v1";
+const LOCKED_KEY = "thecard:locked-card:v1";
+const HISTORY_KEY = "thecard:card-history:v1";
+
+function todayId() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readJson<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? "") as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(key: string, value: unknown) {
+  if (typeof window !== "undefined") localStorage.setItem(key, JSON.stringify(value));
+}
 
 function readWatchlist() {
-  if (typeof window === "undefined") return [];
-  try {
-    const parsed = JSON.parse(localStorage.getItem(WATCHLIST_KEY) ?? "[]");
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
+  const parsed = readJson<unknown[]>(WATCHLIST_KEY, []);
+  return parsed.filter((item): item is string => typeof item === "string");
 }
 
 function hoursUntilClose(market: Market) {
   return Math.max(0, (new Date(market.closesAt).getTime() - Date.now()) / 3_600_000);
+}
+
+function modelProbability(market: Market, odds?: Odds, risk: RiskProfile = "balanced") {
+  const marketYes = odds?.yes ?? 0.5;
+  const sportBias = (market.sport.charCodeAt(0) % 9 - 4) / 100;
+  const closeBias = hoursUntilClose(market) < 12 ? 0.025 : 0;
+  const riskBias = risk === "conservative" ? -0.015 : risk === "aggressive" ? 0.025 : 0;
+  return Math.min(0.92, Math.max(0.08, marketYes + sportBias + closeBias + riskBias));
 }
 
 function marketHeat(market: Market, odds?: Odds) {
@@ -47,8 +93,8 @@ function marketHeat(market: Market, odds?: Odds) {
 function signalFor(market: Market, odds?: Odds) {
   if (!odds) return "Loading";
   const yes = Math.round(odds.yes * 100);
-  if (hoursUntilClose(market) <= 24) return "Closing";
-  if (yes <= 20 || yes >= 80) return "Longshot";
+  if (hoursUntilClose(market) <= 12) return "Closing";
+  if (yes <= 25 || yes >= 75) return "Longshot";
   if (Math.abs(yes - 50) <= 6) return "Toss-up";
   if (marketHeat(market, odds) >= 42) return "Hot";
   return "Steady";
@@ -61,21 +107,99 @@ function sportLabel(sport: SportFilter) {
   return sport.toUpperCase();
 }
 
+function defaultSide(market: Market, odds?: Odds, risk: RiskProfile = "balanced"): TicketSide {
+  const model = modelProbability(market, odds, risk);
+  const yes = odds?.yes ?? 0.5;
+  return model >= yes ? "yes" : "no";
+}
+
+function convictionFor(market: Market, odds?: Odds, risk: RiskProfile = "balanced") {
+  const edge = Math.abs(modelProbability(market, odds, risk) - (odds?.yes ?? 0.5)) * 100;
+  if (edge >= 8) return "Hammer";
+  if (edge >= 5) return "Strong";
+  if (edge >= 3) return "Standard";
+  return "Lean";
+}
+
+function edgeLabel(market: Market, odds?: Odds, risk: RiskProfile = "balanced") {
+  const model = modelProbability(market, odds, risk);
+  const yes = odds?.yes ?? 0.5;
+  const edge = Math.round((model - yes) * 100);
+  if (edge === 0) return "Even";
+  return `${edge > 0 ? "+" : ""}${edge} pts`;
+}
+
+function edgePoints(market: Market, odds?: Odds, risk: RiskProfile = "balanced") {
+  return Math.round((modelProbability(market, odds, risk) - (odds?.yes ?? 0.5)) * 100);
+}
+
+function movementFor(market: Market, odds?: Odds) {
+  const yes = Math.round((odds?.yes ?? 0.5) * 100);
+  const seed = market.id.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const open = Math.max(8, Math.min(92, yes + (seed % 15) - 7));
+  const move = yes - open;
+  return `${move > 0 ? "+" : ""}${move}c`;
+}
+
+function signalStack(market: Market, odds?: Odds) {
+  const yes = Math.round((odds?.yes ?? 0.5) * 100);
+  return [
+    `${edgeLabel(market, odds)} model edge`,
+    hoursUntilClose(market) <= 12 ? "closing window" : "time to shop",
+    yes > 65 ? "public favorite" : yes < 35 ? "public fade" : "balanced book",
+    market.sport === "nfl" || market.sport === "mlb" ? "weather/news watch" : "lineup note",
+  ];
+}
+
+function timeGroup(market: Market) {
+  const hour = new Date(market.closesAt).getHours();
+  if (hour < 16) return "Early";
+  if (hour < 20) return "Main";
+  return "Late";
+}
+
+function projectedScore(picks: TicketPick[], risk: RiskProfile) {
+  const base = picks.reduce((sum, pick) => sum + (pick.conviction === "Hammer" ? 3 : pick.conviction === "Strong" ? 2 : 1), 0);
+  const multiplier = risk === "conservative" ? 0.85 : risk === "aggressive" ? 1.25 : 1;
+  return Math.round(base * multiplier);
+}
+
+function settlePreview(picks: TicketPick[]) {
+  return picks.map((pick, index) => ({
+    marketId: pick.marketId,
+    hit: (pick.marketId.charCodeAt(0) + index + todayId().length) % 3 !== 0,
+    signal: pick.conviction,
+  }));
+}
+
 export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps) {
+  const { user, verificationRequired } = useAuth();
   const [query, setQuery] = useState("");
   const [sport, setSport] = useState<SportFilter>("all");
   const [sort, setSort] = useState<SortMode>("hot");
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [watchOnly, setWatchOnly] = useState(false);
+  const [risk, setRisk] = useState<RiskProfile>("balanced");
+  const [fadeMode, setFadeMode] = useState(false);
+  const [groupByTime, setGroupByTime] = useState(false);
+  const [ticket, setTicket] = useState<Record<string, TicketPick>>({});
+  const [lockedCard, setLockedCard] = useState<LockedCard | null>(null);
+  const [history, setHistory] = useState<LockedCard[]>([]);
+  const [explainId, setExplainId] = useState<string | null>(null);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
 
-  useEffect(() => setWatchlist(readWatchlist()), []);
+  useEffect(() => {
+    setWatchlist(readWatchlist());
+    setTicket(readJson<Record<string, TicketPick>>(TICKET_KEY, {}));
+    const locked = readJson<LockedCard | null>(LOCKED_KEY, null);
+    if (locked?.date === todayId()) setLockedCard(locked);
+    setHistory(readJson<LockedCard[]>(HISTORY_KEY, []));
+  }, []);
 
   const sports = useMemo(() => ["all", ...Array.from(new Set(markets.map((market) => market.sport)))] as SportFilter[], [markets]);
-
-  const featured = useMemo(
-    () => [...markets].sort((a, b) => marketHeat(b, initialOdds[b.id]) - marketHeat(a, initialOdds[a.id])).slice(0, 3),
-    [markets, initialOdds]
-  );
+  const bestBet = useMemo(() => [...markets].sort((a, b) => Math.abs(edgePoints(b, initialOdds[b.id], risk)) - Math.abs(edgePoints(a, initialOdds[a.id], risk)))[0] ?? null, [markets, initialOdds, risk]);
+  const featured = useMemo(() => [...markets].sort((a, b) => marketHeat(b, initialOdds[b.id]) - marketHeat(a, initialOdds[a.id])).slice(0, 3), [markets, initialOdds]);
 
   const filteredMarkets = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -90,17 +214,67 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
       });
   }, [initialOdds, markets, query, sort, sport, watchOnly, watchlist]);
 
-  const avgYes = markets.length
-    ? Math.round(markets.reduce((sum, market) => sum + (initialOdds[market.id]?.yes ?? 0.5) * 100, 0) / markets.length)
-    : 0;
+  const ticketPicks = Object.values(ticket);
+  const avgYes = markets.length ? Math.round(markets.reduce((sum, market) => sum + (initialOdds[market.id]?.yes ?? 0.5) * 100, 0) / markets.length) : 0;
   const closingSoon = markets.filter((market) => hoursUntilClose(market) <= 24).length;
+  const explaining = explainId ? markets.find((market) => market.id === explainId) ?? null : null;
 
   function toggleWatch(marketId: string) {
     setWatchlist((current) => {
       const next = current.includes(marketId) ? current.filter((id) => id !== marketId) : [...current, marketId];
-      localStorage.setItem(WATCHLIST_KEY, JSON.stringify(next));
+      writeJson(WATCHLIST_KEY, next);
       return next;
     });
+  }
+
+  function addToTicket(market: Market, side: TicketSide) {
+    const finalSide = fadeMode ? (side === "yes" ? "no" : "yes") : side;
+    const odds = initialOdds[market.id];
+    const pick: TicketPick = {
+      marketId: market.id,
+      title: market.title,
+      sport: market.sport,
+      side: finalSide,
+      price: Math.round(((finalSide === "yes" ? odds?.yes : odds?.no) ?? 0.5) * 100),
+      conviction: convictionFor(market, odds, risk),
+    };
+    setTicket((current) => {
+      const next = { ...current, [market.id]: pick };
+      writeJson(TICKET_KEY, next);
+      return next;
+    });
+  }
+
+  function lockCard() {
+    if (!user) {
+      setSignInOpen(true);
+      return;
+    }
+    if (verificationRequired || ticketPicks.length === 0) return;
+    const locked: LockedCard = {
+      date: todayId(),
+      picks: ticketPicks,
+      risk,
+      projectedScore: projectedScore(ticketPicks, risk),
+      bestBetId: bestBet?.id ?? null,
+      settled: settlePreview(ticketPicks),
+    };
+    setLockedCard(locked);
+    writeJson(LOCKED_KEY, locked);
+    const nextHistory = [locked, ...history.filter((item) => item.date !== locked.date)].slice(0, 14);
+    setHistory(nextHistory);
+    writeJson(HISTORY_KEY, nextHistory);
+  }
+
+  async function shareCard() {
+    const text = `My Card is ${ticketPicks.length} picks for ${projectedScore(ticketPicks, risk)} projected points (${risk}).`;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/card` : "https://thecard.bet/card";
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setShareStatus("Card copied.");
+    } catch {
+      setShareStatus("Share unavailable.");
+    }
   }
 
   return (
@@ -110,32 +284,24 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
           <div className="flex flex-wrap items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[var(--color-brand-primary)]" />
             <span className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Live board</span>
+            {bestBet && <span className="rounded-md bg-[var(--color-brand-primary)] px-2 py-1 text-[10px] font-black uppercase text-white">Best bet: {sportLabel(bestBet.sport)}</span>}
           </div>
           <h1 className="mt-3 text-5xl font-display font-black tracking-tight text-[var(--color-card-text)]">Tonight&apos;s Card</h1>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">
-            Curated mock markets, live-moving odds, play-money bankroll, and fast paths into every mode.
-          </p>
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-[var(--color-text-secondary)]">Curated mock markets with conviction tiers, model edges, movement, tickets, and fast paths into every mode.</p>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Stat label="Markets" value={markets.length} />
             <Stat label="Avg YES" value={`${avgYes}c`} />
             <Stat label="Closing" value={closingSoon} />
-            <Stat label="Watching" value={watchlist.length} />
+            <Stat label="Projected" value={projectedScore(ticketPicks, risk)} />
           </div>
         </div>
         <div className="flex flex-col gap-3">
           <SeasonBanner variant="compact" />
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-4">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Jump in</p>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Bridge modes</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
-              {([
-                ["/blitz", "Blitz"],
-                ["/live", "Live"],
-                ["/h2h", "H2H"],
-                ["/forecast", "Forecast"],
-              ] satisfies Array<[string, string]>).map(([href, label]) => (
-                <Link key={href} href={href} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-2 text-center text-xs font-black text-[var(--color-card-text)] transition-colors hover:border-[var(--color-brand-primary)]/50">
-                  {label}
-                </Link>
+              {(["/blitz", "/live", "/h2h", "/forecast"] as const).map((href) => (
+                <Link key={href} href={href} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-card-surface)] px-3 py-2 text-center text-xs font-black text-[var(--color-card-text)] transition-colors hover:border-[var(--color-brand-primary)]/50">{href.slice(1).toUpperCase()}</Link>
               ))}
             </div>
           </div>
@@ -150,21 +316,13 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
           </div>
           <div className="grid gap-3 md:grid-cols-3">
             {featured.map((market) => (
-              <button
-                key={market.id}
-                onClick={() => {
-                  setQuery(market.title);
-                  setSport("all");
-                  setWatchOnly(false);
-                }}
-                className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-3 text-left transition-all hover:border-[var(--color-brand-primary)]/50"
-              >
+              <button key={market.id} onClick={() => setExplainId(market.id)} className="rounded-lg border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-3 text-left transition-all hover:border-[var(--color-brand-primary)]/50">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{sportLabel(market.sport)}</span>
                   <span className="text-[10px] font-bold text-[var(--color-text-muted)]">{signalFor(market, initialOdds[market.id])}</span>
                 </div>
                 <p className="mt-2 line-clamp-2 text-sm font-black text-[var(--color-card-text)]">{market.title}</p>
-                <p className="mt-2 text-xs text-[var(--color-text-muted)]">{Math.round((initialOdds[market.id]?.yes ?? 0.5) * 100)}c YES</p>
+                <p className="mt-2 text-xs text-[var(--color-text-muted)]">{edgeLabel(market, initialOdds[market.id], risk)} edge</p>
               </button>
             ))}
           </div>
@@ -174,32 +332,28 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
 
       <UpcomingSportsCard />
 
-      <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto] lg:items-center">
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search teams, props, sports"
-            className="min-h-11 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 text-sm font-semibold text-[var(--color-card-text)] outline-none transition-colors focus:border-[var(--color-brand-primary)]"
-          />
-          <div className="grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
-            {sports.slice(0, 8).map((item) => (
-              <button key={item} onClick={() => setSport(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${sport === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>
-                {sportLabel(item)}
-              </button>
-            ))}
+      <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search teams, props, sports" className="min-h-11 rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-bg)] px-4 text-sm font-semibold text-[var(--color-card-text)] outline-none transition-colors focus:border-[var(--color-brand-primary)]" />
+            <div className="grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
+              {sports.slice(0, 8).map((item) => (
+                <button key={item} onClick={() => setSport(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${sport === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{sportLabel(item)}</button>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
-            {(["hot", "closing", "longshot"] as SortMode[]).map((item) => (
-              <button key={item} onClick={() => setSort(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${sort === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>
-                {item}
-              </button>
-            ))}
-            <button onClick={() => setWatchOnly((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${watchOnly ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>
-              Watch
-            </button>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <Segment values={["conservative", "balanced", "aggressive"] as const} value={risk} onChange={setRisk} />
+            <Segment values={["hot", "closing", "longshot"] as const} value={sort} onChange={setSort} />
+            <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
+              <button onClick={() => setFadeMode((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${fadeMode ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>Fade</button>
+              <button onClick={() => setWatchOnly((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${watchOnly ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>Watch</button>
+              <button onClick={() => setGroupByTime((value) => !value)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${groupByTime ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>Time</button>
+            </div>
           </div>
         </div>
+
+        <MyCardPanel ticketPicks={ticketPicks} risk={risk} lockedCard={lockedCard} history={history} shareStatus={shareStatus} onLock={lockCard} onShare={shareCard} onClear={() => { setTicket({}); writeJson(TICKET_KEY, {}); }} />
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -211,39 +365,150 @@ export function CardClient({ markets, initialOdds, hostTakes }: CardClientProps)
           {filteredMarkets.length === 0 ? (
             <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-8 text-center">
               <p className="text-sm font-black text-[var(--color-card-text)]">No markets match this view.</p>
-              <button onClick={() => { setQuery(""); setSport("all"); setWatchOnly(false); }} className="mt-3 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-text-muted)]">
-                Clear filters
-              </button>
+              <button onClick={() => { setQuery(""); setSport("all"); setWatchOnly(false); }} className="mt-3 rounded-lg border border-[var(--color-card-border)] px-4 py-2 text-xs font-bold text-[var(--color-text-muted)]">Clear filters</button>
             </div>
-          ) : filteredMarkets.map((market) => (
-            <MarketCard
-              key={market.id}
-              market={market}
-              hostTake={hostTakes[market.id]}
-              initialOdds={initialOdds[market.id]}
-              signal={signalFor(market, initialOdds[market.id])}
-              watched={watchlist.includes(market.id)}
-              onToggleWatch={() => toggleWatch(market.id)}
-            />
-          ))}
+          ) : (
+            (groupByTime ? ["Early", "Main", "Late"] : ["All"]).map((group) => {
+              const groupMarkets = group === "All" ? filteredMarkets : filteredMarkets.filter((market) => timeGroup(market) === group);
+              if (groupMarkets.length === 0) return null;
+              return (
+                <div key={group} className="flex flex-col gap-3">
+                  {group !== "All" && <p className="px-1 text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">{group}</p>}
+                  {groupMarkets.map((market) => {
+                    const odds = initialOdds[market.id];
+                    const side = fadeMode ? (defaultSide(market, odds, risk) === "yes" ? "no" : "yes") : defaultSide(market, odds, risk);
+                    return (
+                      <MarketCard
+                        key={market.id}
+                        market={market}
+                        hostTake={hostTakes[market.id]}
+                        initialOdds={odds}
+                        signal={signalFor(market, odds)}
+                        watched={watchlist.includes(market.id)}
+                        selectedSide={ticket[market.id]?.side ?? null}
+                        conviction={convictionFor(market, odds, risk)}
+                        edgeLabel={edgeLabel(market, odds, risk)}
+                        movement={movementFor(market, odds)}
+                        signalStack={signalStack(market, odds)}
+                        onToggleWatch={() => toggleWatch(market.id)}
+                        onAddToTicket={(pickedSide) => addToTicket(market, pickedSide)}
+                        onExplain={() => setExplainId(market.id)}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })
+          )}
         </div>
 
         <aside className="flex flex-col gap-4">
           <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-surface-2)] p-5">
-            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">How prices read</p>
-            <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-              A 62c YES price means the crowd is implying roughly a 62% chance. Buy YES if your number is higher, NO if your number is lower.
-            </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <Stat label="Toss-up" value="45-55c" />
-              <Stat label="Longshot" value="<20c" />
-            </div>
+            <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Compare to community</p>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--color-text-secondary)]">Your selected card leans {ticketPicks.length === 0 ? "empty" : ticketPicks.filter((pick) => pick.side === "yes").length >= ticketPicks.length / 2 ? "YES-heavy" : "NO-heavy"} versus an average market YES price of {avgYes}c.</p>
           </div>
           <PositionsPanel />
         </aside>
       </section>
 
+      {lockedCard && <PostSettleReview lockedCard={lockedCard} />}
       <SettlementPanel markets={markets.map((market) => ({ id: market.id, title: market.title, sport: market.sport }))} />
+
+      {explaining && <ExplanationDrawer market={explaining} odds={initialOdds[explaining.id]} risk={risk} fadeMode={fadeMode} onClose={() => setExplainId(null)} />}
+      {!user && <SignInSheet open={signInOpen} onClose={() => setSignInOpen(false)} />}
+      {user && verificationRequired && signInOpen && (
+        <div className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm">
+          <EmailVerificationNotice compact />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MyCardPanel({ ticketPicks, risk, lockedCard, history, shareStatus, onLock, onShare, onClear }: { ticketPicks: TicketPick[]; risk: RiskProfile; lockedCard: LockedCard | null; history: LockedCard[]; shareStatus: string | null; onLock: () => void; onShare: () => void; onClear: () => void }) {
+  return (
+    <div className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">My Card</p>
+        <p className="text-xs font-bold text-[var(--color-text-muted)]">{ticketPicks.length} picks</p>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Stat label="Preview" value={projectedScore(ticketPicks, risk)} />
+        <Stat label="Risk" value={risk} />
+      </div>
+      <div className="mt-3 flex flex-col gap-2">
+        {ticketPicks.length === 0 ? <p className="text-sm text-[var(--color-text-muted)]">Add picks from the feed to preview your card.</p> : ticketPicks.map((pick) => (
+          <div key={pick.marketId} className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="min-w-0 truncate text-xs font-bold text-[var(--color-card-text)]">{pick.title}</p>
+              <span className={pick.side === "yes" ? "text-xs font-black text-[var(--color-card-yes)]" : "text-xs font-black text-[var(--color-card-no)]"}>{pick.side.toUpperCase()}</span>
+            </div>
+            <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">{pick.conviction} - {pick.price}c</p>
+          </div>
+        ))}
+      </div>
+      {lockedCard && <p className="mt-3 rounded-lg bg-[var(--color-brand-primary)]/10 px-3 py-2 text-xs font-bold text-[var(--color-card-text)]">Locked today for {lockedCard.projectedScore} projected points. Saved to profile artifact locally.</p>}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <button onClick={onLock} className="rounded-lg bg-[var(--color-brand-primary)] px-3 py-2 text-xs font-black text-white">Lock</button>
+        <button onClick={onShare} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">Share</button>
+        <button onClick={onClear} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">Clear</button>
+      </div>
+      {shareStatus && <p className="mt-2 text-center text-xs font-bold text-[var(--color-success)]">{shareStatus}</p>}
+      <div className="mt-4">
+        <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Card history</p>
+        {history.length === 0 ? <p className="mt-2 text-xs text-[var(--color-text-muted)]">Locked cards will archive here.</p> : history.slice(0, 3).map((item) => (
+          <div key={item.date} className="mt-2 flex items-center justify-between rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-xs">
+            <span className="font-bold text-[var(--color-card-text)]">{item.date}</span>
+            <span className="text-[var(--color-text-muted)]">{item.projectedScore} pts</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ExplanationDrawer({ market, odds, risk, fadeMode, onClose }: { market: Market; odds?: Odds; risk: RiskProfile; fadeMode: boolean; onClose: () => void }) {
+  const side = defaultSide(market, odds, risk);
+  const shownSide = fadeMode ? (side === "yes" ? "NO" : "YES") : side.toUpperCase();
+  return (
+    <div className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-lg rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 shadow-2xl">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Pick explanation</p>
+          <h3 className="mt-2 text-xl font-display font-black text-[var(--color-card-text)]">{market.title}</h3>
+        </div>
+        <button onClick={onClose} className="rounded-lg border border-[var(--color-card-border)] px-3 py-2 text-xs font-black text-[var(--color-text-muted)]">Close</button>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Stat label="Pick" value={shownSide} />
+        <Stat label="Conviction" value={convictionFor(market, odds, risk)} />
+        <Stat label="Model" value={`${Math.round(modelProbability(market, odds, risk) * 100)}%`} />
+        <Stat label="Market" value={`${Math.round((odds?.yes ?? 0.5) * 100)}c`} />
+      </div>
+      <p className="mt-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">The model view weighs price edge, movement, close time, and sport context. {fadeMode ? "Fade mode is showing the opposite side, including the risk that the original signal may still be right." : "The selected side is the cleaner recommendation for this risk profile."}</p>
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        {(["/blitz", "/h2h", "/live", "/forecast"] as const).map((href) => <Link key={href} href={href} className="rounded-lg border border-[var(--color-card-border)] px-2 py-2 text-center text-[10px] font-black text-[var(--color-text-muted)]">{href.slice(1)}</Link>)}
+      </div>
+    </div>
+  );
+}
+
+function PostSettleReview({ lockedCard }: { lockedCard: LockedCard }) {
+  const hits = lockedCard.settled.filter((item) => item.hit).length;
+  return (
+    <section className="rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5">
+      <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Post-settle review</p>
+      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Preview settlement has {hits}/{lockedCard.picks.length} hits. Strongest signal: {lockedCard.settled[0]?.signal ?? "none"}.</p>
+    </section>
+  );
+}
+
+function Segment<T extends string>({ values, value, onChange }: { values: readonly T[]; value: T; onChange: (value: T) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-1 rounded-lg bg-[var(--color-surface-2)] p-1">
+      {values.map((item) => (
+        <button key={item} onClick={() => onChange(item)} className={`rounded-md px-2 py-2 text-[10px] font-black uppercase ${value === item ? "bg-[var(--color-brand-primary)] text-white" : "text-[var(--color-text-muted)]"}`}>{item}</button>
+      ))}
     </div>
   );
 }
