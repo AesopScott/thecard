@@ -501,7 +501,7 @@ function ExplanationDrawer({ market, odds, risk, fadeMode, onClose }: { market: 
   const side = defaultSide(market, odds, risk);
   const shownSide = fadeMode ? (side === "yes" ? "NO" : "YES") : side.toUpperCase();
   return (
-    <div className="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-lg rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 shadow-2xl">
+    <div className="fixed inset-x-4 bottom-[calc(6rem+env(safe-area-inset-bottom))] z-[80] mx-auto max-h-[calc(100dvh-8rem)] max-w-lg overflow-y-auto rounded-xl border border-[var(--color-card-border)] bg-[var(--color-card-surface)] p-5 shadow-2xl">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-[var(--color-brand-primary)]">Pick explanation</p>
